@@ -26,16 +26,18 @@ if __name__ == '__main__':
     print (f"boot_time_str = {boot_time_str = }")
     mach = 'jetson' if platform.processor() == 'aarch64' else 'test'
     con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
+    con2 = "/dev/ttyUSB0"
     print(mach)
 
     config_dict = toml_load(config_dir() / f"{mach}_server_config.toml")
     print(config_dict)
-
+    print("Starting GSTCameras")
     cam_0 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_cam_0.toml"), loglevel=LogLevels.INFO)
     cam_1 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_cam_1.toml"), loglevel=LogLevels.INFO)
     cam_2 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_viewsheen.toml"), loglevel=LogLevels.INFO)
     # with MAVCom(con2, source_system=222) as server:
-    with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server:  # This normally runs on drone
+    print("Starting MAVcom")
+    with MAVCom(con2, source_system=222, loglevel=LogLevels.INFO) as UAV_server:  # This normally runs on drone
         # UAV_server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_gst_1))
         UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=20))
         UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=20))

@@ -173,10 +173,10 @@ class BaseComponent:
             self.message_cnts[msg.get_srcSystem()][msg.get_type()] += 1
         except Exception as e:
             # print(f"!!!! new Message type {msg.get_type()} from system {msg.get_srcSystem()}")
-            sys = msg.get_srcSystem()
-            if sys not in self.message_cnts:
-                self.message_cnts[sys] = {}
-            self.message_cnts[sys][msg.get_type()] = 1
+            _sys = msg.get_srcSystem()
+            if _sys not in self.message_cnts:
+                self.message_cnts[_sys] = {}
+            self.message_cnts[_sys][msg.get_type()] = 1
 
         return True
 
@@ -288,10 +288,14 @@ class MAVCom:
     def start_mavlink(self):
         """Start the MAVLink connection."""
 
-        self.master = mavutil.mavlink_connection(self.connection_string,  # "udpin:localhost:14550"
-                                                 baud=self.baudrate,  # baud rate of the serial port
-                                                 source_system=int(self.source_system),  # source system
-                                                 )
+        try:
+            self.master = mavutil.mavlink_connection(self.connection_string,  # "udpin:localhost:14550"
+                                                    baud=self.baudrate,  # baud rate of the serial port
+                                                    source_system=int(self.source_system),  # source system
+                                                    )
+        except Exception as e:
+            self.log.error(e)
+            return
 
         # self.log.info(f"see https://mavlink.io/en/messages/common.html#MAV_COMPONENT")
         time.sleep(0.1)  # Todo delay for connection to establish
@@ -362,10 +366,10 @@ class MAVCom:
             self.message_cnts[msg.get_srcSystem()][msg.get_type()] += 1
         except Exception as e:
             # print(f"!!!! new Message type {msg.get_type()} from system {msg.get_srcSystem()}")
-            sys = msg.get_srcSystem()
-            if sys not in self.message_cnts:
-                self.message_cnts[sys] = {}
-            self.message_cnts[sys][msg.get_type()] = 1
+            _sys = msg.get_srcSystem()
+            if _sys not in self.message_cnts:
+                self.message_cnts[_sys] = {}
+            self.message_cnts[_sys][msg.get_type()] = 1
 
         return True
 
