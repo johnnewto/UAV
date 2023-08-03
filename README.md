@@ -5,18 +5,94 @@
 This file will become your README and also the index of your
 documentation.
 
-## Install
+## Guide to developing UAV
+
+For a step-by-step guide to using nbdev [guide to using
+nbdev](https://nbdev.fast.ai/tutorials/tutorial.html) You’ll need the
+following software to develope using nbdev:
+
+1.  Python venv
+2.  A Python package manager: ie pip
+3.  Jupyter Notebook
+
+``` sh
+pip install jupyter
+```
+
+4.  nbdev
+
+``` sh
+pip install nbdev
+```
+
+5.  Quarto
+
+``` sh
+nbdev_install_quarto
+```
+
+6.  Install Quarto JupyterLab extension
+
+``` sh
+pip install jupyterlab-quarto
+```
+
+7.  Install nbdev pre-commit hooks to catch and fix uncleaned and
+    unexported notebooks
+
+``` sh
+pip install pre-commit
+```
+
+see [nbdev Pre-Commit
+Hooks](https://nbdev.fast.ai/tutorials/pre_commit.html) for more details
+
+``` python
+12+1222
+```
+
+    1234
+
+### Build the library
 
 ``` sh
 pip install UAV
 ```
 
-## How to use
+### Preview Docs
 
-Fill me in please! Don’t forget code examples:
+Start the preview by entering this into your terminal:
 
-``` python
-1+1
+``` sh
+nbdev_preview
 ```
 
-    2
+### Prepare your changes
+
+Before commiting your changes to GitHub we recommend running
+`nbdev_prepare` in the terminal,
+
+which bundles the following commands:
+
+- `nbdev_export`: Builds the `.py` modules from Jupyter notebooks
+- `nbdev_test`: Tests your notebooks
+- `nbdev_clean`: Cleans your notebooks to get rid of extreanous output
+  for git
+- `nbdev_readme`: Updates your repo’s `README.md` file from your index
+  notebook.
+
+### Push to GitHub
+
+You can now commit and push your changes to GitHub. As we mentioned
+before, always remember to run `nbdev_prepare` before you commit to
+ensure your modules are exported and your tests pass. You can use
+`git status` to check which files have been generated or changed. Then:
+
+``` sh
+git add .
+git commit -m 'Add `say_hello`; update index' # Update this text with your own message
+git push
+```
+
+This will kick-off your GitHub Actions. Wait a minute or two for those
+to complete, then check your updated repo and documentation.
