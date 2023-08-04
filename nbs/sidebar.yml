@@ -1,0 +1,8 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 00_core.ipynb
+      - section: Gstreamer
+        contents:
+          - Gstreamer/gst_valve.ipynb
