@@ -77,6 +77,10 @@ which bundles the following commands:
 - `nbdev_readme`: Updates your repo’s `README.md` file from your index
   notebook.
 
+### Update Static site docs
+
+Generate the static docs by entering `nbdev_docs` into your terminal:
+
 ### Push to GitHub
 
 You can now commit and push your changes to GitHub. As we mentioned

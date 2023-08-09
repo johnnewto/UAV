@@ -1,5 +1,5 @@
 _docs/
-_proc/
+_copy proc/
 
 *.bak
 .gitattributes

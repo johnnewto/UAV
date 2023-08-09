@@ -1,0 +1,44 @@
+[
+  {
+    "listing": "/tutorials/index.html",
+    "items": [
+      "/tutorials/api_walkthrough.html",
+      "/tutorials/template.html"
+    ]
+  },
+  {
+    "listing": "/contributing/index.html",
+    "items": [
+      "/contributing/doc_walkthrough.html",
+      "/contributing/directives.html",
+      "/contributing/docs.html",
+      "/contributing/config.html",
+      "/contributing/why_nbdev.html"
+    ]
+  },
+  {
+    "listing": "/api/index.html",
+    "items": [
+      "/api/gstreamer.valve.html",
+      "/api/utils.display.html",
+      "/api/config.html",
+      "/api/core.html",
+      "/api/maker.html",
+      "/api/process.html"
+    ]
+  },
+  {
+    "listing": "/blog/index.html",
+    "items": [
+      "/blog/posts/2022-11-07-spaces/index.html",
+      "/blog/posts/2022-08-25-jupyter-git/index.html",
+      "/blog/posts/2022-07-28-nbdev2/index.html"
+    ]
+  },
+  {
+    "listing": "/explanations/index.html",
+    "items": [
+      "/explanations/template_01.html"
+    ]
+  }
+]

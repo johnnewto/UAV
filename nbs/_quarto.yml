@@ -1,20 +1,82 @@
+#project:
+#  type: website
+#
+#format:
+#  html:
+#    theme: cosmo
+#    css: styles.css
+#    toc: true
+#
+#website:
+#  twitter-card: true
+#  open-graph: true
+#  repo-actions: [issue]
+#  navbar:
+#    background: primary
+#    search: true
+#  sidebar:
+#    style: floating
+#
+#metadata-files: [nbdev.yml, sidebar.yml]
+
 project:
   type: website
+  preview:
+    port: 3000
+    browser: false
 
 format:
   html:
     theme: cosmo
     css: styles.css
     toc: true
+    toc-depth: 4
 
 website:
   twitter-card: true
   open-graph: true
   repo-actions: [issue]
+  sidebar:
+    style: floating
+    contents:
+      - auto: "/*.ipynb"
+      - section: Tutorials
+        contents: tutorials/*
+      - section: Explanations
+        contents: explanations/*
+      - section: API
+        contents: api/*
+      - section: Contributing
+        contents: contributing/*
+  favicon: favicon.png
   navbar:
     background: primary
     search: true
-  sidebar:
-    style: floating
+    collapse-below: lg
+    left:
+      - text: "Get Started"
+        href: getting_started.ipynb
+      - text: "Tutorial"
+        href: tutorials/api_walkthrough.ipynb
+      - text: "Blog"
+        href: blog/index.qmd
+      - text: "Help"
+        menu:
+          - text: "Report an Issue"
+            icon: bug
+            href: https://github.com/johnnewto/UAV/issues
+          - text: "Maui63 Forum"
+            icon: chat-right-text
+            href: https://forums.maui63.ai/
+          - text: "FAQ"
+            icon: question-circle
+            href: getting_started.ipynb#faq
+    right:
+      - icon: github
+        href: "https://github.com/johnnewto/UAV"
+      - icon: twitter
+        href: https://twitter.com/maui63
+        aria-label: Maui63.ai Twitter
 
-metadata-files: [nbdev.yml, sidebar.yml]
+metadata-files: [nbdev.yml]
+
