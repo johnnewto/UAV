@@ -10,7 +10,8 @@ import cv2
 import numpy as np
 from imutils import resize
 from PIL import Image
-
+import matplotlib
+import matplotlib.pyplot as plt
 
 # %% ../../nbs/api/04_utils.display.ipynb 4
 def _fig_bounds(x):
@@ -18,6 +19,7 @@ def _fig_bounds(x):
     return min(5, max(1,r))
 
 # %% ../../nbs/api/04_utils.display.ipynb 5
+# Todo Test for ipython  see def in_ipython(): in fastcore  or imports.py
 def show_image(im
                , ax=None  # if None, a new figure is created
                , figsize=None # if None, the figure size is set to min of 5 and max of 1/32 of the image size
