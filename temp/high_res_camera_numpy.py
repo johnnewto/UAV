@@ -34,7 +34,7 @@ rs = RunSim("AirSimNH", settings="config/settings_high_res.json")
 # rs = RunSim("Blocks")
 # time.sleep(3)
 # rs.place_object( "Car_01", 5.0, 0.0, -1.0,)
-rs.place_object("Sofa_033", 5.0, 0.0, -1.0, 2)
+rs.place_object("Sofa_02", 5.0, 0.0, -1.0, 2)
 
 # count = 0
 # while count < 100:

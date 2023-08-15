@@ -268,7 +268,7 @@ class GstStream():
 # with GstStream("CAM-0", gstcommand) as gs:
 #     gs.cls()
 
-# %% ../../nbs/api/10_gstreamer.valve.ipynb 20
+# %% ../../nbs/api/10_gstreamer.valve.ipynb 19
 @patch     # patch will allow nbdev to document this function when running nbdev_build_docs
 def toggle_valve_state(self:GstStream
                         , valvename: str):  # name of valve element
@@ -294,7 +294,7 @@ def set_valve_state(self:GstStream
     logger.info(f"{self.name}: new drop state: {new_drop_state}")
 
 
-# %% ../../nbs/api/10_gstreamer.valve.ipynb 22
+# %% ../../nbs/api/10_gstreamer.valve.ipynb 23
 @patch
 def get_valve_state(self:GstStream
                     , valvename: str  # name of valve element
@@ -305,7 +305,7 @@ def get_valve_state(self:GstStream
     return valve.get_property("drop")
 
 
-# %% ../../nbs/api/10_gstreamer.valve.ipynb 26
+# %% ../../nbs/api/10_gstreamer.valve.ipynb 28
 def ping_ip(ip_address:str # IP address to ping
             )->bool :  # returns True if IP address is in use
     "Ping an IP address to see if it is in use"
@@ -325,7 +325,7 @@ def ping_ip(ip_address:str # IP address to ping
         logger.debug(f"Ping: cant find {ip_address}")
         return False
 
-# %% ../../nbs/api/10_gstreamer.valve.ipynb 30
+# %% ../../nbs/api/10_gstreamer.valve.ipynb 33
 class Mqtt:
     "Class to control a gst valve via MQTT"
     def __init__(self, camera:str  # name of camera
@@ -412,7 +412,7 @@ class Mqtt:
 
 
 
-# %% ../../nbs/api/10_gstreamer.valve.ipynb 34
+# %% ../../nbs/api/10_gstreamer.valve.ipynb 40
 #| code-fold: true
 def gst_main(camera="CAM-0"):
     params = DefaultParams()

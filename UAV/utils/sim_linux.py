@@ -42,7 +42,7 @@ def find_and_terminate_process(process_name):
 
 
 class RunSim:
-    """Run the AIRsim simulator"""
+    """Run the Airsim simulator"""
 
     def __init__(self,
                  name: str = "Coastline",  # name of the simulator environment
@@ -67,23 +67,27 @@ class RunSim:
         self.resx = resx
         self.resy = resy
         self.windowed = windowed
-
-        self.load_with_shell()
+        # self.load_with_shell()
+        self.load()
         time.sleep(3)
-        self.client = airsim.VehicleClient()
-        self.client.confirmConnection()
-        self.objects = []
-        # self.place_car(5.0, 0.0, -20.0)
+
+        # self.client = airsim.MultirotorClient()
+        # self.client.confirmConnection()
+
+        self._shell = False
 
     def load(self):
         """Load the simulator without shell"""
+        self._shell = False
         if not is_process_running(f"{self.name}"):
             # avoid using the shell
             script_path = [f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']
             if self.windowed is not None:
-                script_path.append(f' -ResX={self.resx} -ResY={self.resy} -{self.windowed} ')
+                script_path.append(f'-ResX={self.resx}')
+                script_path.append(f'-ResY={self.resy}')
+                script_path.append(f'-{self.windowed}')
             if self.settings is not None:
-                script_path.append(f' -settings={self.settings} ')
+                script_path.append(f'-settings={self.settings}')
 
             print("Starting Airsim ", script_path)
             with TemporaryFile() as f:
@@ -94,8 +98,10 @@ class RunSim:
             print(f"Airsim {self.name} already running.")
             
     def load_with_shell(self):
-        """ load with shell"""
+        """ load with shell, this is needed for `*.sh` files"""
+        self._shell = True
         if not is_process_running(f"{self.name}"):
+
             script_path = f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}.sh '
             if self.windowed is not None:
                 script_path += f' -ResX={self.resx} -ResY={self.resy} -{self.windowed} '
@@ -113,68 +119,86 @@ class RunSim:
 
     def exit(self):
         """Exit the simulator"""
-        find_and_terminate_process(self.name)
-        print("Stopped Airsim")
-
-        # self.process.terminate()
-        # # self.process.kill()
-        # try:
-        #     self.process.wait(timeout=1.0)
-        #     print('Airsim exited with rc =', self.process.returncode)
-        # except subprocess.TimeoutExpired:
-        #     print('subprocess did not terminate in time')
-        #     # try to terminate it another way
-        #     find_and_terminate_process(self.name)
-        #     print("Stopped Airsim")
-
-    def check_asset_exists(self,
-                           name: str  # asset name
-                           )->bool: # exists
-        """Check if asset exists"""
-        return name in self.client.simListAssets()
-
-    def place_object(self,
-                    name: str,  # asset name
-                    x: float,  # position x
-                    y: float,  # position y
-                    z: float,  # position z
-                    scale: float = 1.0,  # scale
-                    physics_enabled: bool = False,  # physics enabled
-                    ):
-
-        """Place an asset in the simulator
-            Checks to see if it exists first"""
-        if not self.check_asset_exists(name):
-            print(f"Asset {name} does not exist.")
+        if self._shell:
+            find_and_terminate_process(self.name)
+            print("Stopped Airsim")
             return
-        desired_name = f"{name}_spawn_{random.randint(0, 100)}"
-        pose = airsim.Pose(position_val=airsim.Vector3r(x, y, z), )
-        scale = airsim.Vector3r(scale, scale, scale)
-        self.objects.append(self.client.simSpawnObject(desired_name, name, pose, scale, physics_enabled))
 
-    # def list_cameras(self):
-    #     """List the cameras"""
-    #     return self.client.simListCameras()
+        self.process.terminate()
+        # self.process.kill()
+        try:
+            self.process.wait(timeout=5.0)
+            print('Airsim exited with rc =', self.process.returncode)
+        except subprocess.TimeoutExpired:
+            print('subprocess did not terminate in time')
+            # # try to terminate it another way
+            # find_and_terminate_process(self.name)
+            # print("Stopped Airsim")
 
-    def get_image(self, camera_name: str = "0"  # camera name
-                  ) -> np.ndarray:  # image
-        """Get an image from the simulator of camera `camera_name`"""
-        responses = self.client.simGetImages([airsim.ImageRequest(camera_name, airsim.ImageType.Scene, False, False)])
-        response = responses[0]
-        img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
-        img_rgb = img1d.reshape(response.height, response.width, 3)
-        img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
-        return img_rgb
 
-    def get_images(self, camera_names: list = ["0"]  # camera names
-                   ) -> list[np.ndarray]:  # images
-        """Get images from the simulator of cameras `camera_names`"""
-        responses = self.client.simGetImages(
-            [airsim.ImageRequest(camera_name, airsim.ImageType.Scene, False, False) for camera_name in camera_names])
-        images = []
-        for response in responses:
-            img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
-            img_rgb = img1d.reshape(response.height, response.width, 3)
-            img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
-            images.append(img_rgb)
-        return images
+# Now mived to notebook
+# class AirSimClient(airsim.MultirotorClient, object):
+#     """Multirotor Client for the Airsim simulator with higher level procedures"""
+#
+#     def __init__(self, ip = "", port = 41451, timeout_value = 3600):
+#         super(AirSimClient, self).__init__(ip, port, timeout_value)
+#     # def __init__(self):
+#     #     # super().MultirotorClient()
+#         super().confirmConnection()
+#         self.objects = []
+#
+#     def check_asset_exists(self,
+#                            name: str  # asset name
+#                            )->bool: # exists
+#         """Check if asset exists"""
+#         return name in super().simListAssets()
+#
+#     def place_object(self,
+#                     name: str,  # asset name
+#                     x: float,  # position x
+#                     y: float,  # position y
+#                     z: float,  # position z
+#                     scale: float = 1.0,  # scale
+#                     physics_enabled: bool = False,  # physics enabled
+#                     ):
+#
+#         """Place an object in the simulator
+#             First check to see if the asset it is based on exists"""
+#         if not self.check_asset_exists(name):
+#             print(f"Asset {name} does not exist.")
+#             return
+#         desired_name = f"{name}_spawn_{random.randint(0, 100)}"
+#         pose = airsim.Pose(position_val=airsim.Vector3r(x, y, z), )
+#         scale = airsim.Vector3r(scale, scale, scale)
+#         self.objects.append(super().simSpawnObject(desired_name, name, pose, scale, physics_enabled))
+#
+#     # def list_cameras(self):
+#     #     """List the cameras"""
+#     #     return self.client.simListCameras()
+#
+#     def get_image(self, camera_name: str = "0",  # camera name
+#                   rgb2bgr: bool = False,  # convert to bgr
+#                   ) -> np.ndarray:  # image
+#         """Get an image from the simulator of camera `camera_name`"""
+#         responses = super().simGetImages([airsim.ImageRequest(camera_name, airsim.ImageType.Scene, False, False)])
+#         response = responses[0]
+#         img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
+#         img = img1d.reshape(response.height, response.width, 3)
+#         if rgb2bgr:
+#             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+#         return img
+#
+#     def get_images(self, camera_names: list = ["0"],  # camera names
+#                    rgb2bgr: bool = False,  # convert to rgb
+#                    ) -> list[np.ndarray]:  # images
+#         """Get images from the simulator of cameras `camera_names`"""
+#         responses = super().simGetImages(
+#             [airsim.ImageRequest(camera_name, airsim.ImageType.Scene, False, False) for camera_name in camera_names])
+#         images = []
+#         for response in responses:
+#             img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
+#             img = img1d.reshape(response.height, response.width, 3)
+#             if rgb2bgr:
+#                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+#             images.append(img)
+#         return images
