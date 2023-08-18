@@ -35,7 +35,6 @@ logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename
 logger = logging.getLogger(__name__)
 
 # %% ../../nbs/api/10_gstreamer.valve.ipynb 9
-#|code-fold: true
 from dataclasses import dataclass
 
 @dataclass
@@ -94,7 +93,6 @@ class DefaultParams():
     src_port=1234
 
 # %% ../../nbs/api/10_gstreamer.valve.ipynb 14
-#| code-fold: true
 # https://github.com/gkralik/python-gst-tutorial/blob/master/basic-tutorial-4.py
 
 class GstStream():
@@ -275,7 +273,7 @@ def toggle_valve_state(self:GstStream
     " Toggle the state of a valve element"
 
     valve = self.pipeline.get_by_name(valvename)
-    logger.info(f"{self.name}: current_drop_state: {current_drop_state}")
+    logger.info(f"{self.name}: current_drop_state: {current_drop_state}")   # Todo current_drop_state is unresolved
     valve.set_property("drop", not current_drop_state)
     current_drop_state = valve.get_property("drop")
     logger.info(f"{self.name}: new_drop_state: {current_drop_state}")
@@ -413,7 +411,6 @@ class Mqtt:
 
 
 # %% ../../nbs/api/10_gstreamer.valve.ipynb 40
-#| code-fold: true
 def gst_main(camera="CAM-0"):
     params = DefaultParams()
     gstcommand = params.cameras[camera]["gst"]

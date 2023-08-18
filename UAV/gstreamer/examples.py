@@ -28,7 +28,6 @@ import logging
 gi.require_version('Gst', '1.0')
 
 # %% ../../nbs/api/19_gstreamer.examples.ipynb 8
-#|code-fold: true
 from dataclasses import dataclass
 
 @dataclass
@@ -88,7 +87,6 @@ class DefaultParams():
 
 # %% ../../nbs/api/19_gstreamer.examples.ipynb 15
 #|eval: false     don't run this cell in testing
-#|code-fold: true
 from multiprocessing import Process   # you will need to import Process from multiprocessing
 
 if __name__ == '__main__':
