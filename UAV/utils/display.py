@@ -157,16 +157,35 @@ class ScrollingLog:
 # %% ../../nbs/api/04_utils.display.ipynb 16
 import logging
 
-class ScrollingLogHandler(logging.Handler):
-    def __init__(self, scrolling_log):
+class ScrollingLogHandler(logging.Handler ):
+    """Handler for ScrollingLog: Takes logger messages and places them on the scrolling log display"""
+    def __init__(self, scrolling_log: ScrollingLog, # ScrollingLog object
+                 logger:logging.Logger, # logger object
+                 _filter: str = '', # filter for the log message
+                 format: str = '%(levelname)s - %(message)s',
+                 ): # format of the log message
         super().__init__()
         self.scrolling_log = scrolling_log
-
+        self._filter = _filter
+        # Handler for ScrollingLog
+        formatter_log = logging.Formatter(format)
+        self.setFormatter(formatter_log)
+        logger.addHandler(self)
+        logger.setLevel(logging.INFO)   # todo add this to params
+        
+    def set_filter(self, _filter:str):
+        """Set the filter for the log message"""
+        self._filter = _filter
+        
     def emit(self, record):
         log_entry = self.format(record)
+        if len(self._filter) > 0 and self._filter not in log_entry:
+            # print(f"Filtering out log entry: {log_entry}")
+            return
         self.scrolling_log.update(log_entry)
 
-# %% ../../nbs/api/04_utils.display.ipynb 24
+
+# %% ../../nbs/api/04_utils.display.ipynb 26
 class VideoWriter:
     """A wrapper around FFMPEG_VideoWriter to write videos from images"""
     def __init__(self, 

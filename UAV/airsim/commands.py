@@ -13,10 +13,10 @@ import logging
 
 
 # %% ../../nbs/api/16_airsim.commands.ipynb 7
-logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename)10s:%(lineno)3d] %(message)s',
+logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [name] [%(filename)10s:%(lineno)3d] %(message)s',
                     datefmt='%H:%M:%S',
-                    level=logging.DEBUG)  # Todo add this to params
-logger = logging.getLogger(__name__)
+                    level=logging.INFO)  # Todo add this to params
+logger = logging.getLogger("__name__")   # todo add this to params
 
 # %% ../../nbs/api/16_airsim.commands.ipynb 10
 def start_sim():
@@ -48,7 +48,7 @@ class DroneCommands():
 
     def disarm(self):
         """Disarm the drone and disconnect from the simulator"""
-        print("disarming...")
+        logger.info("disarming...")
         self._client.armDisarm(False)
         self._client.enableApiControl(False)
         
@@ -57,7 +57,7 @@ class DroneCommands():
         """Takeoff to the takeoff height"""
         state = self._client.getMultirotorState()
         if state.landed_state == airsim.LandedState.Landed:
-            print("taking off...")
+            logger.info("taking off...")
             self._client.takeoffAsync().join()
         else:
             self._client.hoverAsync().join()
@@ -66,7 +66,7 @@ class DroneCommands():
     
         state = self._client.getMultirotorState()
         if state.landed_state == airsim.LandedState.Landed:
-            print("take off failed...")
+            logger.info("take off failed...")
             sys.exit(1)
     
         # AirSim uses NED coordinates so negative axis is up.
@@ -78,7 +78,7 @@ class DroneCommands():
     
     def do_NH_path(self):
         """Fly on a path in the Airsim simulator"""
-        print("flying on path...")
+        logger.info("flying on path...")
         print("""This script is designed to fly on the streets of the Neighborhood environment
             and assumes the unreal position of the drone is [160, -1500, 120].""")
         result = self._client.moveOnPathAsync([airsim.Vector3r(125,0,self._z),
@@ -89,13 +89,13 @@ class DroneCommands():
                                 airsim.DrivetrainType.ForwardOnly, airsim.YawMode(False,0), 20, 1).join()
     
     def rth(self):
-        print("returning home...")
+        logger.info("returning home...")
         # drone will over-shoot so we bring it back to the start point before landing.
         # _client.moveToPositionAsync(0,0,_z,1).join()
         self._client.goHomeAsync().join()
     
     def land(self):
-        print("landing...")
+        logger.info("landing...")
         self._client.landAsync().join()
     
 

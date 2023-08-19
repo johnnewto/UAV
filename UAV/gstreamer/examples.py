@@ -87,6 +87,9 @@ class DefaultParams():
 
 # %% ../../nbs/api/19_gstreamer.examples.ipynb 15
 #|eval: false     don't run this cell in testing
+#|eval: false     don't run this cell in testing
+#|eval: false     don't run this cell in testing
+#|eval: false     don't run this cell in testing
 from multiprocessing import Process   # you will need to import Process from multiprocessing
 
 if __name__ == '__main__':
