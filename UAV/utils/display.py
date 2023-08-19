@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['show_image', 'puttext', 'ScrollingLog', 'ScrollingLogHandler', 'VideoWriter']
 
-# %% ../../nbs/api/04_utils.display.ipynb 2
+# %% ../../nbs/api/04_utils.display.ipynb 1
 from fastcore.utils import *
 from fastcore.utils import *
 import cv2
@@ -88,9 +88,9 @@ class ScrollingLog:
     """Draws a  scrolling log of messages onto an image"""
     def __init__(self, 
                  max_lines:int=5, # max number of lines to display
-                 position:tuple|None=None, # position of the log (x, y) or None
+                 position:Union[tuple,None]=None, # position of the log (x, y) or None
                  color:tuple=(255, 0, 0), # color of the log
-                 bg_color:tuple|None=None, # background color of the log
+                 bg_color:Union[tuple,None]=None, # background color of the log
                  thickness:int=2, # thickness of the log
                  font_scale:float=1.0, # font scale of the log
                  ): 
