@@ -84,24 +84,3 @@ class DefaultParams():
     # socket address and port
     mqqt_address='127.0.0.1'
     src_port=1234
-
-# %% ../../nbs/api/19_gstreamer.examples.ipynb 15
-#|eval: false     don't run this cell in testing
-#|eval: false     don't run this cell in testing
-#|eval: false     don't run this cell in testing
-#|eval: false     don't run this cell in testing
-from multiprocessing import Process   # you will need to import Process from multiprocessing
-
-if __name__ == '__main__':
-
-    cams = []
-    params = DefaultParams()
-    for cam in list(params.cameras.keys())[:2]:
-        logger.info("Starting Cam: {cam}")
-        p = Process(target=main, args=(cam,))
-        p.start()
-        cams.append(p)
-
-    for p in cams:
-        p.join()
-        

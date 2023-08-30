@@ -24,58 +24,19 @@ from IPython.display import Markdown
 from execnb.nbio import read_nb,NbCell
 from urllib.error import HTTPError
 
-# %% ../nbs/api/01_config.ipynb 8
-_nbdev_home_dir = 'nbdev' # sub-directory of xdg base dir
-_nbdev_cfg_name = 'settings.ini'
-
 # %% ../nbs/api/01_config.ipynb 9
+_uav_home_dir = 'UAV' # subdirectory of xdg base dir
+_uav_cfg_name = 'settings.toml'    # todo use https://github.com/hukkin/tomli
+_uav_params_name = 'params.py'
+
+# %% ../nbs/api/01_config.ipynb 10
 def _git_repo():
     try: return repo_details(run('git config --get remote.origin.url'))[1]
     except OSError: return
 
-# %% ../nbs/api/01_config.ipynb 11
-# When adding a named default to the list below, be sure that that name
-# is also added to one of the sections in `_nbdev_cfg_sections` as well,
-# or it won't get written by `nbdev_create_config`:
-def _apply_defaults(
-    cfg,
-    lib_name='%(repo)s', # Package name
-    git_url='https://github.com/%(user)s/%(repo)s', # Repo URL
-    custom_sidebar:bool_arg=False, # Use a custom sidebar.yml?
-    nbs_path:Path='nbs', # Path to notebooks
-    lib_path:Path=None, # Path to package root (default: `repo` with `-` replaced by `_`)
-    doc_path:Path='_docs', # Path to rendered docs
-    tst_flags='notest', # Test flags
-    version='0.0.1', # Version of this release
-    doc_host='https://%(user)s.github.io',  # Hostname for docs
-    doc_baseurl='/%(repo)s',  # Base URL for docs
-    keywords='nbdev jupyter notebook python', # Package keywords
-    license='apache2', # License for the package
-    copyright:str=None, # Copyright for the package, defaults to '`current_year` onwards, `author`'
-    status='3', # Development status PyPI classifier
-    min_python='3.7', # Minimum Python version PyPI classifier
-    audience='Developers', # Intended audience PyPI classifier
-    language='English', # Language PyPI classifier
-    recursive:bool_arg=True, # Include subfolders in notebook globs?
-    black_formatting:bool_arg=False, # Format libraries with black?
-    readme_nb='index.ipynb', # Notebook to export as repo readme
-    title='%(lib_name)s', # Quarto website title
-    allowed_metadata_keys='', # Preserve the list of keys in the main notebook metadata
-    allowed_cell_metadata_keys='', # Preserve the list of keys in cell level metadata
-    jupyter_hooks:bool_arg=True, # Run Jupyter hooks?
-    clean_ids:bool_arg=True, # Remove ids from plaintext reprs?
-    clear_all:bool_arg=False, # Remove all cell metadata and cell outputs?
-    put_version_in_init:bool_arg=True, # Add the version to the main __init__.py in nbdev_export
-):
-    "Apply default settings where missing in `cfg`."
-    if getattr(cfg,'repo',None) is None:
-        cfg.repo = _git_repo()
-        if cfg.repo is None:
-            _parent = Path.cwd()
-            cfg.repo = _parent.parent.name if _parent.name=='nbs' else _parent.name
-    if lib_path is None: lib_path = cfg.repo.replace('-', '_')
-    if copyright is None: copyright = f"{datetime.now().year} onwards, %(author)s"
-    for k,v in locals().items():
-        if k.startswith('_') or k == 'cfg' or cfg.get(k) is not None: continue
-        cfg[k] = v
-    return cfg
+# %% ../nbs/api/01_config.ipynb 12
+#|export
+#|export
+#|export
+#|export
+

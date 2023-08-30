@@ -3,7 +3,12 @@
 # %% auto 0
 __all__ = ['show_image', 'puttext', 'ScrollingLog', 'ScrollingLogHandler', 'VideoWriter']
 
-# %% ../../nbs/api/04_utils.display.ipynb 1
+# %% ../../nbs/api/04_utils.display.ipynb 3
+def _fig_bounds(x):
+    r = x//32
+    return min(5, max(1,r))
+
+# %% ../../nbs/api/04_utils.display.ipynb 4
 from fastcore.utils import *
 from fastcore.utils import *
 import cv2
@@ -14,12 +19,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import moviepy.editor as mvp
 from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
+import logging
+import UAV.params as params
 
-
-# %% ../../nbs/api/04_utils.display.ipynb 4
-def _fig_bounds(x):
-    r = x//32
-    return min(5, max(1,r))
 
 # %% ../../nbs/api/04_utils.display.ipynb 5
 # Todo Test for ipython  see def in_ipython(): in fastcore  or imports.py
@@ -30,6 +32,7 @@ def show_image(im
                , text=None # text to be written on image
                , fontsize=12 # fontsize of text
                , ctx=None # context
+               , rgb2bgr:bool=False # convert from/to RGB
                , **kwargs # kwargs for matplotlib
     )->plt.Axes: # return matplotlib axis
     "Show a PIL or PyTorch image on `ax`."
@@ -40,7 +43,8 @@ def show_image(im
     elif not isinstance(im,np.ndarray): im=np.ndarray(im)
     # Handle 1-channel images
     if im.shape[-1]==1: im=im[...,0]
-
+    if rgb2bgr:
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     ax = ifnone(ax,ctx)
     if figsize is None: figsize = (_fig_bounds(im.shape[0]), _fig_bounds(im.shape[1]))
     if ax is None: fig,ax = plt.subplots(figsize=figsize)
@@ -63,7 +67,7 @@ def show_image(im
     ax.axis('off')
     return ax
 
-# %% ../../nbs/api/04_utils.display.ipynb 7
+# %% ../../nbs/api/04_utils.display.ipynb 8
 def puttext(img
             , text:str    # text to be written on image
             , pos=(40,80)  # position of text
@@ -83,7 +87,7 @@ def puttext(img
     img = cv2.rectangle(img, rs_point, re_point, backcolor, -1)
     return cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, fontscale, textcolor, thickness, cv2.LINE_AA)
 
-# %% ../../nbs/api/04_utils.display.ipynb 10
+# %% ../../nbs/api/04_utils.display.ipynb 11
 class ScrollingLog:
     """Draws a  scrolling log of messages onto an image"""
     def __init__(self, 
@@ -154,13 +158,11 @@ class ScrollingLog:
 
 
 
-# %% ../../nbs/api/04_utils.display.ipynb 16
-import logging
-
+# %% ../../nbs/api/04_utils.display.ipynb 17
 class ScrollingLogHandler(logging.Handler ):
     """Handler for ScrollingLog: Takes logger messages and places them on the scrolling log display"""
     def __init__(self, scrolling_log: ScrollingLog, # ScrollingLog object
-                 logger:logging.Logger, # logger object
+                 logger:logging.Logger, # logger object, this ensures that the handler is attached to the logger. 
                  _filter: str = '', # filter for the log message
                  format: str = '%(levelname)s - %(message)s',
                  ): # format of the log message
@@ -171,7 +173,7 @@ class ScrollingLogHandler(logging.Handler ):
         formatter_log = logging.Formatter(format)
         self.setFormatter(formatter_log)
         logger.addHandler(self)
-        logger.setLevel(logging.INFO)   # todo add this to params
+        logger.setLevel(params.LOGGING_LEVEL)   # todo add this to params
         
     def set_filter(self, _filter:str):
         """Set the filter for the log message"""
@@ -185,16 +187,16 @@ class ScrollingLogHandler(logging.Handler ):
         self.scrolling_log.update(log_entry)
 
 
-# %% ../../nbs/api/04_utils.display.ipynb 26
+# %% ../../nbs/api/04_utils.display.ipynb 27
 class VideoWriter:
     """A wrapper around FFMPEG_VideoWriter to write videos from images"""
     def __init__(self, 
                  filename:str='_autoplay.mp4', # default filename
                  fps:float=30.0, #    fps of video
-                 bgr2rgb:bool=False, # convert to RGB
+                 rgb2bgr:bool=False, # convert to RGB
                  **kw): # kwargs for FFMPEG_VideoWriter
         self.writer = None
-        self.bgr2rgb=bgr2rgb,
+        self.rgb2bgr=rgb2bgr,
         self.params = dict(filename=filename, fps=fps, **kw)
         print(f"Writing video to {Path.cwd()/filename} at {fps} fps.")
 
@@ -210,7 +212,7 @@ class VideoWriter:
             img = np.uint8(img.clip(0, 1) * 255)
         if len(img.shape) == 2:
             img = np.repeat(img[..., None], 3, -1)
-        if self.bgr2rgb:
+        if self.rgb2bgr:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.writer.write_frame(img)
 

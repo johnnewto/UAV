@@ -3,22 +3,24 @@
 # %% auto 0
 __all__ = ['logger', 'start_sim', 'DroneCommands']
 
-# %% ../../nbs/api/16_airsim.commands.ipynb 6
+# %% ../../nbs/api/16_airsim.commands.ipynb 5
 from fastcore.utils import *
-import UAV.airsim_python_client as airsim
+
 from ..airsim_client import AirSimClient
+import UAV.airsim_python_client as airsim
+import UAV.params as params
 import time
 from ..utils.sim_linux import RunSim, is_process_running, find_and_terminate_process
 import logging
 
 
-# %% ../../nbs/api/16_airsim.commands.ipynb 7
+# %% ../../nbs/api/16_airsim.commands.ipynb 6
 logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [name] [%(filename)10s:%(lineno)3d] %(message)s',
                     datefmt='%H:%M:%S',
-                    level=logging.INFO)  # Todo add this to params
-logger = logging.getLogger("__name__")   # todo add this to params
+                    level=params.LOGGING_LEVEL) 
+logger = logging.getLogger(params.LOGGING_NAME)
 
-# %% ../../nbs/api/16_airsim.commands.ipynb 10
+# %% ../../nbs/api/16_airsim.commands.ipynb 9
 def start_sim():
     """Start the Airsim simuator if it is not already running"""
     sim_name = "AirSimNH"
@@ -26,7 +28,7 @@ def start_sim():
         return RunSim("AirSimNH", settings="config/settings_high_res.json")
     return None   
 
-# %% ../../nbs/api/16_airsim.commands.ipynb 12
+# %% ../../nbs/api/16_airsim.commands.ipynb 11
 class DroneCommands():
     """Class Multirotor Client for the Airsim simulator with higher level procedures"""
 

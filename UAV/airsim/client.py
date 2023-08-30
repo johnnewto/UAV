@@ -6,15 +6,12 @@ __all__ = ['logger', 'AirSimClient']
 # %% ../../nbs/api/15_airsim.client.ipynb 5
 from fastcore.utils import *
 import random
-import subprocess
-import time
+
 import numpy as np
 import cv2
 import UAV.airsim_python_client as airsim
-# import airsim_python_client as airsim
 from ..airsim_python_client import MultirotorClient
-from pathlib import Path
-from typing import List, Tuple, Union, Optional, Callable, Dict, Any
+import UAV.params as params
 
 import logging
 
@@ -22,8 +19,8 @@ import logging
 # %% ../../nbs/api/15_airsim.client.ipynb 6
 logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename)10s:%(lineno)3d] %(message)s',
                     datefmt='%H:%M:%S',
-                    level=logging.DEBUG)  # Todo add this to params
-logger = logging.getLogger(__name__)
+                    level=params.LOGGING_LEVEL)
+logger = logging.getLogger(params.LOGGING_NAME)
 
 # %% ../../nbs/api/15_airsim.client.ipynb 10
 class AirSimClient(MultirotorClient, object):
