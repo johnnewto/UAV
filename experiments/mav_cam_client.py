@@ -41,7 +41,9 @@ class CameraClient:
         self.log.info("Heartbeat from system (system %u component %u)" % (self.master.target_system, self.master.target_component))
         self.master.wait_heartbeat()
         self.log.info("Connected to MAVLink device")
-    def trigger_camera(self, camera_id=1):
+
+
+    def start_streaming(self, camera_id=1):    def trigger_camera(self, camera_id=1):
         # Use MAV_CMD_DO_DIGICAM_CONTROL to trigger the camera
         # This assumes the camera understands this MAVLink message
         self.master.mav.command_long_send(
@@ -58,8 +60,6 @@ class CameraClient:
             0,  # param7 (command ID)
         )
         print("sent Camera trigger")
-
-    def start_streaming(self, camera_id=1):
         # Use MAV_CMD_VIDEO_START_STREAMING to start streaming video
         # This assumes the camera understands this MAVLink message
         self.master.mav.command_long_send(
