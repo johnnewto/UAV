@@ -1,5 +1,7 @@
 __version__ = "0.0.1"
-
+import time, os, sys
+# Set the environment variable before from pymavlink import mavutil  library is imported
+os.environ['MAVLINK20'] = '1'
 from .logging import setup_logging, get_log_level
 import os
 UAV_DIR = os.path.dirname(os.path.abspath(__file__))

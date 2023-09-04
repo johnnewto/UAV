@@ -4,20 +4,12 @@
 __all__ = ['CamClient', 'CamServer', 'test_cam_client_server']
 
 # %% ../../nbs/api/20_mavlink.cam_client_server.ipynb 7
-# import logging
-# logging.getLogger("uav").setLevel(logging.DEBUG)
-# logging.root.setLevel(logging.INFO)
-# import threading
-# 
-# import time, os
-# # Set the environment variable before from pymavlink import mavutil  library is imported
-# os.environ['MAVLINK20'] = '1'
-from pymavlink import mavutil
-from .base import MavLinkBase , UAV_SYSTEM_VEHICLE_ID, UAV_SYSTEM_GCS_CLIENT_ID
+from .base import MavLinkBase , UAV_SYSTEM_VEHICLE_ID, UAV_SYSTEM_GCS_CLIENT_ID, mavutil 
+
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 
 
-# %% ../../nbs/api/20_mavlink.cam_client_server.ipynb 10
+# %% ../../nbs/api/20_mavlink.cam_client_server.ipynb 11
 class CamClient(MavLinkBase):
  
     def __init__(self, connection_string, # "udpin:localhost:14550"
@@ -48,7 +40,7 @@ class CamClient(MavLinkBase):
                            0,  # param6 (shot ID)
                            0,  # param7 (command ID)
                           ])
-        self.wait_ack()
+        self.wait_ack(mavutil.mavlink.MAV_CMD_DO_DIGICAM_CONTROL)
         self.log.info("Camera triggered")
         
         
@@ -88,6 +80,7 @@ def test_cam_client_server():
     test_eq(client.client_system_ID, client.source_system)
     test_eq(client.num_commands_sent, server.num_commands_received)
     test_eq(client.num_acks_received, server.num_commands_received)
-    assert 'HEARTBEAT' in client.message_cnts
+    test_eq(server.message_cnts[222]['COMMAND_LONG'], client.message_cnts[111]['COMMAND_ACK'])
+    assert client.message_cnts[111]['HEARTBEAT'] >= 1
     
 #test_cam_client_server()
