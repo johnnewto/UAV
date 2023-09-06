@@ -1,4 +1,4 @@
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 import time, os, sys
 # Set the environment variable before from pymavlink import mavutil  library is imported
 os.environ['MAVLINK20'] = '1'

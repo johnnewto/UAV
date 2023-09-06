@@ -6,9 +6,9 @@ LOG_FORMAT = '%(levelname)-6.6s | %(name)-20s | %(asctime)s.%(msecs)03d | %(thre
 LOG_DATE_FORMAT = '%d.%m %H:%M:%S'
 
 LOG_FORMAT = '%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename)10s:%(lineno)3d] %(message)s'
-LOG_FORMAT = '%(levelname)-6.6s | %(name)-20s | %(asctime)s.%(msecs)03d |[%(filename)10s:%(lineno)3d] %(threadName)s | %(message)s'
+LOG_FORMAT = '%(levelname)-6.6s | %(name)-15.15s | %(asctime)s.%(msecs)03d | %(filename)10s:%(lineno)3d | %(threadName)-18.18s | %(message)s'
 LOG_DATE_FORMAT = '%H:%M:%S'
-
+LOG_DATE_FORMAT = '%S'
 def get_log_level():
     return int(os.getenv("UAV_LOG_LEVEL", logging.DEBUG / 10)) * 10
 
