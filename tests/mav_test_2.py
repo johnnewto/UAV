@@ -35,7 +35,7 @@ def test_cam_client_server_serial(debug=False):
     from fastcore.test import test_eq
     print("   ----- test_cam_client_server_serial")
     with uav.CamServer("/dev/ttyUSB0", server_system_ID=111, client_system_ID=222, debug=debug ) as server:
-        with uav.CamClient("/dev/ttyACM1", server_system_ID=111, client_system_ID=222, debug=debug ) as client:
+        with uav.CamClient("/dev/ttyACM0", server_system_ID=111, client_system_ID=222, debug=debug ) as client:
             client.wait_heartbeat()
             server.wait_heartbeat()
             for i in range(10):
@@ -73,7 +73,7 @@ def test_cam_client_server_serial(debug=False):
 
 
 
-from UAV.mavlink.base_1 import MavLinkBase, _Client, _Server, Client_Comp, Srv_Comp1, Srv_Comp2,  MAV_COMP_ID_CAMERA, MAV_COMP_ID_USER1
+from UAV.mavlink.base_1 import MAVCom, _Client, _Server, Client_Comp, Srv_Comp1, Srv_Comp2,  MAV_COMP_ID_CAMERA, MAV_COMP_ID_USER1
 import time
 def test_cam_client_server_UDP(debug=False):
 
@@ -82,10 +82,10 @@ def test_cam_client_server_UDP(debug=False):
     with _Client("udpin:localhost:14445", source_system=111, target_system=222, debug=debug).client() as client:
         with _Server("udpout:localhost:14445", source_system=222, target_system=111,
                      debug=debug).server() as server:
-            client.add_component(Client_Comp(client, source_component=11, debug=False))
+            client.add_component(Client_Comp(client, source_component=11, debug=True))
 
-            server.add_component(Srv_Comp1(server, source_component=22, debug=True))
-            server.add_component(Srv_Comp2(server, source_component=23, debug=True))
+            server.add_component(Srv_Comp1(server, source_component=22, debug=False))
+            server.add_component(Srv_Comp2(server, source_component=23, debug=False))
 
             client.start_listen()
             server.start_listen()
@@ -113,20 +113,20 @@ def test_cam_client_server_UDP(debug=False):
     print(f"server.sysID: {server.source_system}, client.sysID: {client.source_system}")
     for key, comp in client.component.items():
         print(f" **** Client.{comp} system = {comp.source_system} comp = {comp.source_component} ****")
-        print(f" - {comp.num_commands_sent = }")
-        print(f" - {comp.num_commands_rcvd = }")
-        print(f" - {comp.num_msgs_received = }")
-        print(f" - {comp.num_acks_received = }")
+        print(f" - {comp.num_cmds_sent = }")
+        print(f" - {comp.num_cmds_rcvd = }")
+        print(f" - {comp.num_msgs_rcvd = }")
+        print(f" - {comp.num_acks_rcvd = }")
         print(f" - msgs: {comp.message_cnts}")
 
     print()
 
     for key, comp in server.component.items():
         print(f" **** Server.{comp} system = {comp.source_system}  comp = {comp.source_component} ****")
-        print(f" - {comp.num_commands_sent = }")
-        print(f" - {comp.num_commands_rcvd = }")
-        print(f" - {comp.num_msgs_received = }")
-        print(f" - {comp.num_acks_received = }")
+        print(f" - {comp.num_cmds_sent = }")
+        print(f" - {comp.num_cmds_rcvd = }")
+        print(f" - {comp.num_msgs_rcvd = }")
+        print(f" - {comp.num_acks_rcvd = }")
         print(f" - msgs: {comp.message_cnts}")
 
     print()

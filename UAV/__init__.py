@@ -9,4 +9,5 @@ UAV_DIR = os.path.dirname(os.path.abspath(__file__))
 
 setup_logging(verbose=get_log_level())
 
-from .mavlink.cam_client_server import CamClient, CamServer, test_cam_client_server
+from .mavlink.mavcom import MAVCom, mavutil, MAV_TYPE_GCS, MAV_TYPE_CAMERA
+from .mavlink.component import Component
