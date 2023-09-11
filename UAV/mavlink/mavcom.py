@@ -393,8 +393,12 @@ class MAVCom:
 
     def add_component(self, comp):
         # append a component to the component dictionary with the key being the source_component
-        print(f"Check to see if {comp.source_component = } already exists")
+        # Check to see if {comp.source_component = } already exists
+        if comp.source_component in self.component:
+            self.log.error(f"Component {comp.source_component = } already exists")
+            return None
         self.component[comp.source_component] = comp
+        return comp
 
     def close(self):
         # print(f"Closing {self.__class__.__name__}...")

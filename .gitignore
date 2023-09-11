@@ -1,6 +1,8 @@
 _docs/
 _copy proc/
 _proc/
+_experiments/
+_old/
 
 *.bak
 .gitattributes
@@ -151,3 +153,4 @@ checklink/cookies.txt
 # Quarto
 .quarto
 token
+

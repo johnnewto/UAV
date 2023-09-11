@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['Component']
 
-# %% ../../nbs/api/21_mavlink.component.ipynb 7
+# %% ../../nbs/api/21_mavlink.component.ipynb 9
 import time, os, sys
 
 from ..logging import logging
@@ -21,7 +21,7 @@ import typing as typ
 from pathlib import Path
 from inspect import currentframe, getframeinfo
 from pymavlink import mavutil
-
+from pymavlink.dialects.v20.ardupilotmega import MAVLink
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 
@@ -43,6 +43,7 @@ class Component:
         # todo change to def __init__(self:MavLinkBase, ....
         self.mav_connection: MAVCom = mav_connection
         self.master = mav_connection.master
+        self.mav:MAVLink = self.master.mav
         self.mav_type = mav_type
         self.source_system = self.mav_connection.source_system
         self.source_component = source_component
@@ -61,6 +62,10 @@ class Component:
         self.num_acks_drop = 0
         self.message_cnts: {} = {}  # received message counts, indexed by system and message type
 
+        self.target_system = None
+        self.target_component = None
+
+        self.message_callback = None # callback function for when a command is received
         self._heartbeat_que = LeakyQueue(maxsize=10)
         self._ack_que = LeakyQueue(maxsize=10)
         self._message_que = LeakyQueue(maxsize=10)
@@ -87,6 +92,9 @@ class Component:
         """Set the source component for the master.mav """
         self.master.mav.srcComponent = self.source_component
 
+    def set_message_callback(self, callback: typ.Callable):
+        """Set the callback function for when a command is received."""
+        self.message_callback = callback
     def send_ping(self, target_system: int, target_component: int, ping_num: int = None):
         """Send self.max_pings * ping messages to test if the server is alive."""
 
@@ -157,17 +165,32 @@ class Component:
     def send_ack(self, msg, ack_result: object = mavutil.mavlink.MAV_RESULT_ACCEPTED):
         """Send an ACK message to indicate a command was received."""
         self.set_source_compenent()
-        self.master.mav.command_ack_send(
-            msg.command,
-            ack_result,  # or other MAV_RESULT enum
-            # todo enabling these causes QGC not to show them
-            int(0),  # progress
-            int(0),  # result_param2
-            msg.get_srcSystem(),  # target_system = msg.get_srcSystem(),  # target_system
-            msg.get_srcComponent(),  # target_component = msg.get_srcComponent(),  # target_component
-        )
-        self.log.debug(f"Sent ACK for command: {msg.command} to system: {msg.get_srcSystem()} comp: {msg.get_srcComponent()}")
-        self.num_acks_sent += 1
+        try:
+            self.master.mav.command_ack_send(
+                msg.command,
+                ack_result,  # or other MAV_RESULT enum
+                # todo enabling these causes QGC not to show them
+                int(0),  # progress
+                int(0),  # result_param2
+                msg.get_srcSystem(),  # target_system = msg.get_srcSystem(),  # target_system
+                msg.get_srcComponent(),  # target_component = msg.get_srcComponent(),  # target_component
+            )
+            self.log.debug(f"Sent ACK for command: {msg.command} to system: {msg.get_srcSystem()} comp: {msg.get_srcComponent()}")
+            self.num_acks_sent += 1
+        except Exception as e:
+            self.log.warning(f"Error sending ACK {e}")
+
+        # self.master.mav.command_ack_send(
+        #     msg.command,
+        #     ack_result,  # or other MAV_RESULT enum
+        #     # todo enabling these causes QGC not to show them
+        #     int(0),  # progress
+        #     int(0),  # result_param2
+        #     msg.get_srcSystem(),  # target_system = msg.get_srcSystem(),  # target_system
+        #     msg.get_srcComponent(),  # target_component = msg.get_srcComponent(),  # target_component
+        # )
+        # self.log.debug(f"Sent ACK for command: {msg.command} to system: {msg.get_srcSystem()} comp: {msg.get_srcComponent()}")
+        # self.num_acks_sent += 1
 
     def _wait_ack(self, target_system, target_component, command_id=None, timeout = 0.1) -> bool:
         """Wait for an ack from target_system and target_component."""
@@ -243,13 +266,13 @@ class Component:
             self.count_message(msg)
 
             # print (f"{msg.get_type() = }")
-            if msg.get_type() == 'COMMAND_LONG':
-                # print("Om command ")
-                self.on_command_rcvd(msg)
-            elif msg.get_type() == 'COMMAND_INT':
-                self.on_command_rcvd(msg)
+            # if msg.get_type() == 'COMMAND_LONG':
+            #     # print("Om command ")
+            #     self._on_command_rcvd(msg)
+            # elif msg.get_type() == 'COMMAND_INT':
+            #     self._on_command_rcvd(msg)
 
-            elif msg.get_type() == 'COMMAND_ACK':
+            if msg.get_type() == 'COMMAND_ACK':
                 self.log.debug(f"Received ACK ")
                 self._ack_que.put(msg, block=False)
 
@@ -266,11 +289,25 @@ class Component:
                     self.log.debug(f"Received PING {msg}")
                     self.send_ping(msg.get_srcSystem(), msg.get_srcComponent())
 
-    def on_command_rcvd(self, msg):
-        # Callback for when a command is received.
-        print(f"!!! YAY!!! {get_linenumber()} {self} Received command {msg}, sending ACK")
+            else:
+                self._on_message_rcvd(msg)
+
+    def _on_message_rcvd(self, msg):
+        # Callback for when a message is received.
+        if self.message_callback is not None:
+            ok = self.message_callback(msg)
+        else:
+            self.log.debug(f"Received command but no callback set {msg}")
+            # print(f"!!! YAY!!! {get_linenumber()} {self} Received command {msg}")
+            ok = False
         self.num_cmds_rcvd += 1
-        self.send_ack(msg, mavutil.mavlink.MAV_RESULT_ACCEPTED)
+        if ok:
+            self.send_ack(msg, mavutil.mavlink.MAV_RESULT_ACCEPTED)
+
+    def set_target(self, target_system, target_component):
+        """Set the target system and component for the gimbal"""
+        self.target_system = target_system
+        self.target_component = target_component
 
     def send_command(self, target_system: int,  # target system
                      target_component: int,  # target component
