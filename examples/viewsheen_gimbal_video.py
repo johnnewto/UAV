@@ -5,10 +5,12 @@ viewsheen_sdk gimbal control
 """
 
 import cv2
-
-from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
+import numpy as np
+from UAV.camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
+# from UAV.camera_sdks.viewsheen import GST_Video
+from gstreamer import GstPipeline, GstContext, GstVidSrcValve, GstApp, Gst, GstVideo, gst_buffer_to_ndarray
+import gstreamer.utils as gst_utils
 import socket
-from viewsheen_sdk import GST_Video
 import time
 import datetime
 
@@ -16,25 +18,65 @@ from pathlib import Path
 
 from UAV.mavlink.vs_gimbal import GimbalClient, GimbalServer, mavutil, MAVCom
 
+# self.video_source = f'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue'
+# # self.video_codec = '! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264'
+# self.video_codec = '! rtph264depay ! h264parse ! avdec_h264'
+# # Python don't have nibble, convert YUV nibbles (4-4-4) to OpenCV standard BGR bytes (8-8-8)
+# self.video_decode = '! decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert'
+# # Create a sink to get data
+# self.video_sink_conf = '! appsink emit-signals=true sync=false max-buffers=2 drop=true'
+
+DEFAULT_PIPELINE = gst_utils.to_gst_string([
+            'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
+            'rtph264depay ! h264parse ! avdec_h264',
+            'decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert',
+            'appsink name=mysink emit-signals=true sync=false async=false max-buffers=2 drop=true',
+            # # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+            # 'x264enc tune=zerolatency',
+            # 'rtph264pay ! udpsink host=127.0.0.1 port=5000',
+            # 't.',
+            # 'queue leaky=2 ! videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR',
+            # 'videoconvert ! appsink name=mysink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
+        ])
+
+
+def gst_to_opencv(sample):
+    """Transform byte array into np array
+    Args:q
+        sample (TYPE): Description
+    Returns:
+        TYPE: Description
+    """
+    buf = sample.get_buffer()
+    caps_structure = sample.get_caps().get_structure(0)
+    array = np.ndarray(
+        (
+            caps_structure.get_value('height'),
+            caps_structure.get_value('width'),
+            3
+        ),
+        buffer=buf.extract_dup(0, buf.get_size()), dtype=np.uint8)
+    return array
+
 def main(sock=None):
 
 
     cv2.namedWindow('Receive', cv2.WINDOW_NORMAL)
 
-    video = GST_Video.GST_Video()
+    # video = GST_Video.GST_Video()
+
 
     MAV_TYPE_GCS = mavutil.mavlink.MAV_TYPE_GCS
     MAV_TYPE_CAMERA = mavutil.mavlink.MAV_TYPE_CAMERA
     MAV_TYPE_GIMBAL = mavutil.mavlink.MAV_TYPE_GIMBAL
 
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-    con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
+    # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
     with MAVCom(con1, source_system=111, debug=False) as client:
         with MAVCom(con2, source_system=222, debug=False) as server:
             gimbal: GimbalClient = client.add_component(
-                GimbalClient(client, mav_type=MAV_TYPE_GCS, source_component=11, debug=False))
-            server.add_component(GimbalServer(server, mav_type=MAV_TYPE_GIMBAL, source_component=22, debug=False))
-            server.add_component(GimbalServer(server, mav_type=MAV_TYPE_CAMERA, source_component=23, debug=False))
+                GimbalClient(mav_type=MAV_TYPE_GCS, source_component=11, debug=False))
+            server.add_component(GimbalServer(mav_type=MAV_TYPE_GIMBAL, source_component=22, debug=False))
 
 
             gimbal.wait_heartbeat(target_system=222, target_component=22, timeout=0.99)
@@ -45,19 +87,25 @@ def main(sock=None):
 
             print('Initialising stream...')
             waited = 0
-            while not video.frame_available():
+            pipeline = GstVidSrcValve(DEFAULT_PIPELINE, leaky=True)
+            pipeline.startup()
+
+            while True:
+                buffer = pipeline.pop()
+                if buffer:
+                    break
                 waited += 1
                 print('\r  Frame not available (x{})'.format(waited), end='')
                 cv2.waitKey(30)
 
             print('\nSuccess!\nStarting streaming - press "q" to quit.')
+            # ret, (width, height) = gst_utils.get_buffer_size_from_gst_caps(Gst.Caps)
 
             gimbal_speed = 40
             while True:
-
-                if video.frame_available():
-                    frame = video.frame().copy()
-                    cv2.imshow('Receive', frame)
+                buffer = pipeline.pop()
+                if buffer:
+                    cv2.imshow('Receive', buffer.data)
 
                 k = cv2.waitKey(1)
                 if k == ord('q') or k == ord('Q') or k == 27:
@@ -113,7 +161,7 @@ def main(sock=None):
                     print("Snapshot in pressed")
                     gimbal.start_capture()
 
-
+        pipeline.shutdown()
 
 if __name__ == '__main__':
 

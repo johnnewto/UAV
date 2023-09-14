@@ -10,13 +10,15 @@ import time, os, sys
 from ..logging import logging
 from .mavcom import MAVCom
 from .component import Component, mavutil
-from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
+# from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
+from ..camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
+
 import socket
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 
 
-# %% ../../nbs/api/22_mavlink.viewsheen_gimbal.ipynb 14
+# %% ../../nbs/api/22_mavlink.viewsheen_gimbal.ipynb 9
 # from pymavlink.dialects.v20 import ardupilotmega as mav
 from pymavlink.dialects.v20.ardupilotmega import MAVLink
 
@@ -29,12 +31,12 @@ MAV_CMD_IMAGE_STOP_CAPTURE = 2001  # https://mavlink.io/en/messages/common.html#
 class GimbalClient(Component):
     """Create a Viewsheen mavlink gimbal client component for send commands to a gimbal on a companion computer or GCS """
 
-    def __init__(self, mav_connection,  # MavLinkBase connection
+    def __init__(self,
                  source_component,  # used for component indication
                  mav_type,  # used for heartbeat MAV_TYPE indication
                  debug):  # logging level
         
-        super().__init__(mav_connection=mav_connection, source_component=source_component, mav_type=mav_type, debug=debug)
+        super().__init__( source_component=source_component, mav_type=mav_type, debug=debug)
         # self.gimbal_target_component = None
         # self.camera_target_component = None
         
@@ -104,16 +106,16 @@ class GimbalClient(Component):
         [0, NAN, NAN, NAN, NAN, NAN, NAN])
 
 
-# %% ../../nbs/api/22_mavlink.viewsheen_gimbal.ipynb 16
+# %% ../../nbs/api/22_mavlink.viewsheen_gimbal.ipynb 11
 class GimbalServer(Component):
     """Create a Viewsheen mavlink Camera Server Component for receiving commands from a gimbal on a companion computer or GCS"""
 
-    def __init__(self, mav_connection,  # MavLinkBase connection
+    def __init__(self,
                  source_component,  # used for component indication
                  mav_type,  # used for heartbeat MAV_TYPE indication
                  debug):  # logging level
         
-        super().__init__(mav_connection=mav_connection, source_component=source_component, mav_type=mav_type, debug=debug)
+        super().__init__( source_component=source_component, mav_type=mav_type, debug=debug)
         
         self.set_message_callback(self.on_message)
         self.connect()

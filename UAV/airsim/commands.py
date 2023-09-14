@@ -6,7 +6,7 @@ __all__ = ['logger', 'start_sim', 'DroneCommands']
 # %% ../../nbs/api/16_airsim.commands.ipynb 5
 from fastcore.utils import *
 
-from ..airsim_client import AirSimClient
+from .client import AirSimClient
 import UAV.airsim_python_client as airsim
 import UAV.params as params
 import time

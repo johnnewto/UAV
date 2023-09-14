@@ -7,17 +7,17 @@ MAV_TYPE_GCS = mavutil.mavlink.MAV_TYPE_GCS
 MAV_TYPE_CAMERA = mavutil.mavlink.MAV_TYPE_CAMERA
 
 class Cam1(Component):
-    def __init__(self,mav_connection, source_component, mav_type, debug=False):
-        super().__init__(mav_connection=mav_connection, source_component=source_component, mav_type=mav_type,
+    def __init__(self, source_component, mav_type, debug=False):
+        super().__init__( source_component=source_component, mav_type=mav_type,
                          debug=debug)
 
 class Cam2(Component):
-    def __init__(self,mav_connection, source_component, mav_type, debug=False):
-        super().__init__(mav_connection=mav_connection, source_component=source_component, mav_type=mav_type,
+    def __init__(self, source_component, mav_type, debug=False):
+        super().__init__(source_component=source_component, mav_type=mav_type,
                          debug=debug)
 class Cli(Component):
-    def __init__(self,mav_connection, source_component, mav_type, debug=False):
-        super().__init__(mav_connection=mav_connection, source_component=source_component, mav_type=mav_type,
+    def __init__(self,source_component, mav_type, debug=False):
+        super().__init__( source_component=source_component, mav_type=mav_type,
                          debug=debug)
 
 def run_test_client_server(con1="udpin:localhost:14445", con2="udpout:localhost:14445"):
@@ -25,9 +25,9 @@ def run_test_client_server(con1="udpin:localhost:14445", con2="udpout:localhost:
     with MAVCom(con1, source_system=111, debug=False) as client:
         with MAVCom(con2, source_system=222, debug=False) as server:
 
-            client.add_component(Cli(client, mav_type=MAV_TYPE_GCS, source_component = 11, debug=False))
-            server.add_component(Cam1(server, mav_type=MAV_TYPE_CAMERA, source_component = 22, debug=False))
-            server.add_component(Cam1(server, mav_type=MAV_TYPE_CAMERA, source_component = 23, debug=False))
+            client.add_component(Cli( mav_type=MAV_TYPE_GCS, source_component = 11, debug=False))
+            server.add_component(Cam1( mav_type=MAV_TYPE_CAMERA, source_component = 22, debug=False))
+            server.add_component(Cam1( mav_type=MAV_TYPE_CAMERA, source_component = 23, debug=False))
 
 
             for key, comp in client.component.items():
