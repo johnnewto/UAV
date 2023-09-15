@@ -2,7 +2,8 @@
 
 # %% auto 0
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
-           'CAMERA_IMAGE_CAPTURED', 'WaitMessage', 'CameraClient', 'FakeCamera', 'CameraServer']
+           'CAMERA_IMAGE_CAPTURED', 'read_camera_info_from_toml', 'WaitMessage', 'CameraClient', 'BaseCamera',
+           'CameraServer']
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 6
 import time, os, sys
@@ -13,7 +14,11 @@ from .component import Component, mavutil, mavlink, MAVLink
 import threading
 import cv2
 import numpy as np
-
+try:
+    # https://hackernoon.com/how-to-manage-configurations-easily-using-toml-files
+    import tomllib   # Python 3.11+
+except ModuleNotFoundError:
+    import tomli as tomllib
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 
 
@@ -49,6 +54,17 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 10
+def read_camera_info_from_toml(toml_file_path):
+    """Read MAVLink camera info from a TOML file."""
+    with open(toml_file_path, 'rb') as file:
+        data = tomllib.load(file)
+
+    camera_info = data['camera_info']
+    camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
+    camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
+    # Extract camera_info
+    return data['camera_info']
+
 class WaitMessage:
     """Wait for a specific message from the server"""
     def __init__(self, target_system, target_component):
@@ -293,198 +309,67 @@ class CameraClient(Component):
 
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 16
-from fs.memoryfs import MemoryFS
-class FakeCamera:
-    """Create a fake camera component for testing"""
-    def __init__(self, mav=None):
-        self.mav:MAVLink = mav
-        self.vendor_name = [i for i in range(32)]
-        self.model_name = [i + 100 for i in range(32)]
-        self.firmware_version = 0
-        self.focal_length = 8.0
-        self.sensor_size_h = 4.0
-        self.sensor_size_v = 6.0
-        self.resolution_h = 4000
-        self.resolution_v = 3000
-        self.lens_id = 10
-        self.flags = 0
-        self.cam_definition_version = 0
-        self._cam_definition_uri_raw = b''
-        self.cam_definition_uri = b''
-        self.interval = 1
-        self.max_count = 0
-        self.current_img_cnt = 0
-        self.image_index = 0
-        self.image_filename = ""
+class BaseCamera:
+    def __init__(self,
+                 camera_dict=None,  # camera_info dict
+                 debug=False):  # debug log flag
+        self.mav: MAVLink = None
+        camera_dict = {'camera_info':{
+                'vendor_name': 'UAV',
+                'model_name': 'FakeCamera',
+                'firmware_version': 1,
+                'focal_length': 2.8,
+                'sensor_size_h': 3.2,
+                'sensor_size_v': 2.4,
+                'resolution_h': 640,
+                'resolution_v': 480,
+                'lens_id': 0,
+                'flags': 0,
+                'cam_definition_version': 1,
+                'cam_definition_uri': '',
+                }}
 
-        self.capture_thread = threading.Thread(target=self._capture_images)
-        self.mem_fs = MemoryFS()
-        self.fs_size = 100000000  # 100MB
+        self.camera_info = self.get_camera_info(camera_dict)
 
-    def save_image_to_memoryfs(self, img, filename):
-        # Convert OpenCV image to JPEG byte stream
-        success, buffer = cv2.imencode(".jpg", img)
-        if not success:
-            raise ValueError("Failed to encode image")
 
-        # Write to PyFilesystem's Memory Filesystem
-        with self.mem_fs.open(filename, "wb") as f:
-            f.write(buffer.tobytes())
+    def get_camera_info(self, camera_dict):
+        """get  MAVLink camera info from a TOML dict."""
+        def make_length_32(s: str) -> str:
+            if len(s) > 32:
+                return s[:32]
+            return s.ljust(32)  # pad with spaces to the right to make length 32
 
-        print(f"Image saved to memory filesystem with name: {filename}")
-        # return mem_fs
+        camera_info = camera_dict['camera_info']
+        # vender name and model name must be 32 bytes long
+        camera_info['vendor_name'] = make_length_32(camera_info['vendor_name'])
+        camera_info['model_name'] = make_length_32(camera_info['model_name'])
+        camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
+        camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
 
-    def calculate_memory_usage(self):
-        """Calculate total memory used by the MemoryFS."""
-        total_memory = 0
-        for path in self.mem_fs.walk.files():
-            with self.mem_fs.open(path, "rb") as f:
-                total_memory += len(f.read())
-        return total_memory
-
+        return camera_info
 
     def camera_information_send(self):
         """ Information about a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         self.mav.camera_information_send(time_since_boot_ms(),  # time_boot_ms
-                                            self.vendor_name,   # vendor name
-                                            self.model_name,    # model name
-                                            self.firmware_version,    # firmware version
-                                            self.focal_length,    # focal length
-                                            self.sensor_size_h,   # sensor size h
-                                            self.sensor_size_v,   # sensor size v
-                                            self.resolution_h,    # resolution h
-                                            self.resolution_v,    # resolution v
-                                            self.lens_id,    # lend_id
-                                            self.flags,     # flags
-                                            self.cam_definition_version, # cam definition version
-                                            self.cam_definition_uri,     # cam definition uri
+                                            self.camera_info['vendor_name'],         # vendor name
+                                            self.camera_info['model_name'],          # model name
+                                            self.camera_info['firmware_version'],    # firmware version
+                                            self.camera_info['focal_length'],        # focal length
+                                            self.camera_info['sensor_size_h'],       # sensor size h
+                                            self.camera_info['sensor_size_v'],       # sensor size v
+                                            self.camera_info['resolution_h'],        # resolution h
+                                            self.camera_info['resolution_v'],        # resolution v
+                                            self.camera_info['lens_id'],             # lend_id
+                                            self.camera_info['flags'],               # flags
+                                            self.camera_info['cam_definition_version'],          # cam definition version
+                                            bytes(self.camera_info['cam_definition_uri'], 'utf-8'), # cam definition uri
                                          )
-
-    def camera_settings_send(self):
-        """ Information about a camera. Can be requested with a
-            MAV_CMD_REQUEST_MESSAGE command."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
-        self.mav.camera_settings_send(time_since_boot_ms(),  # time_boot_ms
-                                            0,   # camera_id
-                                            0,    # settings_id
-                                            0,    # value
-                                         )
-
-    def storage_information_send(self):
-        """ Information about a camera. Can be requested with a
-            MAV_CMD_REQUEST_MESSAGE command."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
-        self.mav.storage_information_send(time_since_boot_ms(),  # time_boot_ms
-                                            0,   # storage_id
-                                            1,    # storage_count
-                                            0,    # status
-                                            self.fs_size,    # total_capacity
-                                            self.calculate_memory_usage(),    # used_capacity
-                                            self.fs_size-self.calculate_memory_usage(),    # available_capacity
-                                            0,    # read_speed
-                                            0,    # write_speed
-                                         )
-
-    def camera_capture_status_send(self):
-        """ Information about a camera. Can be requested with a
-            MAV_CMD_REQUEST_MESSAGE command."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
-        self.mav.camera_capture_status_send(time_since_boot_ms(),  # time_boot_ms
-                                            0,   # image_status
-                                            0,    # video_status
-                                            0,    # image_interval
-                                            0,    # recording_time_ms
-                                            0,    # available_capacity
-                                            0,    # image_count
-                                         )
-
-    def camera_image_captured_send(self):
-        if self.mav is not None:
-            self.mav.camera_image_captured_send(time_since_boot_ms(),  # time_boot_ms
-                                                time_UTC_usec(),  # time_utc
-                                                0,  # camera_id
-                                                0,  # lat
-                                                0,  # lon
-                                                0,  # alt
-                                                0,  # relative_alt
-                                                [0, 0, 0, 0],  # q
-                                                self.image_index,  # image_index
-                                                1,  # capture_result
-                                                bytes(self.image_filename, 'utf-8'),  # file_url
-                                                )
-
-    def image_start_capture(self, interval, # Image capture interval
-                            count, # Number of images to capture (0 for unlimited)
-                            ):
-        """Start image capture sequence."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
-        self.interval = interval
-        self.max_count = count
-        self.capture_thread.start()
-
-    def _capture_image(self, filename):
-        # Simulate an image capture using OpenCV
-        image = np.zeros((512, 512, 3), dtype=np.uint8)
-        cv2.putText(image, "Fake Image", (50, 256), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
-
-        self.save_image_to_memoryfs(image, filename)
-
-        # print(f"Saving image to {filename}")
-        # is_success, buffer = cv2.imencode(".jpg", image)
-        # with self.fs as my_fs:  # Replace './my_directory' with your desired directory
-        #     with my_fs.open(filename, 'wb') as file:
-        #         file.write(buffer.tobytes())
-        # cv2.imwrite(filename, image)
-
-    # 
-    # def _capture_image2(self, save_path="image.jpg"):
-    #     pipeline_str = "videotestsrc num-buffers=1 ! jpegenc ! filesink location={}".format(save_path)
-    #     pipeline = Gst.parse_launch(pipeline_str)
-    #     pipeline.set_state(Gst.State.PLAYING)
-    #     bus = pipeline.get_bus()
-    #     bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.EOS | Gst.MessageType.ERROR)
-    #     pipeline.set_state(Gst.State.NULL)
-    def time_UTC_usec(self):
-        return int(time.time() * 1e6)
-
-    def _capture_images(self):
-        self._capture_images_thread_running = True
-        self.current_img_cnt = 0
-        while self._capture_images_thread_running:
-            self.image_filename = f"{date_time_str()}_{self.image_index:04d}.jpg"
-            img = self._capture_image(self.image_filename)
-
-            # print(f"Captured image")
-
-            if self.mav is not None:
-                self.mav.camera_image_captured_send(time_since_boot_ms(), # time_boot_ms
-                                                    time_UTC_usec(), # time_utc
-                                                    0, # camera_id
-                                                    0, # lat
-                                                    0, # lon
-                                                    0, # alt
-                                                    0, # relative_alt
-                                                    [0,0,0,0], # q
-                                                    self.image_index, # image_index
-                                                    1, # capture_result
-                                                    bytes(self.image_filename, 'utf-8'), # file_url
-                                                    )
-            time.sleep(self.interval)
-            if self.current_img_cnt > self.max_count:
-                self._capture_images_thread_running = False
-
-            self.current_img_cnt += 1
-            self.image_index += 1
-
-    # def camera_capture_status_send(self, time_boot_ms, image_status, video_status, image_interval, recording_time_ms, available_capacity, image_count):
-    #     msg = self.mav.mav.camera_capture_status_encode(time_boot_ms, image_status, video_status, image_interval, recording_time_ms, available_capacity, image_count)
-    #     self.mav.mav.send(msg)
+    def close(self) :
+        pass
 
 
-
-# %% ../../nbs/api/22_mavlink.camera.ipynb 19
 class CameraServer(Component):
     """Create a mavlink Camera server Component using a test GSTREAMER pipeline"""
 
@@ -503,6 +388,10 @@ class CameraServer(Component):
 
     def on_mav_connection(self):
         """Start the mavlink connection"""
+        assert self.mav is not None, "call set_mav first"
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            self.camera = BaseCamera()
         self.camera.mav = self.mav  # set the mavlink connection for mavlink messages
 
 
@@ -569,8 +458,10 @@ class CameraServer(Component):
     def camera_capture_status_send(self):
         """ Information about the status of a capture. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
-        cam = self.camera
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
         self.mav.camera_capture_status_send(time_since_boot_ms(), # time_boot_ms
                                             0, # image status
                                             0, # video status
@@ -584,12 +475,18 @@ class CameraServer(Component):
         """ Information about a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
         self.camera.camera_information_send()
 
     def camera_settings_send(self):
         """ Settings of a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
         nan = float("nan")
         self.mav.camera_settings_send(time_since_boot_ms(), # time_boot_ms
                                       0, # https://mavlink.io/en/messages/common.html#CAMERA_MODE
@@ -601,21 +498,11 @@ class CameraServer(Component):
         """ Information about a storage medium. This message is sent in response to
             MAV_CMD_REQUEST_MESSAGE."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
         self.camera.storage_information_send()
-        # self.mav.storage_information_send(time_since_boot_ms(), # time_boot_ms
-        #                                   0, # storage_id
-        #                                   0, # storage_count
-        #                                   0, # status
-        #                                   0, # total_capacity
-        #                                   0, # used_capacity
-        #                                   0, # available_capacity
-        #                                   0, # read_speed
-        #                                   0, # write_speed
-        #                                   0, # storage_type
-        #                                   0, # total_capacity
-        #                                   0, # used_capacity
-        #
-        #                                   )
+
 
     def storage_format(self, msg):
         """ A message containing the result of the format attempt (asynchronous)."""
@@ -625,42 +512,8 @@ class CameraServer(Component):
         storage_id = msg.param1
         format =    msg.param2
         reset_image_log = msg.param3
-        
-        self.mav.storage_information_send(  time_since_boot_ms(), # time_boot_ms
-                                            storage_id, # storage_id
-                                            0, # storage_count
-                                            0, # status
-                                            0, # total_capacity
-                                            0, # used_capacity
-                                            0, # available_capacity
-                                            0, # read_speed
-                                            0, # write_speed
-                                            0, # storage_type
-                                            0, # total_capacity
-                                            0, # used_capacity
-                                            0, # available_capacity
-                                            0, # read_speed
-                                            0, # write_speed
-                                            0, # storage_type
-                                            0, # total_capacity
-                                            0, # used_capacity
-                                            0, # available_capacity
-                                            0, # read_speed
-                                            0, # write_speed
-                                            0, # storage_type
-                                            0, # total_capacity
-                                            0, # used_capacity
-                                            0, # available_capacity
-                                            0, # read_speed
-                                            0, # write_speed
-                                            0, # storage_type
-                                            0, # total_capacity
-                                            0, # used_capacity
-                                            0, # available_capacity
-                                            0, # read_speed
-                                            0, # write_speed
-                                            0, # storage_type
-                                            )
+        self.storage_information_send()
+ 
 
 
 
@@ -674,69 +527,52 @@ class CameraServer(Component):
     def image_start_capture(self, msg):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
         self.camera.image_start_capture(msg.param2, msg.param3)
-        # self.log.error(f"image_start_capture not implemented")
-        # start capture thread. each capture send CAMERA_IMAGE_CAPTURED
-
-        # self.mav.camera_image_captured_send(time_since_boot_ms(), # time_boot_ms
-        #                                               0, # time_utc
-        #                                               0, # camera_id
-        #                                               0, # lat
-        #                                               0, # lon
-        #                                               0, # alt
-        #                                               0, # relative_alt
-        #                                               0, # q
-        #                                               0, # image_index
-        #                                               0, # capture_result
-        #                                               0, # file_url
-        #                                               )
-        # mavlink.MAVLink().camera_image_captured_send(time_since_boot_ms(), # time_boot_ms
-        #                                              0, # time_utc
-        #                                              0, # camera_id
-        #                                              0, # lat
-        #                                              0, # lon
-        #                                              0, # alt
-        #                                              0, # relative_alt
-        #                                              0, # q
-        #                                              0, # image_index
-        #                                              0, # capture_result
-        #                                              0, # file_url
-        #                                              )
-
-        # self.mav.camera_image_captured_send(
 
 
     def image_stop_capture(self, msg):
         """Stop image capture sequence"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
         self.log.error(f"image_stop_capture not implemented")
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
 
     def video_start_capture(self, msg):
         """Start video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
         self.log.error(f"video_start_capture not implemented")
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
 
     def video_stop_capture(self, msg):
         """Stop video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE
         self.log.error(f"video_stop_capture not implemented")
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
 
     def set_camera_mode(self, msg):
         """ Set the camera mode"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE
         self.log.error(f"set_camera_mode not implemented")
-
-    def start_capture(self, msg):
-        """Start capture"""
-        self.log.error(f"start_capture not implemented")
+        if self.camera is None:
+            self.log.warning(f"Component has no camera object")
+            return
 
 
 
     def close(self):
         """Close the connection to the camera"""
+        if self.camera is not None:
+            self.camera.close()
         super().close()
         self.log.debug(f"Closed connection to camera")
         return True
     
-
 

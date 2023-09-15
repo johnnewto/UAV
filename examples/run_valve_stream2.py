@@ -40,30 +40,31 @@ print(SINK_PIPELINE)
 #         while not pipeline.is_done:
 #             time.sleep(.1)
 
-num_buffers = 40
-with GstPipeline(SINK_PIPELINE) as rcv_pipeline:  # this will show the video on fpsdisplaysink
+num_buffers = 100
+with GstPipeline(SINK_PIPELINE) as rcv_pipeline:
     with GstVidSrcValve(SRC_PIPELINE, leaky=True) as pipeline:
 
         buffers = []
         count = 0
         dropstate = False
-        while len(buffers) < num_buffers:
-            time.sleep(0.1)
+        while count < num_buffers:
+            time.sleep(0.2)
             count += 1
             if count % 10 == 0:
                 print(f'Count = : {count}')
                 dropstate = not dropstate
-                pipeline.set_valve_state("myvalve", dropstate)
-                # if dropstate:
-                #     pipeline._pipeline.set_state(Gst.State.PLAYING)
-                # else:
-                #     pipeline._pipeline.set_state(Gst.State.PAUSED)
+                # pipeline.set_valve_state("myvalve", dropstate)
+                if dropstate:
+                    pipeline._pipeline.set_state(Gst.State.PLAYING)
+                else:
+                    # pipeline._pipeline.set_state(Gst.State.PAUSED)
+                    pipeline._pipeline.set_state(Gst.State.NULL)
 
-            buffer = pipeline.pop()
+            # buffer = pipeline.pop()
             # print(f'Got buffer: {count = }')
 
-            if buffer:
-                buffers.append(buffer)
-                if len(buffers) % 10 == 0:
-                    print(f'Got: {len(buffers)} buffers of {pipeline.queue_size}')
-        print('Got: {} buffers'.format(len(buffers)))
+        #     if buffer:
+        #         buffers.append(buffer)
+        #         if len(buffers) % 10 == 0:
+        #             print(f'Got: {len(buffers)} buffers of {pipeline.queue_size}')
+        # print('Got: {} buffers'.format(len(buffers)))
