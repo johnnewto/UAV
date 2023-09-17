@@ -1,4 +1,4 @@
-fastcore>=1.5.29
+fastcore>=1.4
 imutils>=0.5.4
 numpy>=1.25.2
 opencv_python>=4.8.0.74
@@ -6,7 +6,7 @@ paho_mqtt>=1.6.1
 PyGObject>=3.44.1
 setuptools>=68.0.0
 
-opencv-python~=4.8.0.74
+opencv-python~=4.5.5.64
 paho-mqtt~=1.6.1
 matplotlib~=3.7.2
 Pillow~=10.0.0

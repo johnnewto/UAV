@@ -14,12 +14,13 @@ from ..mavlink.camera import BaseCamera
 import threading
 import cv2
 import numpy as np
-try:
-    # https://hackernoon.com/how-to-manage-configurations-easily-using-toml-files
-    import tomllib   # Python 3.11+
-except ModuleNotFoundError:
-    import tomli as tomllib
-import tomli_w
+# try:
+#     # https://hackernoon.com/how-to-manage-configurations-easily-using-toml-files
+#     import tomllib   # Python 3.11+
+# except ModuleNotFoundError:
+#     import tomli as tomllib
+# import tomli_w
+import toml
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 from fs.memoryfs import MemoryFS
@@ -74,7 +75,7 @@ def create_toml_file(filename):
         'gstreamer': gstreamer,
     }
     with open(filename, "wb") as f:
-        tomli_w.dump(camera_dict, f)
+        toml.dump(camera_dict, f)
 
 
 
@@ -82,9 +83,8 @@ def create_toml_file(filename):
 def read_camera_dict_from_toml(toml_file_path # path to TOML file
                                )->dict: # camera_info dict
     """Read MAVLink camera info from a TOML file."""
-    with open(toml_file_path, 'rb') as file:
-        camera_dict = tomllib.load(file)
-        return camera_dict
+    camera_dict = toml.load(toml_file_path)
+    return camera_dict
 
 @dataclass
 class CameraCaptureStatus:
@@ -120,7 +120,7 @@ class CV2Camera(BaseCamera):
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
         self._log.setLevel(logging.DEBUG if debug else logging.INFO)
 
-        self.capture_thread = threading.Thread(target=self.capture_image_thread)
+        self.last_image = None
         self.mem_fs = MemoryFS()
         self.fs_size = 100000000  # 100MB
 
@@ -224,6 +224,7 @@ class CV2Camera(BaseCamera):
         # self.interval = interval
         self.camera_capture_status.image_interval = interval
         self.max_count = count
+        self.capture_thread = threading.Thread(target=self.capture_image_thread)
         self.capture_thread.start()
 
     def get_next_image(self, filename):
@@ -232,6 +233,7 @@ class CV2Camera(BaseCamera):
         cv2.putText(image, "Fake Image", (50, 256), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
 
         self.save_image_to_memoryfs(image, filename)
+        self.last_image = image
 
     def time_UTC_usec(self):
         return int(time.time() * 1e6)
@@ -242,31 +244,17 @@ class CV2Camera(BaseCamera):
         while self._capture_images_thread_running:
             self.image_filename = f"{date_time_str()}_{self.camera_capture_status.image_count:04d}.jpg"
             img = self.get_next_image(self.image_filename)
-
             # print(f"Captured image")
-
-            if self.mav is not None:
-                self.mav.camera_image_captured_send(time_since_boot_ms(), # time_boot_ms
-                                                    time_UTC_usec(), # time_utc
-                                                    0, # camera_id
-                                                    0, # lat
-                                                    0, # lon
-                                                    0, # alt
-                                                    0, # relative_alt
-                                                    [0,0,0,0], # q
-                                                    self.camera_capture_status.image_count, # image_index
-                                                    1, # capture_result
-                                                    bytes(self.image_filename, 'utf-8'), # file_url
-                                                    )
-
-            if current_img_cnt >= self.max_count:
-                self._capture_images_thread_running = False
-
+            self.camera_image_captured_send()
             current_img_cnt += 1
             self.camera_capture_status.image_count += 1
-
+            if current_img_cnt > self.max_count: # quit the thread
+                self._capture_images_thread_running = False
+                break
 
             time.sleep(self.camera_capture_status.image_interval)
+
+
     def close(self):
         self._capture_images_thread_running = True
         if self.capture_thread.is_alive():
