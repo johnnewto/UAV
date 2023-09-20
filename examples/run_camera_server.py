@@ -1,4 +1,4 @@
-from UAV.mavlink.camera import CameraClient, CameraServer, MAVCom, boot_time_str
+from UAV.mavlink._old_camera import CameraClient, CameraServer, MAVCom, boot_time_str
 from UAV.mavlink.component import Component, mavutil, mavlink
 from UAV.camera.fake_cam import CV2Camera, GSTCamera, read_camera_dict_from_toml
 from gstreamer import  GstPipeline

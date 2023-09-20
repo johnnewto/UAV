@@ -1,4 +1,4 @@
-from UAV.mavlink.camera import CameraClient, CameraServer, MAVCom, boot_time_str, date_time_str, time_since_boot_ms, time_UTC_usec
+from UAV.mavlink._old_camera import CameraClient, CameraServer, MAVCom, boot_time_str, date_time_str, time_since_boot_ms, time_UTC_usec
 from UAV.camera.fake_cam import GSTCamera, read_camera_dict_from_toml, CameraCaptureStatus
 
 from pathlib import Path
