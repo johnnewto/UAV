@@ -2,23 +2,24 @@
 
 # %% auto 0
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
-           'CAMERA_IMAGE_CAPTURED', 'read_camera_info_from_toml', 'WaitMessage', 'CameraClient', 'BaseCamera',
-           'CameraServer']
+           'CAMERA_IMAGE_CAPTURED', 'read_camera_info_from_toml', 'WaitMessage', 'CameraClient', 'CameraServer']
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 6
 import time, os, sys
 
+from ..camera.fake_cam import GSTCamera, BaseCamera
 from ..logging import logging
 from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from .component import Component, mavutil, mavlink, MAVLink
 import threading
 import cv2
 import numpy as np
-try:
-    # https://hackernoon.com/how-to-manage-configurations-easily-using-toml-files
-    import tomllib   # Python 3.11+
-except ModuleNotFoundError:
-    import tomli as tomllib
+import toml
+# try:
+#     # https://hackernoon.com/how-to-manage-configurations-easily-using-toml-files
+#     import tomllib   # Python 3.11+
+# except ModuleNotFoundError:
+#     import tomli as tomllib
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 
 
@@ -57,7 +58,7 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 def read_camera_info_from_toml(toml_file_path):
     """Read MAVLink camera info from a TOML file."""
     with open(toml_file_path, 'rb') as file:
-        data = tomllib.load(file)
+        data = toml.load(file)
 
     camera_info = data['camera_info']
     camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
@@ -289,7 +290,7 @@ class CameraClient(Component):
                               )
 
     def video_start_capture(self, video_stream_id=0, # Video stream id (0 for all streams)
-                            frequency=0): # Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)
+                            frequency=1): # Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)
         """Start video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
         t = self.send_command(self.target_system, self.target_component,
@@ -307,67 +308,85 @@ class CameraClient(Component):
                                 [video_stream_id, NAN, NAN, NAN, NAN, NAN, NAN]
                               )
 
+    def video_start_streaming(self, video_stream_id=0, # Video Stream ID (0 for all streams)
+                                ):
+        """Start video streaming"""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
+        t = self.send_command(self.target_system, self.target_component,
+                                mavlink.MAV_CMD_VIDEO_START_STREAMING,
+                                [video_stream_id, NAN, NAN, NAN, NAN, NAN, NAN]
+                                )
+
+    def video_stop_streaming(self, video_stream_id=0): # Video Stream ID (0 for all streams)
+        """Stop the video stream"""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
+        t = self.send_command(self.target_system, self.target_component,
+                                mavlink.MAV_CMD_VIDEO_STOP_STREAMING,
+                                [video_stream_id, NAN, NAN, NAN, NAN, NAN, NAN]
+                              )
+
+
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 16
-class BaseCamera:
-    def __init__(self,
-                 camera_dict=None,  # camera_info dict
-                 debug=False):  # debug log flag
-        self.mav: MAVLink = None
-        camera_dict = {'camera_info':{
-                'vendor_name': 'UAV',
-                'model_name': 'FakeCamera',
-                'firmware_version': 1,
-                'focal_length': 2.8,
-                'sensor_size_h': 3.2,
-                'sensor_size_v': 2.4,
-                'resolution_h': 640,
-                'resolution_v': 480,
-                'lens_id': 0,
-                'flags': 0,
-                'cam_definition_version': 1,
-                'cam_definition_uri': '',
-                }}
-
-        self.camera_info = self.get_camera_info(camera_dict)
-
-
-    def get_camera_info(self, camera_dict):
-        """get  MAVLink camera info from a TOML dict."""
-        def make_length_32(s: str) -> str:
-            if len(s) > 32:
-                return s[:32]
-            return s.ljust(32)  # pad with spaces to the right to make length 32
-
-        camera_info = camera_dict['camera_info']
-        # vender name and model name must be 32 bytes long
-        camera_info['vendor_name'] = make_length_32(camera_info['vendor_name'])
-        camera_info['model_name'] = make_length_32(camera_info['model_name'])
-        camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
-        camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
-
-        return camera_info
-
-    def camera_information_send(self):
-        """ Information about a camera. Can be requested with a
-            MAV_CMD_REQUEST_MESSAGE command."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
-        self.mav.camera_information_send(time_since_boot_ms(),  # time_boot_ms
-                                            self.camera_info['vendor_name'],         # vendor name
-                                            self.camera_info['model_name'],          # model name
-                                            self.camera_info['firmware_version'],    # firmware version
-                                            self.camera_info['focal_length'],        # focal length
-                                            self.camera_info['sensor_size_h'],       # sensor size h
-                                            self.camera_info['sensor_size_v'],       # sensor size v
-                                            self.camera_info['resolution_h'],        # resolution h
-                                            self.camera_info['resolution_v'],        # resolution v
-                                            self.camera_info['lens_id'],             # lend_id
-                                            self.camera_info['flags'],               # flags
-                                            self.camera_info['cam_definition_version'],          # cam definition version
-                                            bytes(self.camera_info['cam_definition_uri'], 'utf-8'), # cam definition uri
-                                         )
-    def close(self) :
-        pass
+# class BaseCamera:
+#     def __init__(self,
+#                  camera_dict=None,  # camera_info dict
+#                  debug=False):  # debug log flag
+#         self.mav: MAVLink = None
+#         camera_dict = {'camera_info':{
+#                 'vendor_name': 'UAV',
+#                 'model_name': 'FakeCamera',
+#                 'firmware_version': 1,
+#                 'focal_length': 2.8,
+#                 'sensor_size_h': 3.2,
+#                 'sensor_size_v': 2.4,
+#                 'resolution_h': 640,
+#                 'resolution_v': 480,
+#                 'lens_id': 0,
+#                 'flags': 0,
+#                 'cam_definition_version': 1,
+#                 'cam_definition_uri': '',
+#                 }}
+#
+#         self.camera_info = self.get_camera_info(camera_dict)
+#
+#
+#     def get_camera_info(self, camera_dict):
+#         """get  MAVLink camera info from a TOML dict."""
+#         def make_length_32(s: str) -> str:
+#             if len(s) > 32:
+#                 return s[:32]
+#             return s.ljust(32)  # pad with spaces to the right to make length 32
+#
+#         camera_info = camera_dict['camera_info']
+#         # vender name and model name must be 32 bytes long
+#         camera_info['vendor_name'] = make_length_32(camera_info['vendor_name'])
+#         camera_info['model_name'] = make_length_32(camera_info['model_name'])
+#         camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
+#         camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
+#
+#         return camera_info
+#
+#     def camera_information_send(self):
+#         """ Information about a camera. Can be requested with a
+#             MAV_CMD_REQUEST_MESSAGE command."""
+#         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
+#         self.mav.camera_information_send(time_since_boot_ms(),  # time_boot_ms
+#                                             self.camera_info['vendor_name'],         # vendor name
+#                                             self.camera_info['model_name'],          # model name
+#                                             self.camera_info['firmware_version'],    # firmware version
+#                                             self.camera_info['focal_length'],        # focal length
+#                                             self.camera_info['sensor_size_h'],       # sensor size h
+#                                             self.camera_info['sensor_size_v'],       # sensor size v
+#                                             self.camera_info['resolution_h'],        # resolution h
+#                                             self.camera_info['resolution_v'],        # resolution v
+#                                             self.camera_info['lens_id'],             # lend_id
+#                                             self.camera_info['flags'],               # flags
+#                                             self.camera_info['cam_definition_version'],          # cam definition version
+#                                             bytes(self.camera_info['cam_definition_uri'], 'utf-8'), # cam definition uri
+#                                          )
+#     def close(self) :
+#         pass
 
 
 class CameraServer(Component):
@@ -383,7 +402,7 @@ class CameraServer(Component):
         self.set_message_callback(self.on_message)
 
 
-        self.camera = camera
+        self.camera:GSTCamera = camera
 
 
     def on_mav_connection(self):
@@ -449,6 +468,15 @@ class CameraServer(Component):
                 self.set_camera_mode(msg)
                 return True # return True to indicate that the message has been handled
 
+            elif msg.command == mavlink.MAV_CMD_VIDEO_START_STREAMING:
+                self.video_start_streaming(msg)
+                return True # return True to indicate that the message has been handled
+
+            elif msg.command == mavlink.MAV_CMD_VIDEO_STOP_STREAMING:
+                self.video_stop_streaming(msg)
+                return True # return True to indicate that the message has been handled
+
+
             
         else:
             self.log.debug(f"Unknown command {msg.get_type()} received from {msg.get_srcSystem()}/{msg.get_srcComponent()}")
@@ -459,49 +487,61 @@ class CameraServer(Component):
         """ Information about the status of a capture. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
-        self.mav.camera_capture_status_send(time_since_boot_ms(), # time_boot_ms
-                                            0, # image status
-                                            0, # video status
-                                            0, # image interval
-                                            0, # recording time ms
-                                            0, # available capacity
-                                            0, # image count
-                                            )
+        try:
+            self.camera.camera_capture_status_send()
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
+        # if self.camera is None:
+        #     self.log.warning(f"Component has no camera object")
+        #     return
+        # self.mav.camera_capture_status_send(time_since_boot_ms(), # time_boot_ms
+        #                                     0, # image status
+        #                                     0, # video status
+        #                                     0, # image interval
+        #                                     0, # recording time ms
+        #                                     0, # available capacity
+        #                                     0, # image count
+        #                                     )
 
     def camera_information_send(self):
         """ Information about a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
-        self.camera.camera_information_send()
+        try:
+            self.camera.camera_information_send()
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
 
     def camera_settings_send(self):
         """ Settings of a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
-        nan = float("nan")
-        self.mav.camera_settings_send(time_since_boot_ms(), # time_boot_ms
-                                      0, # https://mavlink.io/en/messages/common.html#CAMERA_MODE
-                                      NAN, # Current zoom level as a percentage of the full range (0.0 to 100.0, NaN if not known)
-                                      NAN, # Current focus level as a percentage of the full range (0.0 to 100.0, NaN if not known)
-                                      )
+        try:
+            self.camera.camera_settings_send()
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
+        # if self.camera is None:
+        #     self.log.warning(f"Component has no camera object")
+        #     return
+        # nan = float("nan")
+        # self.mav.camera_settings_send(time_since_boot_ms(), # time_boot_ms
+        #                               0, # https://mavlink.io/en/messages/common.html#CAMERA_MODE
+        #                               NAN, # Current zoom level as a percentage of the full range (0.0 to 100.0, NaN if not known)
+        #                               NAN, # Current focus level as a percentage of the full range (0.0 to 100.0, NaN if not known)
+        #                               )
 
     def storage_information_send(self):
         """ Information about a storage medium. This message is sent in response to
             MAV_CMD_REQUEST_MESSAGE."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
-        self.camera.storage_information_send()
+        try:
+            self.camera.storage_information_send()
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
 
 
     def storage_format(self, msg):
@@ -520,50 +560,86 @@ class CameraServer(Component):
     def set_camera_zoom(self, msg):
         """ Set the camera zoom """
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
-        self.log.error(f"set_camera_zoom not implemented")
-        pass
+        try:
+            self.camera.set_camera_zoom(msg.param2)
+        except AttributeError as err:
+            self.log.error(f"{err = }")
         
         
     def image_start_capture(self, msg):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
-        self.camera.image_start_capture(msg.param2, msg.param3)
+        try:
+            interval = msg.param2
+            count = msg.param3
+            self.camera.image_start_capture(interval, count)
+        except AttributeError as err:
+            self.log.error(f"{err = }")
 
 
     def image_stop_capture(self, msg):
         """Stop image capture sequence"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
-        self.log.error(f"image_stop_capture not implemented")
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
+        try:
+
+            self.camera.image_stop_capture()
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
 
     def video_start_capture(self, msg):
         """Start video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
-        self.log.error(f"video_start_capture not implemented")
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
+        try:
+            stream_id = msg.param1
+            frequency = msg.param2  # Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)
+
+            self.camera.video_start_capture(stream_id, frequency)
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
+
 
     def video_stop_capture(self, msg):
         """Stop video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE
-        self.log.error(f"video_stop_capture not implemented")
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
+        try:
+            self.camera.video_stop_capture()
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
+
+    def video_start_streaming(self, msg):
+        """Start video streaming"""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
+        # todo get parameters from message
+        print("todo get parameters from message")
+        try:
+            self.camera.video_start_streaming(0)
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
+
+    def video_stop_streaming(self, msg):
+        """Stop video streaming"""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
+        # todo get parameters from message
+        print("todo get parameters from message")
+        try:
+            self.camera.video_stop_streaming(0)
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
 
     def set_camera_mode(self, msg):
         """ Set the camera mode"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE
-        self.log.error(f"set_camera_mode not implemented")
-        if self.camera is None:
-            self.log.warning(f"Component has no camera object")
-            return
+        try:
+            self.camera.set_camera_mode(msg.param2)
+        except AttributeError as err:
+            self.log.error(f"{err = }")
+
+
 
 
 

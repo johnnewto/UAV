@@ -13,7 +13,7 @@ if __name__ == '__main__':
     with  GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml")) as cam_fake1:
         cam_fake1.image_start_capture(0.1, 5)
 
-        while cam_fake1.capture_thread.is_alive():
+        while cam_fake1._image_capture_thread.is_alive():
             if cam_fake1.last_image is not None:
                 cv2.imshow('image', cam_fake1.last_image)
                 cam_fake1.last_image = None

@@ -21,14 +21,47 @@ pitch = 0.0
 yaw = 0.0
 
 [gstreamer]
+#_pipeline = [
+#    "videotestsrc pattern=ball flip=true is-live=true num-buffers=1000 ! video/x-raw,framerate=10/1 !  tee name=t",
+#    "t.",
+#    "queue leaky=2 ! valve name=stream_valve drop=True ! video/x-raw,format=I420,width=640,height=480",
+#    "videoconvert",
+#    "x264enc tune=zerolatency",
+#    "rtph264pay ! udpsink host=127.0.0.1 port=5000",
+#    "t.",
+#    "queue leaky=2 ! valve name=image_valve drop=True",
+#    "videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR",
+#    "videoconvert ! appsink name=mysink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ",
+#    "t.",
+#    "intervideosink channel=video-capture-channel",
+##    "queue leaky=2 ! valve name=video_valve drop=False ! x264enc tune=zerolatency ! mp4mux ! filesink location=video.mp4",
+#]
+# https://gstreamer.freedesktop.org/documentation/videorate/index.html?gi-language=c
 pipeline = [
-    "videotestsrc pattern=ball flip=true is-live=true num-buffers=1000 ! video/x-raw,framerate=10/1 !  tee name=t",
+#    "videotestsrc pattern=ball is-live=true ! video/x-raw,framerate=10/1 !  autovideosink",
+    "videotestsrc pattern=ball is-live=true ! video/x-raw,width=640,height=480,framerate=30/1 !  tee name=t",
+
     "t.",
-    "queue leaky=2 ! valve name=myvalve drop=False ! video/x-raw,format=I420,width=640,height=480",
-    "videoconvert",
-    "x264enc tune=zerolatency",
-    "rtph264pay ! udpsink host=127.0.0.1 port=5000",
+    'queue ! autovideosink',
+
     "t.",
-    "queue leaky=2 ! videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR",
+    'queue leaky=2 ! intervideosink channel=channel_0 ',
+
+    "t.",
+    'queue leaky=2 ! intervideosink channel=channel_1 ',
+
+    "t.",
+    "queue leaky=2 ! valve name=image_valve drop=True",
+    "videoconvert ! videorate drop-only=true ! video/x-raw,framerate=10/1,format=(string)BGR",
     "videoconvert ! appsink name=mysink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ",
-]
+    ]
+
+#        command = ['intervideosrc channel=video-capture-channel  ',
+#                                 'videoconvert',
+#                                 f'video/x-raw,width=640,height=480,framerate={fps}/1',
+#                                 # f'videorate drop-only=true ! video/x-raw,width=640,height=480,framerate={fps}/1',
+#                                 # 'autovideosink',
+#                                 'videoconvert',
+#                                 f'x264enc bitrate={bitrate}',
+#                                 'mp4mux ! filesink location={}'.format(filename),
+#                                 ]

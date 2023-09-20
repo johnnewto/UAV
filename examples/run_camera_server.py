@@ -13,6 +13,7 @@ MAV_TYPE_CAMERA = mavutil.mavlink.MAV_TYPE_CAMERA
 # gim1 = GimbalServer(mav_connection=None, source_component=22, mav_type=MAV_TYPE_CAMERA, debug=False)
 
 con2 = "udpin:192.168.122.84:14445"
+con2 = "udpin:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
 if __name__ == '__main__':
@@ -25,13 +26,13 @@ if __name__ == '__main__':
 
         server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_gst_1, debug=False))
         while True:
-            while cam_gst_1.capture_thread.is_alive():
+            while cam_gst_1.capture_thread_is_alive:
                 if cam_gst_1.last_image is not None:
                     cv2.imshow('gst_src', cam_gst_1.last_image)
                     cam_gst_1.last_image = None
                     cv2.waitKey(10)
 
-            cv2.destroyAllWindows()
+                cv2.destroyAllWindows()
 
             time.sleep(0.01)
 

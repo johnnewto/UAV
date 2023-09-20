@@ -20,6 +20,7 @@ SINK_PIPELINE = gst_utils.to_gst_string([
 con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 con1 = "udpout:192.168.122.84:14445"
+con1 = "udpout:localhost:14445"
 if __name__ == '__main__':
     print (f"{boot_time_str =}")
     config_path = Path("../config")

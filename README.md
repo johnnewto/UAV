@@ -7,9 +7,86 @@ docs](https://johnnewto.github.io/UAV/)
 
 ## Guide to developing with UAV
 
-### Developing with nbdev - Initial setup
+## Install
 
-For a step-by-step guide to using nbdev [guide to using
+1.  Python 3.10 venv for Ubuntu 21.04, Ubuntu 20.04 LTS
+    <https://www.python.org/downloads/>
+    `sh      sudo add-apt-repository ppa:deadsnakes/ppa     sudo apt update     sudo apt install python3.10`
+
+    **Note For Ubuntu 18.04** Deadsnakes/ppa is not hold distribution
+    for Ubuntu 18.04 LTS, so you need to install it manually. Download
+    Python 3.10.0 from <https://github.com/conda-forge/miniforge>
+
+    - [Linux x86_64
+      (amd64)](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh)
+    - [Linux aarch64
+      (arm64)](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh)
+
+    Give the script execution permission and run it to install into
+    ~/miniforge3
+    `sh  chmod +x Miniforge3-Linux-x86_64.sh  ./Miniforge3-Linux-x86_64.sh`
+    follow the prompts to install
+
+2.  Download UAV from github and create a virtual environment
+    `sh     mkdir repos     cd repos     git clone https://github.com/johnnewto/UAV.git     cd UAV     ~/miniforge3/bin/python -m venv 'venv'     source ./venv/bin/activate     pip install --upgrade pip     pip install -e .`
+
+3.  Install gstreamer
+    `sh     sudo apt-get install libcairo2 libcairo2-dev libgirepository1.0-dev     sudo apt install libgirepository1.0-dev     sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio`
+
+4.  Install gstreamer-python
+    `sh    pip install git+https://github.com/johnnewto/gstreamer-python.git`
+
+### Airsim ( optional for dev )
+
+AirSim is a simulator for drones, cars and more, built on [Unreal
+Engine](https://www.unrealengine.com/) (we now also have an experimental
+[Unity](https://unity3d.com/) release). It is open-source, cross
+platform, and supports software-in-the-loop simulation with popular
+flight controllers such as PX4 & ArduPilot and hardware-in-loop with PX4
+for physically and visually realistic simulations. It is developed as an
+Unreal plugin that can simply be dropped into any Unreal environment.
+Similarly, we have an experimental release for a Unity plugin.
+
+Their goal was to develop AirSim as a platform for AI research to
+experiment with deep learning, computer vision and reinforcement
+learning algorithms for autonomous vehicles. For this purpose, AirSim
+also exposes APIs to retrieve data and control vehicles in a platform
+independent way. [![AirSim Drone Demo
+Video](images/demo_video.png)](https://youtu.be/-WfTr1-OBGQ)
+
+#### Install msgpack-rpc-python with tornado 4.5.3
+
+To run airsim in jupyter you need msgpack-rpc-python to have an old
+version of tornado. The latest version of msgpack-rpc-python is 0.4.1,
+which requires tornado 4.5.3. The latest version of tornado is 6.1,
+which is not compatible with msgpack-rpc-python.
+
+The repo
+<https://github.com/xaedes/msgpack-rpc-python/tree/with_tornado_453> is
+a fork of msgpack-rpc-python which includes tornado 4.5.3 directly in
+the repo. This is not the best solution, but it works. This may not be
+the best solution, but for me it solves the issue. I can now use
+jupyterlab and notebook together with msgpack-rpc-python. The example
+works. It is hard to interrupt the server side tho…
+
+To use it, just clone it and checkout the branch with_tornado_453.
+Remove any existing installation of msgpack-rpc-python: pip uninstall
+msgpack-rpc-python
+
+Install msgpack-rpc-python with integrated tornado from the local
+directory in which you cloned fork, for example when you are currently
+in this directory: `pip install ~/../msgpack-rpc-python`
+
+#### Install Airsim
+
+For the binary releases of Airsim see
+<https://github.com/microsoft/AirSim/releases/tag/v1.8.1> We recommend
+the linux version as this repo is developed on linux.
+
+## Developing with nbdev - Initial setup
+
+if you want to develop with nbdev, you’ll need to install it first. For
+a step-by-step guide to using nbdev [guide to using
 nbdev](https://nbdev.fast.ai/tutorials/tutorial.html) You’ll need the
 following software to develope using nbdev:
 
@@ -48,60 +125,6 @@ pip install pre-commit
 
 see [nbdev Pre-Commit
 Hooks](https://nbdev.fast.ai/tutorials/pre_commit.html) for more details
-
-### Airsim
-
-AirSim is a simulator for drones, cars and more, built on [Unreal
-Engine](https://www.unrealengine.com/) (we now also have an experimental
-[Unity](https://unity3d.com/) release). It is open-source, cross
-platform, and supports software-in-the-loop simulation with popular
-flight controllers such as PX4 & ArduPilot and hardware-in-loop with PX4
-for physically and visually realistic simulations. It is developed as an
-Unreal plugin that can simply be dropped into any Unreal environment.
-Similarly, we have an experimental release for a Unity plugin.
-
-Our goal is to develop AirSim as a platform for AI research to
-experiment with deep learning, computer vision and reinforcement
-learning algorithms for autonomous vehicles. For this purpose, AirSim
-also exposes APIs to retrieve data and control vehicles in a platform
-independent way. [![AirSim Drone Demo
-Video](images/demo_video.png)](https://youtu.be/-WfTr1-OBGQ)
-
-#### Install msgpack-rpc-python with tornado 4.5.3
-
-To run airsim in jupyter you need msgpack-rpc-python to have an old
-version of tornado. The latest version of msgpack-rpc-python is 0.4.1,
-which requires tornado 4.5.3. The latest version of tornado is 6.1,
-which is not compatible with msgpack-rpc-python.
-
-The repo
-<https://github.com/xaedes/msgpack-rpc-python/tree/with_tornado_453> is
-a fork of msgpack-rpc-python which includes tornado 4.5.3 directly in
-the repo. This is not the best solution, but it works. This may not be
-the best solution, but for me it solves the issue. I can now use
-jupyterlab and notebook together with msgpack-rpc-python. The example
-works. It is hard to interrupt the server side tho…
-
-To use it, just clone it and checkout the branch with_tornado_453.
-Remove any existing installation of msgpack-rpc-python: pip uninstall
-msgpack-rpc-python
-
-Install msgpack-rpc-python with integrated tornado from the local
-directory in which you cloned fork, for example when you are currently
-in this directory: `pip install ~/../msgpack-rpc-python`
-
-#### Install Airsim
-
-For the binary releases of Airsim see
-<https://github.com/microsoft/AirSim/releases/tag/v1.8.1> We recommend
-the linux version as this repo is developed on linux.
-
-### Checkout UAV and Install the library
-
-``` sh
-git clone https://github.com/johnnewto/UAV.git
-pip install UAV
-```
 
 ### Preview Docs
 
