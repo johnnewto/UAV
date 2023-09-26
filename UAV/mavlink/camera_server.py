@@ -8,7 +8,7 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
 import time, os, sys
 
 from ..camera.fake_cam import GSTCamera, BaseCamera
-from ..logging import logging
+from ..logging import logging, LogLevels
 # from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from .component import Component, mavutil, mavlink, MAVLink
 import threading
@@ -71,10 +71,10 @@ class CameraServer(Component):
                  source_component,  # used for component indication
                  mav_type,  # used for heartbeat MAV_TYPE indication
                  camera, # camera  (or FakeCamera for testing)
-                 debug,  # logging level
+                 loglevel=LogLevels.INFO,  # logging level
                 ):
-        super().__init__( source_component=source_component, mav_type=mav_type, debug=debug)
-        self.set_message_callback(self.on_message)
+        super().__init__( source_component=source_component, mav_type=mav_type, loglevel=loglevel)
+        self._set_message_callback(self.on_message)
 
 
         self.camera:GSTCamera = camera
@@ -98,58 +98,58 @@ class CameraServer(Component):
         if msg.get_type() == "COMMAND_LONG":
             # print(f"Command  {msg.command = } ")
             if msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS:
-                self.camera_capture_status_send()
+                self._camera_capture_status_send()
                 return True # return True to indicate that the message has been handled
 
             elif msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION:
-                self.camera_information_send()
+                self._camera_information_send()
                 return True # return True to indicate that the message has been handled
 
             elif msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS:
                 # self.send_ack(msg)
-                self.camera_settings_send()
+                self._camera_settings_send()
                 return True
 
             elif msg.command == mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION:
-                self.storage_information_send()
+                self._storage_information_send()
                 return True
 
             elif msg.command == mavlink.MAV_CMD_STORAGE_FORMAT:
-                self.storage_format(msg)
+                self._storage_format(msg)
                 return True
 
             elif msg.command == mavlink.MAV_CMD_SET_CAMERA_ZOOM:
                 # self.log.info(f"***** Zoom {msg}")
                 # print(f"Zoom {msg.param2 = }")
-                self.set_camera_zoom(msg)
+                self._set_camera_zoom(msg)
                 return True
 
             elif msg.command == mavlink.MAV_CMD_IMAGE_START_CAPTURE:
-                self.image_start_capture(msg)
+                self._image_start_capture(msg)
                 return True # return True to indicate that the message has been handled
 
             elif msg.command == mavlink.MAV_CMD_IMAGE_STOP_CAPTURE:
-                self.image_stop_capture(msg)
+                self._image_stop_capture(msg)
                 return True
 
             elif msg.command == mavlink.MAV_CMD_VIDEO_START_CAPTURE:
-                self.video_start_capture(msg)
+                self._video_start_capture(msg)
                 return True
 
             elif msg.command == mavlink.MAV_CMD_VIDEO_STOP_CAPTURE:
-                self.video_stop_capture(msg)
+                self._video_stop_capture(msg)
                 return True
 
             elif msg.command == mavlink.MAV_CMD_SET_CAMERA_MODE:
-                self.set_camera_mode(msg)
+                self._set_camera_mode(msg)
                 return True # return True to indicate that the message has been handled
 
             elif msg.command == mavlink.MAV_CMD_VIDEO_START_STREAMING:
-                self.video_start_streaming(msg)
+                self._video_start_streaming(msg)
                 return True # return True to indicate that the message has been handled
 
             elif msg.command == mavlink.MAV_CMD_VIDEO_STOP_STREAMING:
-                self.video_stop_streaming(msg)
+                self._video_stop_streaming(msg)
                 return True # return True to indicate that the message has been handled
 
 
@@ -159,7 +159,7 @@ class CameraServer(Component):
             return False # return False to indicate that the message has not been handled
 
         
-    def camera_capture_status_send(self):
+    def _camera_capture_status_send(self):
         """ Information about the status of a capture. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
@@ -180,7 +180,7 @@ class CameraServer(Component):
         #                                     0, # image count
         #                                     )
 
-    def camera_information_send(self):
+    def _camera_information_send(self):
         """ Information about a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
@@ -190,7 +190,7 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
 
-    def camera_settings_send(self):
+    def _camera_settings_send(self):
         """ Settings of a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
@@ -209,7 +209,7 @@ class CameraServer(Component):
         #                               NAN, # Current focus level as a percentage of the full range (0.0 to 100.0, NaN if not known)
         #                               )
 
-    def storage_information_send(self):
+    def _storage_information_send(self):
         """ Information about a storage medium. This message is sent in response to
             MAV_CMD_REQUEST_MESSAGE."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
@@ -218,9 +218,7 @@ class CameraServer(Component):
         except AttributeError as err:
             self.log.error(f"{err = }")
 
-
-
-    def storage_format(self, msg):
+    def _storage_format(self, msg):
         """ A message containing the result of the format attempt (asynchronous)."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_STORAGE_FORMAT
         self.log.error(f"storage_format_send not implemented")
@@ -228,21 +226,18 @@ class CameraServer(Component):
         storage_id = msg.param1
         format =    msg.param2
         reset_image_log = msg.param3
-        self.storage_information_send()
- 
+        self._storage_information_send()
 
-
-
-    def set_camera_zoom(self, msg):
+    def _set_camera_zoom(self, msg):
         """ Set the camera zoom """
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
         try:
             self.camera.set_camera_zoom(msg.param2)
         except AttributeError as err:
+
             self.log.error(f"{err = }")
-        
-        
-    def image_start_capture(self, msg):
+
+    def _image_start_capture(self, msg):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
         try:
@@ -252,8 +247,7 @@ class CameraServer(Component):
         except AttributeError as err:
             self.log.error(f"{err = }")
 
-
-    def image_stop_capture(self, msg):
+    def _image_stop_capture(self, msg):
         """Stop image capture sequence"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
         try:
@@ -262,8 +256,7 @@ class CameraServer(Component):
         except AttributeError as err:
             self.log.error(f"{err = }")
 
-
-    def video_start_capture(self, msg):
+    def _video_start_capture(self, msg):
         """Start video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
         try:
@@ -276,7 +269,7 @@ class CameraServer(Component):
 
 
 
-    def video_stop_capture(self, msg):
+    def _video_stop_capture(self, msg):
         """Stop video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE
         try:
@@ -285,7 +278,7 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
 
-    def video_start_streaming(self, msg):
+    def _video_start_streaming(self, msg):
         """Start video streaming"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
         # todo get parameters from message
@@ -296,7 +289,7 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
 
-    def video_stop_streaming(self, msg):
+    def _video_stop_streaming(self, msg):
         """Stop video streaming"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
         # todo get parameters from message
@@ -307,7 +300,7 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
 
-    def set_camera_mode(self, msg):
+    def _set_camera_mode(self, msg):
         """ Set the camera mode"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE
         try:

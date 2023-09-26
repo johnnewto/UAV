@@ -4,11 +4,11 @@
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
            'CAMERA_IMAGE_CAPTURED',  'WaitMessage', 'CameraClient', 'Component']
 
-
+import asyncio
 import time, os, sys
 
 from ..camera.fake_cam import GSTCamera, BaseCamera
-from ..logging import logging
+from ..logging import logging, LogLevels
 # from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from .component import Component, mavutil, mavlink, MAVLink
 import threading
@@ -108,6 +108,24 @@ class WaitMessage:
         is_set = self._event.wait(timeout)
         if is_set:
             return self._object
+        return 'False'
+
+    async def async_get(self, timeout=1):
+        """Get the object if the event is set or wait until it's set with an optional timeout.
+
+        Returns:
+            The object if the event is set, or None if it times out or the event isn't set.
+        """
+        _time = 0
+        _TIME_STEP = 0.1
+        while _time < timeout:
+            _time += _TIME_STEP
+            is_set = self._event.wait(0.001)
+            if is_set:
+                return self._object
+            else:
+                await asyncio.sleep(_TIME_STEP)
+
         return None
 
     def is_set(self):
@@ -128,11 +146,14 @@ class CameraClient(Component):
     def __init__(self,
                  source_component,  # used for component indication
                  mav_type,  # used for heartbeat MAV_TYPE indication
-                 debug):  # logging level
+                 loglevel:LogLevels=LogLevels.INFO,  # logging level
+                 ):
         
-        super().__init__(source_component=source_component, mav_type=mav_type, debug=debug)
-        self.set_message_callback(self.on_message)
-        self.wait_for_message = WaitMessage(self.target_system, self.target_component)
+        super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
+
+        self._set_message_callback(self.on_message)
+        self._wait_for_message = WaitMessage(self.target_system, self.target_component)
+
 
     def on_mav_connection(self):
         super().on_mav_connection()
@@ -140,8 +161,8 @@ class CameraClient(Component):
 
     def on_message(self, msg):
         """Callback for a command received from the server"""
-        print(f"CAMERA_Client  {msg} ")
-        self.wait_for_message.on_condition(msg)
+        self.log.info(f"RCVD:  CAMERA_Client  {msg} ")
+        self._wait_for_message.on_condition(msg)
         # if msg.get_type() == "CAMERA_IMAGE_CAPTURED":
         #     # print(f"Camera Capture Status {msg = }")
         #     print(msg)
@@ -150,6 +171,12 @@ class CameraClient(Component):
         #     return True
             # print(f"Camera Image Captured {msg = }")
 
+    async def Await_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
+        """Wait for a specific message from the server"""
+        target_system, target_component = check_target(self, target_system, target_component)
+        self._wait_for_message.set_condition(msg_id, target_system, target_component)
+        ret = await self._wait_for_message.async_get(timeout=timeout)
+        return ret
 
     def send_message(self, msg):
         """Send a message to the camera"""
@@ -162,13 +189,13 @@ class CameraClient(Component):
         # see https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_camera_manager_plugin.cpp#L543
         target_system, target_component = check_target(self, target_system, target_component)
 
-        self.wait_for_message.set_condition(CAMERA_CAPTURE_STATUS, target_system, target_component)
+        self._wait_for_message.set_condition(CAMERA_CAPTURE_STATUS, target_system, target_component)
         t = self.send_command(  target_system,
                                 target_component,
                                 mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
                                 [1,0,0,0,0,0,0]
                               )
-        return self.wait_for_message.get()
+        return self._wait_for_message.get()
 
 
     def request_camera_information(self, target_system=None, target_component=None):
@@ -176,50 +203,50 @@ class CameraClient(Component):
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         target_system, target_component = check_target(self, target_system, target_component)
 
-        self.wait_for_message.set_condition(CAMERA_INFORMATION, target_system, target_component)
+        self._wait_for_message.set_condition(CAMERA_INFORMATION, target_system, target_component)
         self.send_command(target_system, target_component,
                                 command_id=mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
                                 params=[1,0,0,0,0,0,0]
                               )
-        return self.wait_for_message.get()
+        return self._wait_for_message.get()
 
     def request_camera_settings(self, target_system=None, target_component=None):
         """Request camera settings"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
         target_system, target_component = check_target(self, target_system, target_component)
-        self.wait_for_message.set_condition(CAMERA_SETTINGS, target_system, target_component)
+        self._wait_for_message.set_condition(CAMERA_SETTINGS, target_system, target_component)
         t = self.send_command(  target_system,
                                 target_component,
                                 mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS,
                                 [0,0,0,0,0,0,0]
                               )
 
-        return self.wait_for_message.get()
+        return self._wait_for_message.get()
 
     def request_storage_information(self, target_system=None, target_component=None):
         """Request storage information (for cases where camera has storage)"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
         target_system, target_component = check_target(self, target_system, target_component)
-        self.wait_for_message.set_condition(STORAGE_INFORMATION, target_system, target_component)
+        self._wait_for_message.set_condition(STORAGE_INFORMATION, target_system, target_component)
         t = self.send_command(  target_system,
                                 target_component,
                                 mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION,
                                 [0,0,0,0,0,0,0]
                               )
 
-        return self.wait_for_message.get()
+        return self._wait_for_message.get()
 
     def storage_format(self, target_system=None, target_component=None):
         """Format storage (for cases where camera has storage)"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_STORAGE_FORMAT
         target_system, target_component = check_target(self, target_system, target_component)
-        self.wait_for_message.set_condition(STORAGE_INFORMATION, target_system, target_component)
+        self._wait_for_message.set_condition(STORAGE_INFORMATION, target_system, target_component)
         t = self.send_command(  target_system,
                                 target_component,
                                 mavlink.MAV_CMD_STORAGE_FORMAT,
                                 [0,0,0,0,0,0,0]
                               )
-        return self.wait_for_message.get()
+        return self._wait_for_message.get()
 
 
     def set_camera_mode(self, target_system=None, target_component=None, mode_id=0): # https://mavlink.io/en/messages/common.html#CAMERA_MODE
@@ -240,14 +267,14 @@ class CameraClient(Component):
         """ Set the camera zoom"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
         target_system, target_component = check_target(self, target_system, target_component)
-        self.wait_for_message.set_condition(CAMERA_SETTINGS, target_system, target_component)
+        self._wait_for_message.set_condition(CAMERA_SETTINGS, target_system, target_component)
         t = self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_SET_CAMERA_ZOOM,
                                 [zoom_type,  # https://mavlink.io/en/messages/common.html#CAMERA_ZOOM_TYPE
                                  zoom_value, 0,0,0,0,0]
                               )
 
-        return self.wait_for_message.get()
+        return self._wait_for_message.get()
 
 
     def image_start_capture(self, target_system=None, target_component=None, interval=0, # Image capture interval
@@ -262,8 +289,8 @@ class CameraClient(Component):
         except:
             self.image_capture_sequence_number = 1
         target_system, target_component = check_target(self, target_system, target_component)
-        self.wait_for_message.set_condition(CAMERA_IMAGE_CAPTURED, target_system, target_component)
-        t = self.send_command(target_system, target_component,
+        # self.wait_for_message.set_condition(CAMERA_IMAGE_CAPTURED, target_system, target_component)
+        return self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_IMAGE_START_CAPTURE,
                                 [0,
                                  interval, # interval
@@ -273,24 +300,26 @@ class CameraClient(Component):
                                  NAN, # Reserved
                                  NAN]
                               ) # Reserved
-        return self.wait_for_message.get()
+
+        # return self.wait_for_message.get()
 
 
     def image_stop_capture(self, target_system=None, target_component=None):
         """Stop image capture sequence"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
         target_system, target_component = check_target(self, target_system, target_component)
-        t = self.send_command(target_system, target_component,
+        return self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_IMAGE_STOP_CAPTURE,
                                 [0, NAN, NAN, NAN, NAN, NAN, NAN]
                               )
+
 
     def video_start_capture(self, target_system=None, target_component=None, video_stream_id=0, # Video stream id (0 for all streams)
                             frequency=1): # Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)
         """Start video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
         target_system, target_component = check_target(self, target_system, target_component)
-        t = self.send_command(target_system, target_component,
+        return self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_VIDEO_START_CAPTURE,
                                 [video_stream_id, # Video stream id (0 for all streams)
                                  frequency, # Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)
@@ -301,7 +330,7 @@ class CameraClient(Component):
         """Stop video capture"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE
         target_system, target_component = check_target(self, target_system, target_component)
-        t = self.send_command(target_system, target_component,
+        return self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_VIDEO_STOP_CAPTURE,
                                 [video_stream_id, NAN, NAN, NAN, NAN, NAN, NAN]
                               )
@@ -311,7 +340,7 @@ class CameraClient(Component):
         """Start video streaming"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
         target_system, target_component = check_target(self, target_system, target_component)
-        t = self.send_command(target_system, target_component,
+        return self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_VIDEO_START_STREAMING,
                                 [video_stream_id, NAN, NAN, NAN, NAN, NAN, NAN]
                                 )
@@ -320,7 +349,7 @@ class CameraClient(Component):
         """Stop the video stream"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
         target_system, target_component = check_target(self, target_system, target_component)
-        t = self.send_command(target_system, target_component,
+        return self.send_command(target_system, target_component,
                                 mavlink.MAV_CMD_VIDEO_STOP_STREAMING,
                                 [video_stream_id, NAN, NAN, NAN, NAN, NAN, NAN]
                               )

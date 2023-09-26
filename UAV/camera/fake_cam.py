@@ -7,10 +7,13 @@ __all__ = ['create_toml_file', 'read_camera_dict_from_toml', 'CameraCaptureStatu
 
 import time, os, sys
 
-from ..logging import logging
+from ..logging import logging, LogLevels
 # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..mavlink.component import Component, mavutil, mavlink, MAVLink
+from gstreamer import GstVidSrcValve,  GstVideoSave, GstJpegEnc, GstStreamUDP
+import gstreamer.utils as gst_utils
+
 
 import threading
 import cv2
@@ -116,8 +119,7 @@ class CameraCaptureStatus:
 class BaseCamera:
     def __init__(self,
                  camera_dict=None,  # camera_info dict
-                 debug=False):  # debug log flag
-        self.mav: MAVLink = None
+                 loglevel=LogLevels.INFO):  # debug log flag
         if camera_dict is  None:
             self.camera_dict = {'camera_info':{
                     'vendor_name': 'UAV',
@@ -136,6 +138,7 @@ class BaseCamera:
         else:
             self.camera_dict = camera_dict
 
+        self.loglevel = loglevel
         self.camera_info = self.get_camera_info(self.camera_dict)   # camera_info dict
 
         self.model_name = self.camera_dict['camera_info']['model_name']
@@ -224,10 +227,10 @@ class CaptureThread():
 
 class CV2Camera(BaseCamera):
     """Create a fake camera component for testing"""
-    def __init__(self, mav=None, # MAVLink connection
+    def __init__(self,
                  camera_dict=None, # camera_info dict
-                 debug=False): # debug log flag
-        super().__init__(mav, camera_dict)
+                 loglevel=LogLevels.INFO): # log flag
+        super().__init__(camera_dict, loglevel)
         # self.mav:MAVLink = mav
         # if camera_dict is not None:
         #     self.camera_info = self.get_camera_info(camera_dict)   # camera_info dict
@@ -245,7 +248,7 @@ class CV2Camera(BaseCamera):
 
         # self.image_filename = ""
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
-        self._log.setLevel(logging.DEBUG if debug else logging.INFO)
+        self._log.setLevel(int(loglevel))
 
         self.last_image = None
         self.mem_fs = MemoryFS()
@@ -278,7 +281,7 @@ class CV2Camera(BaseCamera):
         with self.mem_fs.open(filename, "wb") as f:
             f.write(buffer.tobytes())
 
-        print(f"Image saved to memory filesystem with name: {filename}")
+        self.log.info(f"Image saved to memory filesystem with name: {filename}")
         # return mem_fs
 
     def calculate_memory_usage(self):
@@ -289,6 +292,21 @@ class CV2Camera(BaseCamera):
                 total_memory += len(f.read())
         return total_memory
 
+    def list_files(self) -> str:
+        """List all files in the MemoryFS."""
+        path = None
+        for path in self.mem_fs.walk.files():
+            print(path)
+        return path
+
+    def show_image(self, filename=None):
+        """Show image using OpenCV."""
+        if filename is None:
+            filename = self.list_files()
+        with self.mem_fs.open(filename, "rb") as f:
+            img = cv2.imdecode(np.frombuffer(f.read(), np.uint8), cv2.IMREAD_COLOR)
+        #     cv2.imshow('image', img)
+        # cv2.waitKey(1)
 
     def camera_settings_send(self):
         """ Information about a camera. Can be requested with a
@@ -412,21 +430,19 @@ class CV2Camera(BaseCamera):
 
 
 
-from gstreamer import GstVidSrcValve,  GstVideoSave, GstJpegEnc
-import gstreamer.utils as gst_utils
+
 
 
 class GSTCamera(CV2Camera):
 
-    def __init__(self, mav=None,  # MAVLink connection
+    def __init__(self,
                  camera_dict=None,  # camera_info dict
-                 debug=False):  # debug log flag
-        super().__init__(mav, camera_dict, debug)
+                 loglevel=LogLevels.INFO):  # log flag
+        super().__init__( camera_dict, loglevel)
 
-        self.debug = debug
 
         pipeline = gst_utils.to_gst_string(camera_dict['gstreamer']['pipeline'])
-        self.pipeline = GstVidSrcValve(pipeline, leaky=True, debug=debug)
+        self.pipeline = GstVidSrcValve(pipeline, leaky=True, loglevel=loglevel)
         self.pipeline.startup()
         self.last_image = None
         pass
@@ -435,7 +451,7 @@ class GSTCamera(CV2Camera):
         """Save image to memory filesystem."""
         with self.mem_fs.open(filename, "wb") as f:
             f.write(data) # Write to PyFilesystem's Memory Filesystem
-        print(f"Image saved to memory filesystem with name: {filename}")
+        self.log.info(f"Image saved to memory filesystem with name: {filename}")
 
 
     def on_capture_image(self, data):
@@ -461,6 +477,7 @@ class GSTCamera(CV2Camera):
             'intervideosrc channel=channel_1  ',
             # 'videotestsrc pattern=ball num-buffers={num_buffers}',
             'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+            'queue',
             'jpegenc quality={quality}',  # Quality of encoding, default is 85
             # "queue",
             'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
@@ -469,9 +486,9 @@ class GSTCamera(CV2Camera):
         interval = 1/MAX_FPS if interval < 1/MAX_FPS else interval
         fps = int(1/interval)
         command = gst_utils.fstringify(command, quality=85, num_buffers=100, width=640, height=480, fps=fps)
-        self._gst_image_save = GstJpegEnc(command, max_count=5,
+        self._gst_image_save = GstJpegEnc(command, max_count=count,
                                           on_jpeg_capture=self.on_capture_image,
-                                          debug=self.debug).startup()
+                                          loglevel=self.loglevel).startup()
 
     def image_stop_capture(self):
         """Stop image capture sequence."""
@@ -482,6 +499,35 @@ class GSTCamera(CV2Camera):
         except:
             pass
 
+    def on_video_callback(self):
+        """Call back function from the GstStreamUDP Thread (video)."""
+        pass
+
+    def video_start_streaming(self, stream_id): # Stream ID (0 for all streams
+        """Start video streaming."""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
+        command = gst_utils.to_gst_string([
+            # 'intervideosrc channel=channel_2  ',
+            'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
+            'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
+            # 'videoconvert',
+            # 'queue',
+            # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+            'x264enc tune=zerolatency',
+            'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+        ])
+
+        command = gst_utils.fstringify(command, width=720, height=480, fps=30, port=5000)
+        self._gst_stream_video = GstStreamUDP(command, on_callback=self.on_video_callback, loglevel=self.loglevel).startup()
+
+    def video_stop_streaming(self, stream_id): # Stream ID (0 for all streams
+        """Stop video streaming."""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
+        try:
+            self._gst_stream_video.shutdown()
+        except:
+            self.log.warning("Video streaming not running")
+
     def video_start_capture(self, stream_id, # Stream ID (0 for all streams)
                             frequency): # Frequency CAMERA_CAPTURE_STATUS messages sent (0 for no messages, otherwise frequency)
         """Start video capture sequence."""
@@ -489,7 +535,7 @@ class GSTCamera(CV2Camera):
         self.camera_capture_status.video_status = 1
         interval = None if frequency == 0 else max(1/(frequency+0.000000001), 1) # reporting interval in seconds
         i= 1
-        self._gst_vid_save = GstVideoSave(f'file{i:03d}.mp4', 1280, 720, status_interval=interval, on_status_video_capture=self.on_status_video_capture, debug=self.debug ).startup()
+        self._gst_vid_save = GstVideoSave(f'file{i:03d}.mp4', 1280, 720, status_interval=interval, on_status_video_capture=self.on_status_video_capture, loglevel=self.loglevel ).startup()
 
 
     def on_status_video_capture(self):
@@ -508,16 +554,6 @@ class GSTCamera(CV2Camera):
         self._gst_vid_save.stop()
         # self.pipeline.set_valve_state("video_valve", False)
 
-    def video_start_streaming(self, stream_id): # Stream ID (0 for all streams
-        """Start video streaming."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-
-        self.pipeline.set_valve_state("stream_valve", False)
-
-    def video_stop_streaming(self, stream_id): # Stream ID (0 for all streams
-        """Stop video streaming."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
-        self.pipeline.set_valve_state("stream_valve", True)
 
 
     def close(self):

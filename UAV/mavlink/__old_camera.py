@@ -142,7 +142,7 @@ class CameraClient(Component):
                  debug):  # logging level
         
         super().__init__(source_component=source_component, mav_type=mav_type, debug=debug)
-        self.set_message_callback(self.on_message)
+        self._set_message_callback(self.on_message)
         self.wait_for_message = WaitMessage(self.target_system, self.target_component)
 
     def on_mav_connection(self):
@@ -351,7 +351,7 @@ class CameraServer(Component):
                  debug,  # logging level
                 ):
         super().__init__( source_component=source_component, mav_type=mav_type, debug=debug)
-        self.set_message_callback(self.on_message)
+        self._set_message_callback(self.on_message)
 
 
         self.camera:GSTCamera = camera

@@ -117,7 +117,7 @@ class GimbalServer(Component):
         
         super().__init__( source_component=source_component, mav_type=mav_type, debug=debug)
         
-        self.set_message_callback(self.on_message)
+        self._set_message_callback(self.on_message)
         self.connect()
      
      

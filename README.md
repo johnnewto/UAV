@@ -11,30 +11,60 @@ docs](https://johnnewto.github.io/UAV/)
 
 1.  Python 3.10 venv for Ubuntu 21.04, Ubuntu 20.04 LTS
     <https://www.python.org/downloads/>
-    `sh      sudo add-apt-repository ppa:deadsnakes/ppa     sudo apt update     sudo apt install python3.10`
 
-    **Note For Ubuntu 18.04** Deadsnakes/ppa is not hold distribution
-    for Ubuntu 18.04 LTS, so you need to install it manually. Download
-    Python 3.10.0 from <https://github.com/conda-forge/miniforge>
+``` sh
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.10
+```
 
-    - [Linux x86_64
-      (amd64)](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh)
-    - [Linux aarch64
-      (arm64)](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh)
+**Note For Ubuntu 18.04** Deadsnakes/ppa is not hold distribution for
+Ubuntu 18.04 LTS, so you need to install it manually. Download Python
+3.10.0 from <https://github.com/conda-forge/miniforge>
 
-    Give the script execution permission and run it to install into
-    ~/miniforge3
-    `sh  chmod +x Miniforge3-Linux-x86_64.sh  ./Miniforge3-Linux-x86_64.sh`
-    follow the prompts to install
+There are 2 or 3 options for Linux architectures:
+
+- [Linux x86_64
+  (amd64)](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh)
+- [Linux aarch64
+  (arm64)](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh)
+
+Give the script execution permission and run it to install into
+`~/miniforge3`
+
+``` sh
+chmod +x Miniforge3-Linux-x86_64.sh
+./Miniforge3-Linux-x86_64.sh
+```
+
+Follow the prompts to install
 
 2.  Download UAV from github and create a virtual environment
-    `sh     mkdir repos     cd repos     git clone https://github.com/johnnewto/UAV.git     cd UAV     ~/miniforge3/bin/python -m venv 'venv'     source ./venv/bin/activate     pip install --upgrade pip     pip install -e .`
+
+``` sh
+mkdir repos
+cd repos
+git clone https://github.com/johnnewto/UAV.git
+cd UAV
+~/miniforge3/bin/python -m venv 'venv'
+source ./venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+```
 
 3.  Install gstreamer
-    `sh     sudo apt-get install libcairo2 libcairo2-dev libgirepository1.0-dev     sudo apt install libgirepository1.0-dev     sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio`
+
+``` sh
+sudo apt-get install libcairo2 libcairo2-dev libgirepository1.0-dev
+sudo apt install libgirepository1.0-dev
+sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+```
 
 4.  Install gstreamer-python
-    `sh    pip install git+https://github.com/johnnewto/gstreamer-python.git`
+
+``` sh
+pip install git+https://github.com/johnnewto/gstreamer-python.git
+```
 
 ### Airsim ( optional for dev )
 

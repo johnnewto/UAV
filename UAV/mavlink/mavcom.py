@@ -4,13 +4,13 @@
 from __future__ import annotations
 
 __all__ = [ 'MAV_SYSTEM_GCS_CLIENT', 'MAV_TYPE_GCS', 'MAV_SYSTEM_VEHICLE', 'MAV_TYPE_CAMERA',
-           'MAV_COMP_ID_CAMERA', 'MAV_COMP_ID_USER1', 'BaseComponent', 'MAVCom', 'test_MAVCom']
+           'MAV_COMP_ID_CAMERA', 'MAV_COMP_ID_USER1', 'BaseComponent', 'MAVCom', 'test_MAVCom', 'mavlink']
 
 
 import time, os, sys
 import typing
 
-from ..logging import logging
+from ..logging import logging, LogLevels
 from ..utils.general import LeakyQueue, format_rcvd_msg, time_since_boot_ms, time_UTC_usec, date_time_str
 
 
@@ -279,19 +279,15 @@ class MAVCom:
     def __init__(self, connection_string,  # "udpin:localhost:14550"
                  baudrate=57600,  # baud rate of the serial port
                  source_system=MAV_SYSTEM_VEHICLE,  # remote or air uav system   1 = vehicle
-                 debug=False,  # logging level
+                 loglevel:LogLevels=LogLevels.INFO,  # logging level
                  ):
 
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
-        if debug:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.INFO
-        self._log.setLevel(log_level)
+
+        self._log.setLevel(int(loglevel))
         self.connection_string: str = connection_string
         self.baudrate: int = baudrate
         self.source_system: int = source_system
-        self.debug = debug
 
         self.check_message_route(None)
 
@@ -471,7 +467,7 @@ class MAVCom:
 
 
 def test_MAVCom():
-    with MAVCom("udpin:localhost:14445", source_system=111, debug=False) as client:
+    with MAVCom("udpin:localhost:14445", source_system=111, loglevel=LogLevels.NONE) as client:
         with MAVCom("udpout:localhost:14445", source_system=222, debug=False) as server:
             server.add_component(BaseComponent(server, mav_type=MAV_TYPE_CAMERA, source_component = 22, debug=False))
             client.add_component(BaseComponent(client, mav_type=MAV_TYPE_GCS, source_component = 11, debug=False))
