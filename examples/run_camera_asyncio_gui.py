@@ -25,7 +25,7 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 
 
 async def snapshot_task(client:CameraClient, # mav component
-                        comp: int = 22,  # server component ID (camera ID)
+                        comp:int,  # server component ID (camera ID)
                         start:bool=True, # start or stop
                         timeout=5.0): # timeout
     """This is a coroutine function that will be called by the button when pressed."""
@@ -42,7 +42,8 @@ async def snapshot_task(client:CameraClient, # mav component
         return
 
     while True:
-        ret = await client.wait_for_message(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+        # cb = client.register_message_callback(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+        ret = await client.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
         print(f"Image Request {comp = } {ret = }")
         if not ret:
             print(f"BREAK Image Request {comp = } {ret = }")
@@ -52,7 +53,7 @@ async def snapshot_task(client:CameraClient, # mav component
 
 
 async def stream_task(client:CameraClient, # mav component
-                        comp: int = 22,  # server component ID (camera ID)
+                        comp:int,  # server component ID (camera ID)
                         start:bool=True, # start or stop
                         timeout=5.0): # timeout
     """This is a coroutine function that will be called by the button when pressed."""
@@ -76,7 +77,7 @@ async def stream_task(client:CameraClient, # mav component
     # yield Btn_State.READY, "f{snapshot_func.__name__} Ready"
 
 async def record_task(client:CameraClient, # mav component
-                        comp: int = 22,  # server component ID (camera ID)
+                        comp:int,  # server component ID (camera ID)
                         start:bool=True, # start or stop
                         timeout=5.0): # timeout
     """This is a coroutine function that will be called by the button when pressed."""
@@ -114,14 +115,10 @@ class Gui():
 
     async def run_gui(self):
         btn_manager = ButtonManager()
-        # layout = [[sg.Button('Info'), sg.B('Cancel'), sg.Button('Exit')]]
         window = create_window([[sg.Button('Info'), sg.B('Cancel'), sg.Button('Exit')]]).finalize()
-        # cam_num = add_camera(self.client, window, btn_manager, 0)
-        cam_num = 0
         btn_tasks = []
         while True:
             try:
-                comp = 22
                 # check for new camera, add to window
                 system, comp = self.new_cam_queue.get_nowait()
                 print(f"Get Queue New camera {system}/{comp}")
@@ -130,7 +127,6 @@ class Gui():
                            FButton(self.client, comp, record_task, 'Record')]
 
                 add_camera(self.client, window, btn_manager, comp, buttons=buttons)
-                # cam_num = add_camera(self.client, window, btn_manager, cam_num)
             except asyncio.QueueEmpty:
                 pass
 
@@ -142,27 +138,13 @@ class Gui():
                 btn = btn_manager.find_button(event)
                 task = btn.run_task() if btn else None
                 if task: btn_tasks.append(task)
-
+                print(f"{len(btn_tasks) = } ")  # this is the problem, it keeps adding tasks to the list
             if event == None or event == "Exit":
                 for task in btn_tasks:
                     task.cancel()
                 self.exit_event.set()
                 break
 
-            # elif event == 'Cancel':
-            #     self.client.image_stop_capture(222, 22)
-            #     for button in manager.buttons:
-            #         button.cancel_task()
-            #
-            #     window[event].update('New Snap Text')
-
-            # elif event == 'Add Control Panel':
-            #     buttons = [FButton(None, comp, snapshot_task, 'Snapshot'),
-            #                FButton(None, comp, stream_task, 'Stream'),
-            #                FButton(None, comp, record_task, 'Record')]
-            #
-            #     add_camera(self.client, window, btn_manager, comp, buttons=buttons)
-            #     # cam_num = add_camera(self.client, window, btn_manager, cam_num)
             await asyncio.sleep(0.1)
 
         window.close()
@@ -181,10 +163,10 @@ async def main():
                 with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server: # This normally runs on drone
 
                     # add GCS manager
-                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.CRITICAL))
-                    # gcs.log.disabled = True
+                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.INFO))
+
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.CRITICAL)
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.DEBUG)
                     cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.CRITICAL)
                     UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=22, camera=cam_1, loglevel=LogLevels.DEBUG))
                     UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=23, camera=cam_2, loglevel=LogLevels.DEBUG))
@@ -193,9 +175,7 @@ async def main():
 
                     t1 = asyncio.create_task(gui.find_cameras())
                     t2 = asyncio.create_task(gui.run_gui())
-                    # g.fc = asyncio.create_task(find_cameras(gcs))
 
-                    print("before gather")
                     try:
                         await asyncio.gather(t1, t2)
                     except asyncio.CancelledError:

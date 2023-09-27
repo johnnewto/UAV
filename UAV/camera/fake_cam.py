@@ -512,8 +512,8 @@ class GSTCamera(CV2Camera):
         """Start video streaming."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
         command = gst_utils.to_gst_string([
-            # 'intervideosrc channel=channel_2  ',
-            'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
+            'intervideosrc channel=channel_2  ',
+            # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
             'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
             # 'videoconvert',
             # 'queue',

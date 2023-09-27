@@ -4,6 +4,8 @@ import PySimpleGUI as sg
 import asyncio
 
 
+from UAV.mavlink import mavlink
+
 class Btn_State:
     """ States of the button that executes a function and awaits the result """
     RUNNING=1

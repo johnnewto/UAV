@@ -5,6 +5,8 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
            'CAMERA_IMAGE_CAPTURED',  'WaitMessage', 'CameraClient', 'Component']
 
 import asyncio
+import contextlib
+
 from ..logging import logging, LogLevels
 from .component import Component, mavutil, mavlink
 import threading
@@ -62,90 +64,6 @@ def patch_MAVLink_camera_information_message():
 patch_MAVLink_camera_information_message()
 
 
-class WaitMessage:
-    """Wait for a specific message from the server"""
-    def __init__(self, target_system, target_component, loglevel:LogLevels=LogLevels.INFO):
-        # self.target_system = None
-        # self.target_component = None
-        self._condition = None
-        self._event = threading.Event()
-        self._object = None
-        self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
-        self._log.setLevel(int(loglevel))
-        # self._msg_id = None
-
-    @property
-    def log(self) -> logging.Logger:
-        return self._log
-
-    def set_condition(self, msg_id, target_system, target_component):
-        """Set the condition function to generate event for a specific message received from the server"""
-        assert target_system is not None and target_component is not None, "call set_target(target_system, target_component) first"
-        # self._msg_id = msg_id
-        # self.target_system = target_system
-        # self.target_component = target_component
-        self._condition = (lambda msg: msg.get_msgId() == msg_id
-                                   and msg.get_srcSystem() == target_system
-                                   and msg.get_srcComponent() == target_component)
-        self._event.clear()
-
-    def on_condition(self, msg):
-        """Event for a specific received from the server"""
-        if self._condition is not None:
-            # self.log.debug(f"!!!! on_condition : {msg.get_msgId() = } {self._msg_id = } ")
-            # self.log.debug(f"!{msg.get_msgId() == self._msg_id} and {msg.get_srcSystem() = } {self.target_system} and {msg.get_srcComponent() == self.target_component } ")
-            self.log.debug(f"!!!!  {msg.get_msgId() = }  {msg.get_srcSystem() = } {msg.get_srcComponent() = } ")
-            self.log.debug(f"!!!!  {self._condition(msg) = } ")
-            if self._condition(msg):
-                # self.log.debug(f"!!!! on_condition meet : {msg = } ")
-                self._object = msg
-                self._event.set()
-        # except:
-        #     pass
-
-
-    def set(self, value):
-        """Set the object and set the event."""
-        self._object = value
-        self._event.set()
-
-    def clear(self):
-        """Clear the object and clear the event."""
-        self._object = None
-        self._event.clear()
-
-    def get(self, timeout=1):
-        """Get the object if the event is set or wait until it's set with an optional timeout.
-
-        Returns:
-            The object if the event is set, or None if it times out or the event isn't set.
-        """
-        is_set = self._event.wait(timeout)
-        if is_set:
-            return self._object
-        return 'False'
-
-    async def async_get(self, timeout=1):
-        """Get the object if the event is set or wait until it's set with an optional timeout.
-
-        Returns:
-            The object if the event is set, or None if it times out or the event isn't set.
-        """
-        _time = 0
-        _TIME_STEP = 0.1
-        while _time < timeout:
-            _time += _TIME_STEP
-            is_set = self._event.wait(0.001)
-            if is_set:
-                return self._object
-            else:
-                await asyncio.sleep(_TIME_STEP)
-
-        return None
-
-    def is_set(self):
-        """Check if the event is set."""
-        return self._event.is_set()
 
 def check_target(obj, target_system, target_component):
     """Check if the target_system and target_component are set and return them"""
@@ -154,6 +72,11 @@ def check_target(obj, target_system, target_component):
     assert target_system is not None and target_component is not None, "call set_target(target_system, target_component) first"
     return target_system, target_component
 
+async def event_wait(evt, timeout):
+    # suppress TimeoutError because we'll return False in case of timeout
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(evt.wait(), timeout)
+    return evt.is_set()
 
 class CameraClient(Component):
     """Create a Viewsheen mavlink gimbal client component for send commands to a gimbal on a companion computer or GCS """
@@ -167,7 +90,22 @@ class CameraClient(Component):
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
 
         self._set_message_callback(self.on_message)
-        self._wait_for_message = WaitMessage(self.target_system, self.target_component, loglevel=loglevel)
+        self._message_callback_conds = []
+
+
+    async def message_callback_cond(self, msg_id, target_system, target_component, timeout):
+        """Register a callback for a message received from the server"""
+        evt = asyncio.Event()
+        dict = {'msg_id':msg_id, 'target_system':target_system, 'target_component':target_component, 'event':evt}
+        self._message_callback_conds.append(dict)
+        print (f"{len( self._message_callback_conds) = } ")
+        # await asyncio.sleep(0.1)
+        ret = await event_wait(evt, timeout)
+        try:
+            self._message_callback_conds.remove(dict)
+        except ValueError:
+            self.log.error(f"Failed to remove callback condition {msg_id = } {target_system = } {target_component = } {timeout = } {evt = }")
+        return ret
 
 
     def on_mav_connection(self):
@@ -177,7 +115,13 @@ class CameraClient(Component):
     def on_message(self, msg: mavlink.MAVLink_message):
         """Callback for a command received from the server"""
         self.log.info(f"RCVD: {msg.get_srcSystem()}/{msg.get_srcComponent()}: CAMERA_Client  {msg} ")
-        self._wait_for_message.on_condition(msg)
+        for cond in self._message_callback_conds:
+            if msg.get_msgId() == cond['msg_id'] and msg.get_srcSystem() == cond['target_system'] and msg.get_srcComponent() == cond['target_component']:
+                cond['event'].set()
+
+
+        #     callback(msg)
+        # self._wait_for_message.on_condition(msg)
         # if msg.get_type() == "CAMERA_IMAGE_CAPTURED":
         #     # print(f"Camera Capture Status {msg = }")
         #     print(msg)
@@ -189,6 +133,7 @@ class CameraClient(Component):
     async def wait_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
         """Wait for a specific message from the server"""
         target_system, target_component = check_target(self, target_system, target_component)
+        self._wait_for_message = WaitMessage(target_system, target_component)
         self._wait_for_message.set_condition(msg_id, target_system, target_component)
         ret = await self._wait_for_message.async_get(timeout=timeout)
         return ret

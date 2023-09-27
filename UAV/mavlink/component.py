@@ -86,6 +86,8 @@ class Component:
 
 
         self.message_callback = None # callback function for when a command is received
+        self._message_callbacks = [] # list of callback functions for when a command is received
+
         self._heartbeat_que = LeakyQueue(maxsize=10)
         self._ack_que = LeakyQueue(maxsize=10)
         self._message_que = LeakyQueue(maxsize=10)
@@ -112,6 +114,11 @@ class Component:
     @property
     def log(self) -> logging.Logger:
         return self._log
+
+    # def register_message_callback(self, callback):
+    #     """Register a callback for a message received from the server"""
+    #     self._message_callbacks.append(callback)
+
 
     def set_mav_connection(self, mav_com: "MAVCom"):
 
@@ -141,6 +148,8 @@ class Component:
     def _set_message_callback(self, callback: typ.Callable):
         """Set the callback function for when a command is received."""
         self.message_callback = callback
+
+
     def send_ping(self, target_system: int, target_component: int, ping_num: int = None):
         """Send self.max_pings * ping messages to test if the server is alive."""
 
@@ -320,6 +329,8 @@ class Component:
 
     def _on_message_rcvd(self, msg):
         # Callback for when a message is received.
+        for cb in self._message_callbacks:
+            cb(msg)
         if self.message_callback is not None:
             ok = self.message_callback(msg)
         else:
