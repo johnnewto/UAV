@@ -14,7 +14,7 @@ from .component import Component, mavutil, mavlink, MAVLink
 import threading
 import cv2
 import numpy as np
-import toml
+# import toml
 
 
 
@@ -49,16 +49,16 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 
 
 
-def read_camera_info_from_toml(toml_file_path):
-    """Read MAVLink camera info from a TOML file."""
-    with open(toml_file_path, 'rb') as file:
-        data = toml.load(file)
-
-    camera_info = data['camera_info']
-    camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
-    camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
-    # Extract camera_info
-    return data['camera_info']
+# def read_camera_info_from_toml(toml_file_path):
+#     """Read MAVLink camera info from a TOML file."""
+#     with open(toml_file_path, 'rb') as file:
+#         data = toml.load(file)
+#
+#     camera_info = data['camera_info']
+#     camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
+#     camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
+#     # Extract camera_info
+#     return data['camera_info']
 
 
 
@@ -74,6 +74,7 @@ class CameraServer(Component):
                  loglevel=LogLevels.INFO,  # logging level
                 ):
         super().__init__( source_component=source_component, mav_type=mav_type, loglevel=loglevel)
+        # self.set_log(loglevel)
         self._set_message_callback(self.on_message)
 
 
@@ -88,15 +89,20 @@ class CameraServer(Component):
             self.log.warning(f"Component has no camera object")
             self.camera = BaseCamera()
         self.camera.mav = self.mav  # set the mavlink connection for mavlink messages
+        self.camera.source_system = self.source_system
+        self.camera.source_component = self.source_component
+        # self.set_source_compenent()
+        # self.camera.mav.srcComponent = self.source_component
 
 
     def on_message(self, msg # type: Message
                    ) -> bool: # return True to indicate that the message has been handled
         """Callback for a command received from the client
         """
+        self.set_source_compenent()  # set the source component for the reply
 
         if msg.get_type() == "COMMAND_LONG":
-            # print(f"Command  {msg.command = } ")
+
             if msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS:
                 self._camera_capture_status_send()
                 return True # return True to indicate that the message has been handled
@@ -184,6 +190,7 @@ class CameraServer(Component):
         """ Information about a camera. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
+        # self.set_source_compenent()
         try:
             self.camera.camera_information_send()
         except AttributeError as err:

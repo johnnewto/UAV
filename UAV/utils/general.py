@@ -1,6 +1,6 @@
 
 __all__ = [ 'boot_time', 'boot_time_str', 'get_linenumber', 'format_rcvd_msg', 'time_since_boot_ms',
-           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'read_camera_info_from_toml', ]
+           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'read_camera_dict_from_toml', 'With']
 
 
 from fastcore.utils import *
@@ -71,17 +71,22 @@ class LeakyQueue(queue.Queue):
     def dropped(self):
         return self._dropped
 
-
-def read_camera_info_from_toml(toml_file_path):
+def read_camera_dict_from_toml(toml_file_path # path to TOML file
+                               )->dict: # camera_info dict
     """Read MAVLink camera info from a TOML file."""
-    with open(toml_file_path, 'rb') as file:
-        data = toml.load(file)
+    camera_dict = toml.load(toml_file_path)
+    return camera_dict
 
-    camera_info = data['camera_info']
-    camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
-    camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
-    # Extract camera_info
-    return data['camera_info']
+# def read_camera_info_from_toml(toml_file_path):
+#     """Read MAVLink camera info from a TOML file."""
+#     with open(toml_file_path, 'rb') as file:
+#         data = toml.load(file)
+#
+#     camera_info = data['camera_info']
+#     camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
+#     camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
+#     # Extract camera_info
+#     return data['camera_info']
 
 
 def euler_to_quaternion(roll:float, # roll (rotation around x-axis)  angle in radians 
@@ -97,3 +102,21 @@ def euler_to_quaternion(roll:float, # roll (rotation around x-axis)  angle in ra
   qw = np.cos(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
  
   return [qx, qy, qz, qw]
+
+
+class With(object):
+    """Break out of the with statement"""
+    class Break(Exception):
+      """Break out of the with statement"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __enter__(self):
+        return self.value.__enter__()
+
+    def __exit__(self, etype, value, traceback):
+        error = self.value.__exit__(etype, value, traceback)
+        if etype == self.Break:
+            return True
+        return error

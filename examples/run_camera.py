@@ -1,19 +1,20 @@
 from UAV.logging import LogLevels
 
 from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
-from UAV.utils.general import boot_time_str
+from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml
 from UAV.mavlink.camera_client import CAMERA_IMAGE_CAPTURED
 
-from UAV.camera import GSTCamera, read_camera_dict_from_toml
+from UAV.camera import GSTCamera
 from gstreamer import  GstPipeline, Gst, GstContext
-import gstreamer.utils as gst_utils
+from gstreamer.utils import to_gst_string
+
 import time
 from pathlib import Path
 import asyncio
 
-# gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 
-GCS_DISPLAY_PIPELINE = gst_utils.to_gst_string([
+
+GCS_DISPLAY_PIPELINE = to_gst_string([
             'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
             'queue ! rtph264depay ! avdec_h264',
             'fpsdisplaysink',
@@ -36,6 +37,8 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 
 # def run_gui():
 #     asyncio.run(main())
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union, cast
+import sys
 
 
 # if __name__ == '__main__':
@@ -43,29 +46,44 @@ async def main():
     # logger.disabled = True
     print (f"{boot_time_str =}")
     config_path = Path("../config")
-    with GstContext(loglevel=LogLevels.INFO):  # GST main loop in thread
+    with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
         with GstPipeline(GCS_DISPLAY_PIPELINE, loglevel=LogLevels.CRITICAL) as rcv_pipeline: # this will show the video on fpsdisplaysink
             # rcv_pipeline.log.disabled = True
             with MAVCom(con1, source_system=111, loglevel=LogLevels.CRITICAL) as GCS_client: # This normally runs on GCS
-                with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server: # This normally runs on drone
+                with With(MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL)) as UAV_server: # This normally runs on drone
                     # UAV_server.log.disabled = True
                     # GCS_client.log.disabled = True
 
                     # add GCS manager
-                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.INFO) )
+                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.WARNING) )
                     # gcs.log.disabled = True
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.INFO)
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.WARNING)
                     # cam_1.log.disabled = True
-                    cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.INFO)
-                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=22, camera=cam_1, loglevel=LogLevels.INFO))
-                    UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=23, camera=None, loglevel=LogLevels.INFO))
-                    UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=24, camera=None, loglevel=LogLevels.INFO))
+                    cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), loglevel=LogLevels.WARNING)
+                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=22, camera=cam_1, loglevel=LogLevels.WARNING))
+                    UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=23, camera=cam_2, loglevel=LogLevels.WARNING))
+                    UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=24, camera=None, loglevel=LogLevels.WARNING))
 
                     # gimbal_cam_3 = UAV_server.add_component(GimbalServer(mav_type=mavutil.mavlink.MAV_TYPE_GIMBAL, source_component=24, debug=False))
                     # GCS client requests
-                    # ret = await gcs.wait_heartbeat(target_system=222, target_component=22, timeout=1)
-                    # print(f"Heartbeat 22 {ret = }")
+                    ret = await gcs.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA)
+                    print(f"Heartbeat {ret = }")
+                    await asyncio.sleep(0.1)
+                    msg = await gcs.request_camera_information(222, 22)
+                    print (f"1 request_camera_information  = {msg} ")
+
+                    msg = await gcs.request_camera_information(222, 23)
+                    print (f"2 request_camera_information  = {msg} ")
+
+
+                    print(f"3 {await gcs.request_camera_information(222, 24)}")
+                    print()
+                    print()
+                    raise With.Break
+
+                    await asyncio.sleep(11)
+
                     event_new_cam = asyncio.Event()
                     cameras = []
                     async def find_cameras():
@@ -88,7 +106,7 @@ async def main():
                         ret = await gcs.image_start_capture(222, comp, interval=0.2, count=5)
                         print (f"Image Capture {comp = } {ret = }")
                         while True:
-                            ret = await gcs.Await_for_message(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+                            ret = await gcs.wait_for_message(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
                             print (f"Image Request {comp = } {ret = }")
                             if not ret:
                                 print (f"BREAK Image Request {comp = } {ret = }")
@@ -111,7 +129,13 @@ async def main():
 
                     # gcs.set_target(222, 22)
                     #
-                    # gcs.request_camera_information(222, 23)
+                    msg = await gcs.request_camera_information(222, 22)
+                    print (f"request_camera_information {msg} {msg.get_msgId() = }")
+                    print()
+                    print()
+                    raise With.Break
+
+                    await asyncio.sleep(11)
                     # gcs.request_camera_settings(222, 22)
                     #
                     # # capture 5 images from camera 22 and 23

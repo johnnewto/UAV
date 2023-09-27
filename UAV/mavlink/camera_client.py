@@ -5,21 +5,10 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
            'CAMERA_IMAGE_CAPTURED',  'WaitMessage', 'CameraClient', 'Component']
 
 import asyncio
-import time, os, sys
-
-from ..camera.fake_cam import GSTCamera, BaseCamera
 from ..logging import logging, LogLevels
-# from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-from .component import Component, mavutil, mavlink, MAVLink
+from .component import Component, mavutil, mavlink
 import threading
-import cv2
-import numpy as np
 
-
-
-
-# from pymavlink.dialects.v20 import ardupilotmega as mav
-# from pymavlink.dialects.v20.ardupilotmega import MAVLink
 
 
 NAN = float("nan")
@@ -48,16 +37,41 @@ CAMERA_CAPTURE_STATUS = mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS # https://m
 CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://mavlink.io/en/messages/common.html#CAMERA_IMAGE_CAPTURED
 
 
+def patch_MAVLink_camera_information_message():
+    """Override/patch format_attr to handle vender and model name list.
+    See ardupilotmega.py line 143
+
+    `def format_attr(self, field: str) -> Union[str, float, int]:`
+    """
+    print("patch_MAVLink_camera_information_message.format_attr;   to handle vender and model name list")
+    from typing import List, Union
+    import sys
+    def format_attr(msg, field: str) -> Union[str, float, int]:
+        """override field getter"""
+        raw_attr: Union[bytes, float, int] = getattr(msg, field)
+        if isinstance(raw_attr, bytes):
+            if sys.version_info[0] == 2:
+                return raw_attr.rstrip(b"\x00")
+            return raw_attr.decode(errors="backslashreplace").rstrip("\x00")
+        elif isinstance(raw_attr, List):
+            return str(''.join(chr(i) for i in raw_attr)).rstrip()
+        return raw_attr
+
+    mavlink.MAVLink_camera_information_message.format_attr = format_attr
+
+patch_MAVLink_camera_information_message()
+
 
 class WaitMessage:
     """Wait for a specific message from the server"""
-    def __init__(self, target_system, target_component):
+    def __init__(self, target_system, target_component, loglevel:LogLevels=LogLevels.INFO):
         # self.target_system = None
         # self.target_component = None
         self._condition = None
         self._event = threading.Event()
         self._object = None
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
+        self._log.setLevel(int(loglevel))
         # self._msg_id = None
 
     @property
@@ -80,7 +94,8 @@ class WaitMessage:
         if self._condition is not None:
             # self.log.debug(f"!!!! on_condition : {msg.get_msgId() = } {self._msg_id = } ")
             # self.log.debug(f"!{msg.get_msgId() == self._msg_id} and {msg.get_srcSystem() = } {self.target_system} and {msg.get_srcComponent() == self.target_component } ")
-            # self.log.debug(f"!!!!  {self._condition(msg) = } ")
+            self.log.debug(f"!!!!  {msg.get_msgId() = }  {msg.get_srcSystem() = } {msg.get_srcComponent() = } ")
+            self.log.debug(f"!!!!  {self._condition(msg) = } ")
             if self._condition(msg):
                 # self.log.debug(f"!!!! on_condition meet : {msg = } ")
                 self._object = msg
@@ -152,16 +167,16 @@ class CameraClient(Component):
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
 
         self._set_message_callback(self.on_message)
-        self._wait_for_message = WaitMessage(self.target_system, self.target_component)
+        self._wait_for_message = WaitMessage(self.target_system, self.target_component, loglevel=loglevel)
 
 
     def on_mav_connection(self):
         super().on_mav_connection()
 
 
-    def on_message(self, msg):
+    def on_message(self, msg: mavlink.MAVLink_message):
         """Callback for a command received from the server"""
-        self.log.info(f"RCVD:  CAMERA_Client  {msg} ")
+        self.log.info(f"RCVD: {msg.get_srcSystem()}/{msg.get_srcComponent()}: CAMERA_Client  {msg} ")
         self._wait_for_message.on_condition(msg)
         # if msg.get_type() == "CAMERA_IMAGE_CAPTURED":
         #     # print(f"Camera Capture Status {msg = }")
@@ -171,7 +186,7 @@ class CameraClient(Component):
         #     return True
             # print(f"Camera Image Captured {msg = }")
 
-    async def Await_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
+    async def wait_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
         """Wait for a specific message from the server"""
         target_system, target_component = check_target(self, target_system, target_component)
         self._wait_for_message.set_condition(msg_id, target_system, target_component)
@@ -188,8 +203,7 @@ class CameraClient(Component):
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
         # see https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_camera_manager_plugin.cpp#L543
         target_system, target_component = check_target(self, target_system, target_component)
-
-        self._wait_for_message.set_condition(CAMERA_CAPTURE_STATUS, target_system, target_component)
+        self._wait_for_message.set_condition( mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component)
         t = self.send_command(  target_system,
                                 target_component,
                                 mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
@@ -198,17 +212,17 @@ class CameraClient(Component):
         return self._wait_for_message.get()
 
 
-    def request_camera_information(self, target_system=None, target_component=None):
+    async def request_camera_information(self, target_system=None, target_component=None):
         """Request camera information"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         target_system, target_component = check_target(self, target_system, target_component)
 
         self._wait_for_message.set_condition(CAMERA_INFORMATION, target_system, target_component)
-        self.send_command(target_system, target_component,
+        await self.send_command(target_system, target_component,
                                 command_id=mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
                                 params=[1,0,0,0,0,0,0]
                               )
-        return self._wait_for_message.get()
+        return await self._wait_for_message.async_get()
 
     def request_camera_settings(self, target_system=None, target_component=None):
         """Request camera settings"""

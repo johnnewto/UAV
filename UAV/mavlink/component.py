@@ -62,17 +62,11 @@ class Component:
                  mav_type,  # used for heartbeat MAV_TYPE indication
                  loglevel:LogLevels=LogLevels.INFO,  # logging level
                  ):
-        # todo change to def __init__(self:MavLinkBase, ....
-        # self.mav_connection: MAVCom = None # this is a mavcom object that contains the mav_connection , set up in add_component
-        # self.master = None
-        # self.mav:MAVLink = None #
-        self.mav_type = mav_type
-        # self.source_system = None
+
+
         self.source_component = source_component
-
-
-        self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
-        self._log.setLevel(int(loglevel))
+        self.mav_type = mav_type
+        self.set_log(loglevel)
 
         self._loop = asyncio.get_event_loop()
 
@@ -110,6 +104,10 @@ class Component:
 
     def __repr__(self) -> str:
         return "<{}>".format(self)
+
+    def set_log(self, loglevel):
+        self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
+        self._log.setLevel(int(loglevel))
 
     @property
     def log(self) -> logging.Logger:
@@ -168,7 +166,7 @@ class Component:
         self.log.debug(f"Starting heartbeat type: {self.mav_type} to all Systems and Components")
         while not self._t_heartbeat_stop:
             self.set_source_compenent()
-            self.log.debug(f"Sent hrtbeat to All")
+            # self.log.debug(f"Sent hrtbeat to All")
             # "Sent Ping #2 to:   111, comp: 100"
             self.master.mav.heartbeat_send(
                 self.mav_type,  # type
@@ -211,7 +209,7 @@ class Component:
 
             except queue.Empty:  # i.e time out
                 await asyncio.sleep(_TIME_STEP)
-                self.log.debug(f"HB queue Empty  {target_system = }:  {target_component = }")
+                # self.log.debug(f"HB queue Empty  {target_system = }:  {target_component = }")
 
         self.log.debug(f"No heartbeat received after {timeout} seconds")
         return None
