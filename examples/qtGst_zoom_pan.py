@@ -1,3 +1,9 @@
+"""
+https://brettviren.github.io/pygst-tutorial-org/pygst-tutorial.html
+
+"""
+
+
 import sys
 import time
 
@@ -19,8 +25,8 @@ class VideoWidget(QMainWindow):
 
         # Zoom and pan state
         self.zoom_level = 1.0
-        self.pan_x = 0
-        self.pan_y = 0
+        self.pan_x = 0.5
+        self.pan_y = 0.5
         self.left_crop = 0
         self.right_crop = 0
         self.top_crop = 0
@@ -39,6 +45,9 @@ class VideoWidget(QMainWindow):
         # Initialize GStreamer pipeline
         self.pipeline = Gst.Pipeline()
         self.src = Gst.ElementFactory.make('videotestsrc', None)
+
+        self.src = Gst.ElementFactory.make('videotestsrc', None)
+
         self.videobox = Gst.ElementFactory.make('videobox', None)
         self.sink = Gst.ElementFactory.make('xvimagesink', None)
 
@@ -80,7 +89,9 @@ class VideoWidget(QMainWindow):
         # ... your existing pipeline setup code ...
 
         self.pipeline.set_state(Gst.State.PLAYING)
+        print('todo ???? Wait awhile for state change to playing')  # todo fixme
         time.sleep(0.1)
+        print('Getting video dimensions')
         pad = self.src.get_static_pad("src")
         cap = pad.get_current_caps()
         if cap:
@@ -120,8 +131,8 @@ class VideoWidget(QMainWindow):
         self.pan_x -= dx * self.zoom_level
         self.pan_y -= dy * self.zoom_level
 
-        self.pan_x = max(-0.5, min(0.5, self.pan_x))
-        self.pan_y = max(-0.5, min(0.5, self.pan_y))
+        self.pan_x = max(0.0, min(1.0, self.pan_x))
+        self.pan_y = max(0.0, min(1.0, self.pan_y))
         # print(f"{self.pan_x =}, {self.pan_y =} {self.zoom_level =} {self.video_width =}, {self.video_height =}, {self.width() =}, {self.height() =}")
 
         self.last_mouse_pos = event.pos()  # Update the last position
@@ -133,13 +144,13 @@ class VideoWidget(QMainWindow):
         self.zoom_height = self.video_height * self.zoom_level
 
 
-        self.zoom_left = (self.pan_x+0.5) * self.video_width - self.zoom_width//2
+        self.zoom_left = self.pan_x * self.video_width - self.zoom_width//2
         self.zoom_right = self.video_width -(self.zoom_left + self.zoom_width)
 
-        self.zoom_top = (self.pan_y+0.5) * self.video_height - self.zoom_height//2
+        self.zoom_top = self.pan_y * self.video_height - self.zoom_height//2
         self.zoom_bottom = self.video_height -(self.zoom_top + self.zoom_height)
 
-        print(f"{self.zoom_level = :3f} {self.pan_x = :3f} {self.pan_y =:3f} {self.zoom_left =} {self.zoom_right =} {self.zoom_width =}")
+        # print(f"{self.zoom_level = :3f} {self.pan_x = :3f} {self.pan_y =:3f} {self.zoom_left =} {self.zoom_right =} {self.zoom_width =}")
 
         self.videobox.set_property('left', self.zoom_left)
         self.videobox.set_property('right', self.zoom_right)

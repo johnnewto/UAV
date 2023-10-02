@@ -251,8 +251,8 @@ async def main(num_cams, udp_encoder):
 
 
 if __name__ == '__main__':
-    UDP_ENCODER = 'rawvideo'  # 'h264'
-    # UDP_ENCODER = 'h264'
+    # UDP_ENCODER = 'rawvideo'  # 'h264'
+    UDP_ENCODER = 'h264'
     num_cams = 1
     from multiprocessing import Process
     # #
