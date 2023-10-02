@@ -2,6 +2,7 @@
 from gstreamer import GstPipeline, GstContext, GstVideoSave, GstVideoSink, GstVidSrcValve, GstApp, Gst, GstVideo, GstJpegEnc
 from gstreamer.utils import *
 import time, threading
+from UAV.logging import LogLevels
 
 command1 = to_gst_string(['videotestsrc pattern=ball ! video/x-raw,width=640,height=480,framerate=10/1 ! tee name=t allow-not-linked=true',
 
@@ -39,13 +40,14 @@ command1 = to_gst_string(['videotestsrc pattern=ball ! video/x-raw,width=640,hei
 set_gst_debug_level(Gst.DebugLevel.FIXME)
 def on_capture():
     print('on_capture')
+
 # if True:
-with GstContext(debug=False):  # GST main loop in thread
-    with GstPipeline(command1, debug=False) as pipeline1:
+with GstContext(loglevel=LogLevels.DEBUG):  # GST main loop in thread
+    with GstPipeline(command1, loglevel=LogLevels.DEBUG) as pipeline1:
 
         for i in range(1):
-            vs = GstVideoSave(f'file{i:03d}.mp4', 1280, 720, status_interval=1, on_status_video_capture=on_capture, debug=False).startup()
-            time.sleep(2)
+            vs = GstVideoSave(f'file{i:03d}.mp4', 1280, 720, status_interval=1, on_status_video_capture=on_capture, loglevel=LogLevels.DEBUG).startup()
+            time.sleep(5)
             vs.end_stream()
             # time.sleep(1)
             if vs :

@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import List
 
 import PySimpleGUI as sg
 import asyncio
-
-
-from UAV.mavlink import mavlink
+from UAV.mavlink import mavlink, mavutil
+from UAV.mavlink import CameraClient
 
 class Btn_State:
     """ States of the button that executes a function and awaits the result """
@@ -136,6 +136,138 @@ def create_window(layout = None):
         ]
     window = sg.Window('Extend Layout Example', layout)
     return window
+
+
+async def snapshot_task(client:CameraClient, # mav component
+                        comp:int,  # server component ID (camera ID)
+                        start:bool=True, # start or stop
+                        timeout=5.0): # timeout
+    """This is a coroutine function that will be called by the button when pressed."""
+    print (f'executing the task {snapshot_task.__name__} {comp=} ')
+    ret = await client.image_start_capture(222, comp, 1, 10) if start else await client.image_stop_capture(222, comp)
+
+    if ret and start:
+        yield Btn_State.RUNNING
+    elif ret and not start:
+        yield Btn_State.READY
+        return
+    else:
+        yield Btn_State.FAILED
+        return
+
+    while True:
+        # cb = client.register_message_callback(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+        ret = await client.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+        print(f"Image Request {comp = } {ret = }")
+        if not ret:
+            print(f"BREAK Image Request {comp = } {ret = }")
+            break
+
+    yield Btn_State.READY
+
+
+async def stream_task(client:CameraClient, # mav component
+                        comp:int,  # server component ID (camera ID)
+                        start:bool=True, # start or stop
+                        timeout=5.0): # timeout
+    """This is a coroutine function that will be called by the button when pressed."""
+    ret = await client.video_start_streaming(222, comp) if start else await client.video_stop_streaming(222, comp)
+    if ret and start:
+        yield Btn_State.RUNNING
+    elif ret and not start:
+        yield Btn_State.READY
+        # return
+    else:
+        yield Btn_State.FAILED
+        # return
+    # while True:
+    #     ret = await client.Await_for_message(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, timeout=2)
+    #     print(f"Image Request {comp = } {ret = }")
+    #     if not ret:
+    #         print(f"BREAK Image Request {comp = } {ret = }")
+    #         break
+    #     # await asyncio.sleep(1)
+    # # await asyncio.sleep(5)
+    # yield Btn_State.READY, "f{snapshot_func.__name__} Ready"
+
+async def record_task(client:CameraClient, # mav component
+                        comp:int,  # server component ID (camera ID)
+                        start:bool=True, # start or stop
+                        timeout=5.0): # timeout
+    """This is a coroutine function that will be called by the button when pressed."""
+    print(f'executing the task {record_task.__name__} asyncio.sleep({timeout=}) ')
+    # print (f'{button.state = }, button_color = {button.button_color}, {button.key = }')
+    await asyncio.sleep(timeout)
+    return Btn_State.DONE, "f{record_func.__name__} Done"
+
+
+def add_camera(client, window, manager, comp, buttons=None):
+    # Instantiate ControlPanel and extend the window's layout with it
+    panel = ControlPanel(comp, buttons=buttons)
+    layout = panel.get_layout()
+    window.extend_layout(window, [layout])
+    for b in panel.buttons:
+        manager.register(b)
+
+
+@dataclass
+class Gui():
+    client:CameraClient = None
+    fc = None
+    cameras = []
+
+    new_cam_queue = asyncio.Queue()
+    exit_event = asyncio.Event()
+
+    async def find_cameras(self):
+        while not self.exit_event.is_set():
+            ret = await self.client.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, timeout=2)
+            if ret:
+                if ret not in self.cameras:
+                    self.cameras.append(ret)
+                    await self.new_cam_queue.put(ret)
+                    print(f"Put Queue New camera {ret = }")
+        print("find_cameras exit")
+
+    async def run_gui(self):
+        btn_manager = ButtonManager()
+        window = create_window([[sg.Button('Info'), sg.B('Cancel'), sg.Button('Exit')]]).finalize()
+        btn_tasks = []
+        while True:
+            try:
+                # check for new camera, add to window
+                system, comp = self.new_cam_queue.get_nowait()
+                print(f"Get Queue New camera {system}/{comp}")
+                buttons = [FButton(self.client, comp, snapshot_task, 'Snapshot'),
+                           FButton(self.client, comp, stream_task, 'Stream'),
+                           FButton(self.client, comp, record_task, 'Record')]
+
+                add_camera(self.client, window, btn_manager, comp, buttons=buttons)
+            except asyncio.QueueEmpty:
+                pass
+
+            event, values = window.read(timeout=1)
+            if event == '__TIMEOUT__':
+                await asyncio.sleep(0.1)
+            else:
+                print(event, values)
+                btn = btn_manager.find_button(event)
+                task = btn.run_task() if btn else None
+                if task: btn_tasks.append(task)
+                print(f"{len(btn_tasks) = } ")  # this is the problem, it keeps adding tasks to the list
+            if event == None or event == "Exit":
+                for task in btn_tasks:
+                    task.cancel()
+                self.exit_event.set()
+                break
+
+            await asyncio.sleep(0.1)
+
+        window.close()
+        print("run_gui exit")
+
+
+
 
 if __name__ == '__main__':
     async def snapshot_task(client, start=True, comp=22, timeout=5):

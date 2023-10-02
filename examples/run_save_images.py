@@ -2,7 +2,7 @@
 from gstreamer import GstPipeline, GstContext, GstVideoSave, GstVideoSink, GstVidSrcValve, GstApp, Gst, GstVideo, GstJpegEnc
 from gstreamer.utils import *
 import time, threading
-
+from UAV.logging import LogLevels
 command1 = to_gst_string(['videotestsrc pattern=ball ! video/x-raw,width=640,height=480,framerate=10/1 ! tee name=t allow-not-linked=true',
 
                         "t.",
@@ -106,7 +106,7 @@ command = to_gst_string([
 ])
 with GstContext():  # create GstContext (hides MainLoop)
     command = fstringify(command, quality=quality, num_buffers=num_buffers, width=640, height=480, fps=10)
-    je = GstJpegEnc(command, max_count=10, on_jpeg_capture=on_capture, debug=False).startup()
+    je = GstJpegEnc(command, max_count=10, on_jpeg_capture=on_capture, loglevel=LogLevels.DEBUG).startup()
 
     while not je.is_done:
         time.sleep(.1)

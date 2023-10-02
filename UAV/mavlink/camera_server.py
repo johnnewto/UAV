@@ -73,6 +73,9 @@ class CameraServer(Component):
                  camera, # camera  (or FakeCamera for testing)
                  loglevel=LogLevels.INFO,  # logging level
                 ):
+
+        if source_component is None:
+            source_component = mavutil.mavlink.MAV_COMP_ID_CAMERA
         super().__init__( source_component=source_component, mav_type=mav_type, loglevel=loglevel)
         # self.set_log(loglevel)
         self._set_message_callback(self.on_message)
@@ -288,10 +291,10 @@ class CameraServer(Component):
     def _video_start_streaming(self, msg):
         """Start video streaming"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-        # todo get parameters from message
-        print("todo get parameters from message")
         try:
-            self.camera.video_start_streaming(0)
+            self.camera.video_start_streaming(port = 5000+self.source_component)
+            self.log.info(f"Started video streaming on port {5000+self.source_component}")
+            self.log.info(f"{msg = }")
         except AttributeError as err:
             self.log.error(f"{err = }")
 
@@ -299,10 +302,9 @@ class CameraServer(Component):
     def _video_stop_streaming(self, msg):
         """Stop video streaming"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
-        # todo get parameters from message
-        print("todo get parameters from message")
+        # print("todo get parameters from message")
         try:
-            self.camera.video_stop_streaming(0)
+            self.camera.video_stop_streaming()
         except AttributeError as err:
             self.log.error(f"{err = }")
 

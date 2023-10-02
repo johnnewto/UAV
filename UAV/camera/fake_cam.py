@@ -11,7 +11,7 @@ from ..logging import logging, LogLevels
 # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..mavlink.component import Component, mavutil, mavlink, MAVLink
-from gstreamer import GstVidSrcValve,  GstVideoSave, GstJpegEnc, GstStreamUDP
+from gstreamer import GstPipeline, GstVideoSource, GstVideoSave, GstJpegEnc, GstStreamUDP
 import gstreamer.utils as gst_utils
 
 
@@ -58,20 +58,56 @@ def create_toml_file(filename):
     }
     # GStreamer pipeline for video streaming and image capturing
     gstreamer = {
-        'pipeline':[
-            'videotestsrc pattern=ball flip=true is-live=true num-buffers=1000 ! video/x-raw,framerate=10/1 !  tee name=t',
-            't.',
-            'queue leaky=2 ! valve name=myvalve drop=False ! video/x-raw,format=I420,width=640,height=480',
-            # 'textoverlay text="Frame: " valignment=top halignment=left shaded-background=true',
-            # 'timeoverlay valignment=top halignment=right shaded-background=true',
-            'videoconvert',
-            # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-            'x264enc tune=zerolatency',
-            'rtph264pay ! udpsink host=127.0.0.1 port=5000',
-            't.',
-            'queue leaky=2 ! videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR',
-            'videoconvert ! appsink name=mysink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
-        ]}
+    'src_pipeline':[
+        #    "videotestsrc pattern=ball is-live=true ! video/x-raw,framerate=10/1 !  autovideosink",
+        "videotestsrc pattern=ball is-live=true ! video/x-raw,width=640,height=480,framerate=30/1 !  tee name=t",
+
+        "t.",
+        'queue ! autovideosink',
+
+        "t.",
+        'queue leaky=2 ! intervideosink channel=channel_0',
+
+        "t.",
+        'queue leaky=2 ! intervideosink channel=channel_1',
+
+        "t.",
+        'queue leaky=2 ! videoconvert ! videorate drop-only=true ! intervideosink channel=channel_2 ',
+
+    ],
+
+    'ai_pipeline':[
+        'intervideosrc channel=channel_0',
+        # 'videotestsrc pattern=ball num-buffers={num_buffers}',
+        'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1,format=(string)BGR',
+        'appsink name=ai_sink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
+    ],
+
+    'jpg_pipeline':[
+        'intervideosrc channel=channel_1  ',
+        # 'videotestsrc pattern=ball num-buffers={num_buffers}',
+        'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+        'queue',
+        'jpegenc quality={quality}',  # Quality of encoding, default is 85
+        # "queue",
+        'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
+    ],
+
+    'udp_pipeline':[
+        'intervideosrc channel=channel_2',
+        # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
+        'queue',
+        'videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+        # 'video/x-raw,format=I420,width={width},height={height}',
+        # 'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
+        # 'videoconvert',
+        # 'queue',
+        # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+        'x264enc tune=zerolatency',
+        'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+    ],
+    }
+
     
     camera_dict = {
         'camera_info': camera_info,
@@ -128,7 +164,6 @@ class BaseCamera:
                     }}
         else:
             self.camera_dict = camera_dict
-
         self._loglevel = loglevel
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
         self._log.setLevel(int(loglevel))
@@ -138,7 +173,7 @@ class BaseCamera:
         self.model_name = self.camera_dict['camera_info']['model_name']
         self.mav:MAVLink = None  # camera_server.on_mav_connection() callback sets this  (line 84)
         self.source_system = None # camera_server.on_mav_connection() callback sets this  (line 84)
-        self.source_component = None
+        self.source_component = None # camera_server.on_mav_connection() callback sets this  (line 84)
 
     def __str__(self) -> str:
         return self.__class__.__name__
@@ -434,20 +469,19 @@ class CV2Camera(BaseCamera):
 
 
 
-
-
-
-
 class GSTCamera(CV2Camera):
 
     def __init__(self,
                  camera_dict=None,  # camera_info dict
+                 udp_encoder='H264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
         super().__init__( camera_dict, loglevel)
 
-
-        pipeline = gst_utils.to_gst_string(camera_dict['gstreamer']['pipeline'])
-        self.pipeline = GstVidSrcValve(pipeline, leaky=True, loglevel=loglevel)
+        self.camera_dict = camera_dict
+        self.udp_encoder = udp_encoder
+        pipeline = gst_utils.to_gst_string(camera_dict['gstreamer']['src_pipeline'])
+        # self.pipeline = GstVideoSource(pipeline, leaky=True, loglevel=loglevel)
+        self.pipeline = GstPipeline(pipeline, loglevel=loglevel)
         self.pipeline.startup()
         self.last_image = None
         pass
@@ -458,7 +492,6 @@ class GSTCamera(CV2Camera):
             f.write(data) # Write to PyFilesystem's Memory Filesystem
         self.log.info(f"Image saved to memory filesystem with name: {filename}")
 
-
     def on_capture_image(self, data):
         """Call back function from the CaptureThread (images). Gets the next image from camera using GStreamer."""
         self.image_filename = f"{date_time_str()}_{self.camera_capture_status.image_count:04d}.jpg"
@@ -466,7 +499,6 @@ class GSTCamera(CV2Camera):
         self.last_image = data
         self.camera_capture_status.image_count += 1
         self.camera_image_captured_send()
-
 
     def image_start_capture(self, interval, # Image capture interval
                             count, # Number of images to capture (0 for unlimited)
@@ -478,20 +510,12 @@ class GSTCamera(CV2Camera):
         self.camera_capture_status.image_interval = interval
         self.max_count = count
 
-        command = gst_utils.to_gst_string([
-            'intervideosrc channel=channel_1  ',
-            # 'videotestsrc pattern=ball num-buffers={num_buffers}',
-            'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
-            'queue',
-            'jpegenc quality={quality}',  # Quality of encoding, default is 85
-            # "queue",
-            'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
-        ])
+        pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['jpg_pipeline'])
         MAX_FPS = 10
         interval = 1/MAX_FPS if interval < 1/MAX_FPS else interval
         fps = int(1/interval)
-        command = gst_utils.fstringify(command, quality=85, num_buffers=100, width=640, height=480, fps=fps)
-        self._gst_image_save:GstJpegEnc = GstJpegEnc(command, max_count=count,
+        pipeline = gst_utils.fstringify(pipeline, quality=85, num_buffers=100, width=640, height=480, fps=fps)
+        self._gst_image_save:GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
                                                      on_jpeg_capture=self.on_capture_image,
                                                      loglevel=self._loglevel).startup()
 
@@ -508,24 +532,19 @@ class GSTCamera(CV2Camera):
         """Call back function from the GstStreamUDP Thread (video)."""
         pass
 
-    def video_start_streaming(self, stream_id): # Stream ID (0 for all streams
+    def video_start_streaming(self, port=5000): # Stream ID (0 for all streams
         """Start video streaming."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-        command = gst_utils.to_gst_string([
-            'intervideosrc channel=channel_2  ',
-            # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
-            'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
-            # 'videoconvert',
-            # 'queue',
-            # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-            'x264enc tune=zerolatency',
-            'rtph264pay ! udpsink host=127.0.0.1 port={port}',
-        ])
+        if '264' in self.udp_encoder:
+            pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['h264_pipeline'])
+        else:
+            pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['raw_pipeline'])
+        pipeline = gst_utils.fstringify(pipeline, width=640, height=480, fps=10, port=port)
+        self._gst_stream_video:GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
+        self.log.info(f"Video streaming started on port {port}")
+        pass
 
-        command = gst_utils.fstringify(command, width=720, height=480, fps=30, port=5000)
-        self._gst_stream_video:GstStreamUDP = GstStreamUDP(command, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
-
-    def video_stop_streaming(self, stream_id): # Stream ID (0 for all streams
+    def video_stop_streaming(self): # Stream ID (0 for all streams
         """Stop video streaming."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
         try:

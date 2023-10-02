@@ -130,31 +130,32 @@ class CameraClient(Component):
         #     return True
             # print(f"Camera Image Captured {msg = }")
 
-    async def wait_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
-        """Wait for a specific message from the server"""
-        target_system, target_component = check_target(self, target_system, target_component)
-        self._wait_for_message = WaitMessage(target_system, target_component)
-        self._wait_for_message.set_condition(msg_id, target_system, target_component)
-        ret = await self._wait_for_message.async_get(timeout=timeout)
-        return ret
+    # async def wait_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
+    #     """Wait for a specific message from the server"""
+    #     target_system, target_component = check_target(self, target_system, target_component)
+    #     self._wait_for_message = WaitMessage(target_system, target_component)
+    #     self._wait_for_message.set_condition(msg_id, target_system, target_component)   # todo this is not working
+    #     ret = await self._wait_for_message.async_get(timeout=timeout)
+    #     return ret
 
     def send_message(self, msg):
         """Send a message to the camera"""
         self.master.mav.send(msg)
         self.log.debug(f"Sent {msg}")
 
-    def request_camera_capture_status(self, target_system=None, target_component=None):
+    async def request_camera_capture_status(self, target_system=None, target_component=None):
         """Request camera capture status"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
         # see https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_camera_manager_plugin.cpp#L543
         target_system, target_component = check_target(self, target_system, target_component)
-        self._wait_for_message.set_condition( mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component)
+        # self._wait_for_message.set_condition( mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component)
         t = self.send_command(  target_system,
                                 target_component,
                                 mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
                                 [1,0,0,0,0,0,0]
                               )
-        return self._wait_for_message.get()
+        ret = await self.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component, 2)
+        # return self._wait_for_message.get()
 
 
     async def request_camera_information(self, target_system=None, target_component=None):
@@ -162,12 +163,14 @@ class CameraClient(Component):
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         target_system, target_component = check_target(self, target_system, target_component)
 
-        self._wait_for_message.set_condition(CAMERA_INFORMATION, target_system, target_component)
+        # self._wait_for_message.set_condition(CAMERA_INFORMATION, target_system, target_component)
         await self.send_command(target_system, target_component,
                                 command_id=mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
                                 params=[1,0,0,0,0,0,0]
                               )
-        return await self._wait_for_message.async_get()
+        ret = await self.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system,
+                                               target_component, 2)
+        # return await self._wait_for_message.async_get()
 
     def request_camera_settings(self, target_system=None, target_component=None):
         """Request camera settings"""
