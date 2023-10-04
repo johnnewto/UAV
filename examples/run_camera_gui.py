@@ -1,9 +1,9 @@
 from UAV.logging import LogLevels
 
 from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, GimbalServer, mavutil
-from UAV.utils.general import boot_time_str
+from UAV.utils.general import boot_time_str, read_camera_dict_from_toml
 
-from UAV.camera import GSTCamera, read_camera_dict_from_toml
+from UAV.camera import GSTCamera
 from gstreamer import  GstPipeline, Gst, GstContext
 import gstreamer.utils as gst_utils
 import time

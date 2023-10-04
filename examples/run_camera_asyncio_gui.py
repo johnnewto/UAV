@@ -61,9 +61,10 @@ async def main(encoder):
     # logger.disabled = True
     print (f"{boot_time_str =}")
     config_path = Path("../config")
+    # if True:
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
-        if True:
-        # with GstPipes(display_pipelines): # this will show the video on fpsdisplaysink
+        # if True:
+        with GstPipes(display_pipelines): # this will show the video on fpsdisplaysink
         # with GstPipeline(GCS_DISPLAY_PIPELINE, loglevel=LogLevels.CRITICAL) as rcv_pipeline: # this will show the video on fpsdisplaysink
             # rcv_pipeline.log.disabled = True
             with MAVCom(con1, source_system=111, loglevel=LogLevels.CRITICAL) as GCS_client: # This normally runs on GCS
@@ -73,10 +74,10 @@ async def main(encoder):
                     gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.INFO))
 
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.INFO)
-                    cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.INFO)
-                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.INFO))
-                    UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.INFO))
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.DEBUG)
+                    cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.DEBUG)
+                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.DEBUG))
+                    UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.DEBUG))
 
                     # Run the main function using asyncio.run
                     gui = Gui(client=gcs)

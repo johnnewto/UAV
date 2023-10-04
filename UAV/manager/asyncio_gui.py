@@ -144,7 +144,7 @@ async def snapshot_task(client:CameraClient, # mav component
                         timeout=5.0): # timeout
     """This is a coroutine function that will be called by the button when pressed."""
     print (f'executing the task {snapshot_task.__name__} {comp=} ')
-    ret = await client.image_start_capture(222, comp, 1, 10) if start else await client.image_stop_capture(222, comp)
+    ret = await client.image_start_capture(222, comp, 0.2, 5) if start else await client.image_stop_capture(222, comp)
 
     if ret and start:
         yield Btn_State.RUNNING
@@ -273,7 +273,7 @@ if __name__ == '__main__':
     async def snapshot_task(client, start=True, comp=22, timeout=5):
         if start:
             print(f'!!!Run the task {snapshot_task.__name__} _asyncio.sleep({timeout=}) ')
-            ret = await client.image_start_capture(222, 22, interval=1, count=10)
+            ret = await client.image_start_capture(222, 22, interval=0.2, count=5)
         else:
             print(f'Cancel the task {snapshot_task.__name__} _asyncio.sleep({timeout=}) ')
             ret =  await client.image_stop_capture(222, 22)

@@ -70,6 +70,10 @@ jpg_pipeline = [
             'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
         ]
 
+# todo add video save pipeline
+
+# streaming pipelines
+
 h264_pipeline = [
             'intervideosrc channel=channel_2',
             # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',

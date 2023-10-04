@@ -55,6 +55,7 @@ async def main(num_cams, udp_encoder):
     # logger.disabled = True
     print (f"{boot_time_str =}")
     config_path = Path("../config")
+    # if True:
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
 
         if '264' in udp_encoder:
@@ -69,10 +70,10 @@ async def main(num_cams, udp_encoder):
                     # GCS_client.log.disabled = True
 
                     # add GCS manager
-                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.CRITICAL) )
+                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG) )
                     # gcs.log.disabled = True
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.INFO)
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.DEBUG)
                     # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
                     UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.INFO))
@@ -94,8 +95,12 @@ async def main(num_cams, udp_encoder):
                     # print(f"3 {await gcs.request_camera_information(222, 24)}")
                     # print()
                     # print()
-                    await gcs.video_start_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    await gcs.image_start_capture(222, mavutil.mavlink.MAV_COMP_ID_CAMERA, interval=0.2, count=5)
+                    # await gcs.video_start_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
+
+
                     await asyncio.sleep(5)
+                    print("###### Shutdown  #################")
                     raise With.Break
 
 
