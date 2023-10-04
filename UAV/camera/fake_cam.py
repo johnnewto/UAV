@@ -11,9 +11,12 @@ from ..logging import logging, LogLevels
 # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..mavlink.component import Component, mavutil, mavlink, MAVLink
-from gstreamer import GstPipeline, GstVideoSource, GstVideoSave, GstJpegEnc, GstStreamUDP
-import gstreamer.utils as gst_utils
-
+try:
+    from gstreamer import GstPipeline, GstVideoSource, GstVideoSave, GstJpegEnc, GstStreamUDP
+    import gstreamer.utils as gst_utils
+except:
+    print("GStreamer is not installed")
+    pass
 
 import threading
 import cv2
