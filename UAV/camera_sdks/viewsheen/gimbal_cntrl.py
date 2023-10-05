@@ -4,7 +4,10 @@ import socket
 import cv2, time
 import numpy as np
 import threading
-from pynput import keyboard, mouse
+try:
+    from pynput import keyboard, mouse
+except ImportError:
+    print("pynput not installed, install with pip install pynput")
 
 # Define the IP address and port number of the viewsheen_sdk gimbal
 VS_IP_ADDRESS = '192.168.144.200'

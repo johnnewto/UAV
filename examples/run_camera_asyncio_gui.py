@@ -61,9 +61,8 @@ async def main(encoder):
     # logger.disabled = True
     print (f"{boot_time_str =}")
     config_path = Path("../config")
-    # if True:
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
-        # if True:
+
         with GstPipes(display_pipelines): # this will show the video on fpsdisplaysink
         # with GstPipeline(GCS_DISPLAY_PIPELINE, loglevel=LogLevels.CRITICAL) as rcv_pipeline: # this will show the video on fpsdisplaysink
             # rcv_pipeline.log.disabled = True
