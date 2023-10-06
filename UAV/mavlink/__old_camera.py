@@ -7,7 +7,7 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
 
 import time, os, sys
 
-from ..camera.fake_cam import GSTCamera, BaseCamera
+from ..camera.gst_cam import GSTCamera, BaseCamera
 from ..logging import logging
 # from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from .component import Component, mavutil, mavlink, MAVLink

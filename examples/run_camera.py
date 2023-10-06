@@ -73,10 +73,10 @@ async def main(num_cams, udp_encoder):
                     gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG) )
                     # gcs.log.disabled = True
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.DEBUG)
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL).open()
                     # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
-                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.INFO))
+                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=24, camera=None, loglevel=LogLevels.WARNING))
 
@@ -85,8 +85,13 @@ async def main(num_cams, udp_encoder):
                     ret = await gcs.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA)
                     print(f"Heartbeat {ret = }")
                     # await asyncio.sleep(0.1)
-                    # msg = await gcs.request_camera_information(222, 22)
-                    # print (f"1 request_camera_information  = {msg} ")
+                    msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system=222, target_component=mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    print (f"1 MAVLINK_MSG_ID_CAMERA_INFORMATION {msg }")
+                    msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION, target_system=222, target_component=mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    print (f"2 MAVLINK_MSG_ID_STORAGE_INFORMATION  {msg }")
+
+                    raise With.Break
+
                     #
                     # msg = await gcs.request_camera_information(222, 23)
                     # print (f"2 request_camera_information  = {msg} ")
@@ -133,7 +138,7 @@ async def main(num_cams, udp_encoder):
                                     count += 1
 
 
-                    async def test1(comp):
+                    async def atest1(comp):
                         ret = await gcs.wait_heartbeat(target_system=222, target_component=comp, timeout=1)
                         print (f"Heartbeat {comp} {ret = }")
                         ret = await gcs.image_start_capture(222, comp, interval=0.2, count=5)
@@ -147,12 +152,12 @@ async def main(num_cams, udp_encoder):
                             # await asyncio.sleep(1)
                         # await asyncio.sleep(5)
 
-                    async def test2(comp):
+                    async def atest2(comp):
                         for i in range (10):
                             ret = await gcs.wait_heartbeat(target_system=222, target_component=comp, timeout=2)
                             print (f"Heartbeat {comp} {ret = }")
 
-                    async def test3(task):
+                    async def atest3(task):
                         await asyncio.sleep(3)
 
                         print(f"Cancelling {task = }")

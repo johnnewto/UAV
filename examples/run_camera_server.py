@@ -1,6 +1,6 @@
 from UAV.mavlink._old_camera import CameraClient, CameraServer, MAVCom, boot_time_str
 from UAV.mavlink.component import Component, mavutil, mavlink
-from UAV.camera.fake_cam import CV2Camera, GSTCamera, read_camera_dict_from_toml
+from UAV.camera.gst_cam import CV2Camera, GSTCamera, read_camera_dict_from_toml
 from gstreamer import  GstPipeline
 import gstreamer.utils as gst_utils
 import time
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     print (f"boot_time_str = {boot_time_str = }")
     config_path = Path("../config")
 
-    cam_gst_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"))
+    cam_gst_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml")).open()
 
     with MAVCom(con2, source_system=222, debug=False) as server:
 

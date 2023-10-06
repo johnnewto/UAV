@@ -32,9 +32,10 @@ rs = RunSim("AirSimNH", settings="config/settings_high_res.json")
 
 asc = AirSimClient()
 cmd = DroneCommands()
-t = threading.Thread(target=cmd.do_tasklist, daemon=True)
-t.start()
-
+# t = threading.Thread(target=cmd.do_tasklist, daemon=True)
+# t.start()
+cmd.arm()
+cmd.takeoff()
 framecounter = 1
 cam_num = 0
 cams = ["high_res", "front_center", "front_right", "front_left", "bottom_center", "back_center"]
@@ -54,7 +55,7 @@ with GstVideoSink(command, width=width, height=height, loglevel=10) as pipeline:
         puttext(img, f"Frame: {framecounter} Pos: {pos.x_val:.2f}, {pos.y_val:.2f}, {pos.z_val:.2f}")
 
         img = resize(img, width=width)
-        print(img.shape)
+        # print(img.shape)
         # img = np.random.randint(low=0, high=255, size=(height, width, 3), dtype=np.uint8)
         pipeline.push(buffer=img)
         # pipeline.push(buffer=np.random.randint(low=0, high=255, size=(height, width, 3), dtype=np.uint8))
@@ -94,7 +95,7 @@ with GstVideoSink(command, width=width, height=height, loglevel=10) as pipeline:
         #     break
 
 cmd.disarm()
-t.join(timeout=5)
+# t.join(timeout=5)
 cv2.destroyAllWindows()
 rs.exit()
 

@@ -27,7 +27,7 @@ rs = RunSim("AirSimNH", settings="config/settings_high_res.json")
 
 asc = AirSimClient()
 cmd = DroneCommands()
-t = threading.Thread(target=cmd.do_tasklist, daemon=True)
+t = threading.Thread(target=cmd.do_tasklist, daemon=True)  # tasklist is a generator that returns tasks = [self.arm, self.takeoff, self.do_NH_path, self.rth, self.land, self.disarm]
 t.start()
 
 framecounter = 1

@@ -6,11 +6,12 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 6
 import time
-
 from UAV.mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, date_time_str
 from UAV.mavlink.component import Component, mavutil, mavlink, MAVLink
 
-from UAV.mavlink.camera import *
+from UAV.mavlink.camera_client import *
+from UAV.mavlink.camera_server import *
+from UAV.utils.display import *
 from fastcore.test import *
 
 # %% ../../nbs/api/22_mavlink.camera.ipynb 9
@@ -44,7 +45,7 @@ CAMERA_CAPTURE_STATUS = mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS # https://m
 CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://mavlink.io/en/messages/common.html#CAMERA_IMAGE_CAPTURED
 
 
-# %% ../../nbs/api/22_mavlink.camera.ipynb 20
+# %% ../../nbs/api/22_mavlink.camera.ipynb 18
 from UAV.mavlink.mavcom import MAVCom
 from UAV.mavlink.component import Component, mavutil
 import time
@@ -66,7 +67,7 @@ class Cli(Component):
         super().__init__( source_component=source_component, mav_type=mav_type,
                          debug=debug)
 
-# %% ../../nbs/api/22_mavlink.camera.ipynb 21
+# %% ../../nbs/api/22_mavlink.camera.ipynb 19
 def test_ack():
     # Test sending a command and receiving an ack from client to server
     with MAVCom("udpin:localhost:14445", source_system=111, debug=False) as client:

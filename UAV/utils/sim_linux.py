@@ -79,7 +79,7 @@ class RunSim:
     def load(self):
         """Load the simulator without shell"""
         self._shell = False
-        if not is_process_running(f"{self.name}"):
+        if not is_process_running(f"{self.name}"):  # check if process is running
             # avoid using the shell
             script_path = [f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']
             if self.windowed is not None:

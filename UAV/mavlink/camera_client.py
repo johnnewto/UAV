@@ -2,7 +2,7 @@
 
 
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
-           'CAMERA_IMAGE_CAPTURED',  'WaitMessage', 'CameraClient', 'Component']
+           'CAMERA_IMAGE_CAPTURED', 'CameraClient', 'Component']
 
 import asyncio
 import contextlib
@@ -40,12 +40,11 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 
 
 def patch_MAVLink_camera_information_message():
-    """Override/patch format_attr to handle vender and model name list.
+    """Override/patch format_attr to handle vender and model name list as a string rather than list of ints.
     See ardupilotmega.py line 143
-
     `def format_attr(self, field: str) -> Union[str, float, int]:`
     """
-    print("patch_MAVLink_camera_information_message.format_attr;   to handle vender and model name list")
+    # print("patch_MAVLink_camera_information_message.format_attr;   to handle vender and model name list")
     from typing import List, Union
     import sys
     def format_attr(msg, field: str) -> Union[str, float, int]:
@@ -79,7 +78,7 @@ async def event_wait(evt, timeout):
     return evt.is_set()
 
 class CameraClient(Component):
-    """Create a Viewsheen mavlink gimbal client component for send commands to a gimbal on a companion computer or GCS """
+    """Create a client component to send commands to a companion computer or GCS that will control a camera via a CameraServer instance """
 
     def __init__(self,
                  source_component,  # used for component indication
@@ -93,19 +92,38 @@ class CameraClient(Component):
         self._message_callback_conds = []
 
 
-    async def message_callback_cond(self, msg_id, target_system, target_component, timeout):
-        """Register a callback for a message received from the server"""
+    def set_message_callback_cond(self, msg_id, target_system, target_component):
+        """Register a callback condition for a message received from the server"""
         evt = asyncio.Event()
-        dict = {'msg_id':msg_id, 'target_system':target_system, 'target_component':target_component, 'event':evt}
-        self._message_callback_conds.append(dict)
-        print (f"{len( self._message_callback_conds) = } ")
+        cond = {'msg_id':msg_id, 'target_system':target_system, 'target_component':target_component, 'event':evt, 'msg':None}
+        self._message_callback_conds.append(cond)
+        self.log.debug (f"{len( self._message_callback_conds) = } ")
+        return cond
+
+    async def wait_message_callback(self, cond, timeout=1):
+        """Wait for the callback for a message received from the server"""
+        ret = await event_wait(cond['event'], timeout)
+        try:
+            self._message_callback_conds.remove(cond)
+        except ValueError:
+            self.log.error(f"Failed to remove callback condition {cond}")
+        return ret
+
+
+    async def message_callback_cond(self, msg_id, target_system, target_component, timeout=1):
+        """Register a callback for a message received from the server
+           Returns the message """
+        evt = asyncio.Event()
+        cond = {'msg_id':msg_id, 'target_system':target_system, 'target_component':target_component, 'event':evt, 'msg':None}
+        self._message_callback_conds.append(cond)
+        self.log.debug (f"{len( self._message_callback_conds) = } ")
         # await asyncio.sleep(0.1)
         ret = await event_wait(evt, timeout)
         try:
-            self._message_callback_conds.remove(dict)
+            self._message_callback_conds.remove(cond)
         except ValueError:
             self.log.error(f"Failed to remove callback condition {msg_id = } {target_system = } {target_component = } {timeout = } {evt = }")
-        return ret
+        return cond['msg']
 
 
     def on_mav_connection(self):
@@ -114,89 +132,98 @@ class CameraClient(Component):
 
     def on_message(self, msg: mavlink.MAVLink_message):
         """Callback for a command received from the server"""
-        self.log.info(f"RCVD: {msg.get_srcSystem()}/{msg.get_srcComponent()}: CAMERA_Client  {msg} ")
+        self.log.debug(f"RCVD: {msg.get_srcSystem()}/{msg.get_srcComponent()}: CAMERA_Client  {msg} ")
         for cond in self._message_callback_conds:
             if msg.get_msgId() == cond['msg_id'] and msg.get_srcSystem() == cond['target_system'] and msg.get_srcComponent() == cond['target_component']:
+                # self.log.debug(f"RCVD: {msg.get_srcSystem()}/{msg.get_srcComponent()}: CAMERA_Client  {msg} ")
                 cond['event'].set()
+                cond['msg'] = msg  # add the message to the condition, so it can be returned
 
-
-        #     callback(msg)
-        # self._wait_for_message.on_condition(msg)
-        # if msg.get_type() == "CAMERA_IMAGE_CAPTURED":
-        #     # print(f"Camera Capture Status {msg = }")
-        #     print(msg)
-        #         # f"{msg.image_count = }  {msg.image_interval = } {msg.recording_time_ms = } {msg.available_capacity = } {msg.image_status = } {msg.video_status = } {msg.image_interval = } ")
-        #
-        #     return True
-            # print(f"Camera Image Captured {msg = }")
-
-    # async def wait_for_message(self, msg_id, target_system=None, target_component=None, timeout=1):
-    #     """Wait for a specific message from the server"""
-    #     target_system, target_component = check_target(self, target_system, target_component)
-    #     self._wait_for_message = WaitMessage(target_system, target_component)
-    #     self._wait_for_message.set_condition(msg_id, target_system, target_component)   # todo this is not working
-    #     ret = await self._wait_for_message.async_get(timeout=timeout)
-    #     return ret
 
     def send_message(self, msg):
         """Send a message to the camera"""
         self.master.mav.send(msg)
         self.log.debug(f"Sent {msg}")
 
-    async def request_camera_capture_status(self, target_system=None, target_component=None):
-        """Request camera capture status"""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
-        # see https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_camera_manager_plugin.cpp#L543
-        target_system, target_component = check_target(self, target_system, target_component)
-        # self._wait_for_message.set_condition( mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component)
-        t = self.send_command(  target_system,
-                                target_component,
-                                mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
-                                [1,0,0,0,0,0,0]
-                              )
-        ret = await self.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component, 2)
-        # return self._wait_for_message.get()
 
+    # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_MESSAGE
+    async def request_message(self, msg_id, params=None, target_system=None, target_component=None):
+        """Request a message from the camera"""
+        if params is None:
+            params = [0, 0, 0, 0, 0, 0]
+        tgt_sys, tgt_comp = check_target(self, target_system, target_component)
 
-    async def request_camera_information(self, target_system=None, target_component=None):
-        """Request camera information"""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
-        target_system, target_component = check_target(self, target_system, target_component)
-
-        # self._wait_for_message.set_condition(CAMERA_INFORMATION, target_system, target_component)
-        await self.send_command(target_system, target_component,
-                                command_id=mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
-                                params=[1,0,0,0,0,0,0]
-                              )
-        ret = await self.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system,
-                                               target_component, 2)
-        # return await self._wait_for_message.async_get()
-
-    def request_camera_settings(self, target_system=None, target_component=None):
-        """Request camera settings"""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
-        target_system, target_component = check_target(self, target_system, target_component)
-        self._wait_for_message.set_condition(CAMERA_SETTINGS, target_system, target_component)
-        t = self.send_command(  target_system,
-                                target_component,
-                                mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS,
-                                [0,0,0,0,0,0,0]
+        cond = self.set_message_callback_cond(msg_id, tgt_sys, tgt_comp)
+        await self.send_command(  tgt_sys, tgt_comp,
+                                mavlink.MAV_CMD_REQUEST_MESSAGE,
+                                [msg_id]+params
                               )
 
-        return self._wait_for_message.get()
+        await self.wait_message_callback(cond)
+        return cond['msg']
 
-    def request_storage_information(self, target_system=None, target_component=None):
-        """Request storage information (for cases where camera has storage)"""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
-        target_system, target_component = check_target(self, target_system, target_component)
-        self._wait_for_message.set_condition(STORAGE_INFORMATION, target_system, target_component)
-        t = self.send_command(  target_system,
-                                target_component,
-                                mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION,
-                                [0,0,0,0,0,0,0]
-                              )
-
-        return self._wait_for_message.get()
+    # async def request_camera_information(self, target_system=None, target_component=None):
+    #     """Request camera information"""
+    #     # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
+    #
+    #     # todo change this to  requested with a MAV_CMD_REQUEST_MESSAGE command.
+    #     #  todo see https://mavlink.io/en/messages/common.html#CAMERA_INFORMATION
+    #     tgt_sys, tgt_comp = check_target(self, target_system, target_component)
+    #
+    #     cond = self.set_message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, tgt_sys, tgt_comp)
+    #     await self.send_command(target_system, target_component,
+    #                             command_id=mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
+    #                             params=[1,0,0,0,0,0,0]
+    #                           )
+    #     await self.wait_message_callback(cond)
+    #     return cond['msg']
+    #     # return await self._wait_for_message.async_get()
+    #
+    #
+    #
+    # async def request_camera_capture_status(self, target_system=None, target_component=None):
+    #     """Request camera capture status"""
+    #     # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
+    #     # see https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_camera_manager_plugin.cpp#L543
+    #     target_system, target_component = check_target(self, target_system, target_component)
+    #     # self._wait_for_message.set_condition( mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS, target_system, target_component)
+    #     await self.send_command(  target_system,
+    #                             target_component,
+    #                             mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
+    #                             [1,0,0,0,0,0,0]
+    #                           )
+    #     ret = await self.wait_message_callback()
+    #     # return self._wait_for_message.get()
+    #
+    #
+    #
+    #
+    #
+    # def request_camera_settings(self, target_system=None, target_component=None):
+    #     """Request camera settings"""
+    #     # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
+    #     target_system, target_component = check_target(self, target_system, target_component)
+    #     self._wait_for_message.set_condition(CAMERA_SETTINGS, target_system, target_component)
+    #     t = self.send_command(  target_system,
+    #                             target_component,
+    #                             mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS,
+    #                             [0,0,0,0,0,0,0]
+    #                           )
+    #
+    #     return self._wait_for_message.get()
+    #
+    # def request_storage_information(self, target_system=None, target_component=None):
+    #     """Request storage information (for cases where camera has storage)"""
+    #     # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
+    #     target_system, target_component = check_target(self, target_system, target_component)
+    #     self._wait_for_message.set_condition(STORAGE_INFORMATION, target_system, target_component)
+    #     t = self.send_command(  target_system,
+    #                             target_component,
+    #                             mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION,
+    #                             [0,0,0,0,0,0,0]
+    #                           )
+    #
+    #     return self._wait_for_message.get()
 
     def storage_format(self, target_system=None, target_component=None):
         """Format storage (for cases where camera has storage)"""

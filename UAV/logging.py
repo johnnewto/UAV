@@ -50,3 +50,5 @@ def setup_logging(verbose: int = logging.DEBUG):
 
     if not root_logger.handlers:   # don't add handlers if they already exist
         root_logger.addHandler(log_handler)
+
+logging.getLogger('matplotlib').setLevel(logging.WARNING) # disable matplotlib font manager debug messages

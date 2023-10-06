@@ -61,11 +61,7 @@ class FButton:
         self.button.update(button_color=self.button_color)
         # print(f'FunctionButton {self.key} state set to {self.down}')
 
-    #
-    # async def handle_event(self, event, start, timeout=3):
-    #     if event == self.key:
-    #         async for state in self.function(self.gcs, start=start, timeout=timeout):
-    #             self.set_state(state[0])
+
 
     async def task(self, start, timeout=3):
         # proto_task()
@@ -102,11 +98,6 @@ class ButtonManager:
                 return button
         return None
 
-    # def find_handler(self, event):
-    #     for button in self.buttons:
-    #         if event == button.key:
-    #             return button.handle_event
-    #     return None
 
 class ControlPanel:
     def __init__(self, comp, buttons=None):
@@ -157,6 +148,7 @@ async def snapshot_task(client:CameraClient, # mav component
 
     while True:
         # cb = client.register_message_callback(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+        # client.set_message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp )
         ret = await client.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
         print(f"Image Request {comp = } {ret = }")
         if not ret:
@@ -201,13 +193,7 @@ async def record_task(client:CameraClient, # mav component
     return Btn_State.DONE, "f{record_func.__name__} Done"
 
 
-def add_camera(client, window, manager, comp, buttons=None):
-    # Instantiate ControlPanel and extend the window's layout with it
-    panel = ControlPanel(comp, buttons=buttons)
-    layout = panel.get_layout()
-    window.extend_layout(window, [layout])
-    for b in panel.buttons:
-        manager.register(b)
+
 
 
 @dataclass
@@ -254,6 +240,7 @@ class Gui():
                 btn = btn_manager.find_button(event)
                 task = btn.run_task() if btn else None
                 if task: btn_tasks.append(task)
+                # await task
                 print(f"{len(btn_tasks) = } ")  # this is the problem, it keeps adding tasks to the list
             if event == None or event == "Exit":
                 for task in btn_tasks:

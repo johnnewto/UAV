@@ -2,12 +2,12 @@
 
 
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
-           'CAMERA_IMAGE_CAPTURED', 'read_camera_info_from_toml', 'CameraServer', 'Component']
+           'CAMERA_IMAGE_CAPTURED', 'CameraServer', 'Component']
 
 
 import time, os, sys
 
-from ..camera.fake_cam import GSTCamera, BaseCamera
+from ..camera.gst_cam import GSTCamera, BaseCamera
 from ..logging import logging, LogLevels
 # from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from .component import Component, mavutil, mavlink, MAVLink
@@ -65,7 +65,7 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 
 
 class CameraServer(Component):
-    """Create a mavlink Camera server Component using a test GSTREAMER pipeline"""
+    """Create a mavlink Camera server Component, camera argument will normally be a  gstreamer pipeline"""
 
     def __init__(self,
                  source_component,  # used for component indication
@@ -98,7 +98,7 @@ class CameraServer(Component):
         # self.camera.mav.srcComponent = self.source_component
 
 
-    def on_message(self, msg # type: Message
+    def on_message(self, msg:mavlink.MAVLink_command_long_message # : mavlink  Message
                    ) -> bool: # return True to indicate that the message has been handled
         """Callback for a command received from the client
         """
@@ -106,22 +106,39 @@ class CameraServer(Component):
 
         if msg.get_type() == "COMMAND_LONG":
 
-            if msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS:
-                self._camera_capture_status_send()
-                return True # return True to indicate that the message has been handled
+            if msg.command == mavlink.MAV_CMD_REQUEST_MESSAGE:
+                if msg.param1 == mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION:
+                    self._camera_information_send()
+                    return True # return True to indicate that the message has been handled
+                elif msg.param1 == mavlink.MAVLINK_MSG_ID_CAMERA_SETTINGS:
+                    self._camera_settings_send()
+                    return True
+                elif msg.param1 == mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION:
+                    self._storage_information_send()
+                    return True
+                elif msg.param1 == mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS:
+                    self._camera_capture_status_send()
+                    return True
+                else:
+                    self.log.warning(f"Unknown message type {msg.param1}")
+                    return False
 
-            elif msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION:
-                self._camera_information_send()
-                return True # return True to indicate that the message has been handled
-
-            elif msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS:
-                # self.send_ack(msg)
-                self._camera_settings_send()
-                return True
-
-            elif msg.command == mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION:
-                self._storage_information_send()
-                return True
+            # if msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS:
+            #     self._camera_capture_status_send()
+            #     return True # return True to indicate that the message has been handled
+            #
+            # elif msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION:
+            #     self._camera_information_send()
+            #     return True # return True to indicate that the message has been handled
+            #
+            # elif msg.command == mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS:
+            #     # self.send_ack(msg)
+            #     self._camera_settings_send()
+            #     return True
+            #
+            # elif msg.command == mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION:
+            #     self._storage_information_send()
+            #     return True
 
             elif msg.command == mavlink.MAV_CMD_STORAGE_FORMAT:
                 self._storage_format(msg)
