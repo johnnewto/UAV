@@ -66,16 +66,61 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 
 class CameraServer(Component):
     """Create a mavlink Camera server Component, camera argument will normally be a  gstreamer pipeline"""
+    # mav_cmd_list = [mavlink.MAV_CMD_REQUEST_MESSAGE,
+    #                 mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
+    #                 mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
+    #                 mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS,
+    #                 mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION,
+    #                 mavlink.MAV_CMD_STORAGE_FORMAT,
+    #                 mavlink.MAV_CMD_SET_CAMERA_ZOOM,
+    #                 mavlink.MAV_CMD_IMAGE_START_CAPTURE,
+    #                 mavlink.MAV_CMD_IMAGE_STOP_CAPTURE,
+    #                 mavlink.MAV_CMD_VIDEO_START_CAPTURE,
+    #                 mavlink.MAV_CMD_VIDEO_STOP_CAPTURE,
+    #                 mavlink.MAV_CMD_SET_CAMERA_MODE,
+    #                 mavlink.MAV_CMD_VIDEO_START_STREAMING,
+    #                 mavlink.MAV_CMD_VIDEO_STOP_STREAMING,
+    #                 ]
+    # mav_msg_id_list = [ mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION,
+    #                     mavlink.MAVLINK_MSG_ID_CAMERA_SETTINGS,
+    #                     mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION,
+    #                     mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS,
+    #                     mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED,
+    #                     mavlink.MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION,
+    #                     mavlink.MAVLINK_MSG_ID_VIDEO_STREAM_STATUS,
+    #                    ]
+    mav_cmd_list = [mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_MESSAGE],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_STORAGE_FORMAT],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_SET_CAMERA_ZOOM],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_IMAGE_START_CAPTURE],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_IMAGE_STOP_CAPTURE],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_START_CAPTURE],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_STOP_CAPTURE],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_SET_CAMERA_MODE],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_START_STREAMING],
+                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_STOP_STREAMING],
+                ]
+    # mav_msg_id_list = [ mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_INFORMATION'],
+    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_SETTINGS'],
+    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_STORAGE_INFORMATION'],
+    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS'],
+    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED'],
+    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION'],
+    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_VIDEO_STREAM_STATUS'],
+    #                    ]
+
 
     def __init__(self,
-                 source_component,  # used for component indication
-                 mav_type,  # used for heartbeat MAV_TYPE indication
-                 camera, # camera  (or FakeCamera for testing)
+                 source_component=mavlink.MAV_COMP_ID_CAMERA,  # used for component indication
+                 mav_type=mavlink.MAV_TYPE_CAMERA,  # used for heartbeat MAV_TYPE indication
+                 camera=None, # camera  (or FakeCamera for testing)
                  loglevel=LogLevels.INFO,  # logging level
                 ):
 
-        if source_component is None:
-            source_component = mavutil.mavlink.MAV_COMP_ID_CAMERA
         super().__init__( source_component=source_component, mav_type=mav_type, loglevel=loglevel)
         # self.set_log(loglevel)
         self._set_message_callback(self.on_message)
@@ -97,10 +142,35 @@ class CameraServer(Component):
         # self.set_source_compenent()
         # self.camera.mav.srcComponent = self.source_component
 
+    def list_commands(self):
+        """List the commands supported by the camera server
+        https://mavlink.io/en/messages/common.html
+        https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
+        https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
+        https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
+        https://mavlink.io/en/messages/common.html#MAV_CMD_STORAGE_FORMAT
+        https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
+        etc
+
+        """
+        print("Supported Commands: https://mavlink.io/en/messages/common.html#mav_commands")
+        for cmd in self.mav_cmd_list:
+            print(f"{cmd = }")
+
+        print("Supported Message Requests:  https://mavlink.io/en/messages/common.html#messages")
+        for msg in self.mav_msg_id_list:
+            print(f"{msg = }")
+        #
+        # print("Supported Commands: https://mavlink.io/en/messages/common.html#mav_commands")
+        # print(self.mav_cmd_list)
+        # print("Supported Message Requests:  https://mavlink.io/en/messages/common.html#messages")
+        # print(self.mav_msg_id_list)
+        # pass
 
     def on_message(self, msg:mavlink.MAVLink_command_long_message # : mavlink  Message
                    ) -> bool: # return True to indicate that the message has been handled
         """Callback for a command received from the client
+        This will respond to the mavlink camera and storage focused commands:
         """
         self.set_source_compenent()  # set the source component for the reply
 
@@ -178,8 +248,6 @@ class CameraServer(Component):
                 self._video_stop_streaming(msg)
                 return True # return True to indicate that the message has been handled
 
-
-            
         else:
             self.log.debug(f"Unknown command {msg.get_type()} received from {msg.get_srcSystem()}/{msg.get_srcComponent()}")
             return False # return False to indicate that the message has not been handled

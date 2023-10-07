@@ -45,7 +45,7 @@ CAMERA_CAPTURE_STATUS = mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS # https://m
 CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://mavlink.io/en/messages/common.html#CAMERA_IMAGE_CAPTURED
 
 
-# %% ../../nbs/api/22_mavlink.camera.ipynb 18
+# %% ../../nbs/api/22_mavlink.camera.ipynb 29
 from UAV.mavlink.mavcom import MAVCom
 from UAV.mavlink.component import Component, mavutil
 import time
@@ -67,7 +67,7 @@ class Cli(Component):
         super().__init__( source_component=source_component, mav_type=mav_type,
                          debug=debug)
 
-# %% ../../nbs/api/22_mavlink.camera.ipynb 19
+# %% ../../nbs/api/22_mavlink.camera.ipynb 30
 def test_ack():
     # Test sending a command and receiving an ack from client to server
     with MAVCom("udpin:localhost:14445", source_system=111, debug=False) as client:

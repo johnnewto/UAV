@@ -65,7 +65,7 @@ async def main(num_cams, udp_encoder):
         # if True:
         with GstPipes(display_pipelines, loglevel=LogLevels.INFO):  # this will show the video on fpsdisplaysink
             with MAVCom(con1, source_system=111, loglevel=LogLevels.CRITICAL) as GCS_client: # This normally runs on GCS
-                with With(MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL)) as UAV_server: # This normally runs on drone
+                with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server: # This normally runs on drone
                     # UAV_server.log.disabled = True
                     # GCS_client.log.disabled = True
 

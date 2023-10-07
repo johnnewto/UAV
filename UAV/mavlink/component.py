@@ -128,7 +128,7 @@ class Component:
         self.master = mav_com.master
         self.mav:MAVLink = mav_com.master.mav
         self.source_system = mav_com.source_system
-        print(f"set_mav_connection {self.__class__.__name__} {get_linenumber()} {self.mav_com = }")
+        self.log.debug(f"set_mav_connection {self.__class__.__name__} {get_linenumber()} {self.mav_com = }")
         self._t_heartbeat.start()
         self._t_command.start()
         self.on_mav_connection()
