@@ -66,52 +66,25 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://m
 
 class CameraServer(Component):
     """Create a mavlink Camera server Component, camera argument will normally be a  gstreamer pipeline"""
-    # mav_cmd_list = [mavlink.MAV_CMD_REQUEST_MESSAGE,
-    #                 mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS,
-    #                 mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION,
-    #                 mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS,
-    #                 mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION,
-    #                 mavlink.MAV_CMD_STORAGE_FORMAT,
-    #                 mavlink.MAV_CMD_SET_CAMERA_ZOOM,
-    #                 mavlink.MAV_CMD_IMAGE_START_CAPTURE,
-    #                 mavlink.MAV_CMD_IMAGE_STOP_CAPTURE,
-    #                 mavlink.MAV_CMD_VIDEO_START_CAPTURE,
-    #                 mavlink.MAV_CMD_VIDEO_STOP_CAPTURE,
-    #                 mavlink.MAV_CMD_SET_CAMERA_MODE,
-    #                 mavlink.MAV_CMD_VIDEO_START_STREAMING,
-    #                 mavlink.MAV_CMD_VIDEO_STOP_STREAMING,
-    #                 ]
-    # mav_msg_id_list = [ mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION,
-    #                     mavlink.MAVLINK_MSG_ID_CAMERA_SETTINGS,
-    #                     mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION,
-    #                     mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS,
-    #                     mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED,
-    #                     mavlink.MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION,
-    #                     mavlink.MAVLINK_MSG_ID_VIDEO_STREAM_STATUS,
-    #                    ]
-    mav_cmd_list = [mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_MESSAGE],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_CAMERA_INFORMATION],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_CAMERA_SETTINGS],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_REQUEST_STORAGE_INFORMATION],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_STORAGE_FORMAT],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_SET_CAMERA_ZOOM],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_IMAGE_START_CAPTURE],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_IMAGE_STOP_CAPTURE],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_START_CAPTURE],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_STOP_CAPTURE],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_SET_CAMERA_MODE],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_START_STREAMING],
-                    mavlink.enums['MAV_CMD'][mavlink.MAV_CMD_VIDEO_STOP_STREAMING],
-                ]
-    # mav_msg_id_list = [ mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_INFORMATION'],
-    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_SETTINGS'],
-    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_STORAGE_INFORMATION'],
-    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS'],
-    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED'],
-    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION'],
-    #                     mavlink.enums['MAVLINK_MSG_ID']['MAVLINK_MSG_ID_VIDEO_STREAM_STATUS'],
-    #                    ]
+    mav_cmd_list = [mavlink.MAV_CMD_REQUEST_MESSAGE,
+                    mavlink.MAV_CMD_STORAGE_FORMAT,
+                    mavlink.MAV_CMD_SET_CAMERA_ZOOM,
+                    mavlink.MAV_CMD_IMAGE_START_CAPTURE,
+                    mavlink.MAV_CMD_IMAGE_STOP_CAPTURE,
+                    mavlink.MAV_CMD_VIDEO_START_CAPTURE,
+                    mavlink.MAV_CMD_VIDEO_STOP_CAPTURE,
+                    mavlink.MAV_CMD_SET_CAMERA_MODE,
+                    mavlink.MAV_CMD_VIDEO_START_STREAMING,
+                    mavlink.MAV_CMD_VIDEO_STOP_STREAMING,
+                    ]
+    mav_msg_id_list = [ ("MAVLINK_MSG_ID_CAMERA_INFORMATION",      mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION),
+                        ("MAVLINK_MSG_ID_CAMERA_SETTINGS",         mavlink.MAVLINK_MSG_ID_CAMERA_SETTINGS),
+                        ("MAVLINK_MSG_ID_STORAGE_INFORMATION",     mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION),
+                        ("MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS",   mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS),
+                        ("MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED",   mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED),
+                        ("MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION",mavlink.MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION),
+                        ("MAVLINK_MSG_ID_VIDEO_STREAM_STATUS",     mavlink.MAVLINK_MSG_ID_VIDEO_STREAM_STATUS),
+                       ]
 
 
     def __init__(self,
@@ -155,17 +128,14 @@ class CameraServer(Component):
         """
         print("Supported Commands: https://mavlink.io/en/messages/common.html#mav_commands")
         for cmd in self.mav_cmd_list:
-            print(f"{cmd = }")
+            detail = mavlink.enums['MAV_CMD'][cmd]
+            print(f" Cmd = {detail.name}: {cmd} ") #: '{detail.description}'")
 
         print("Supported Message Requests:  https://mavlink.io/en/messages/common.html#messages")
+        print()
         for msg in self.mav_msg_id_list:
-            print(f"{msg = }")
-        #
-        # print("Supported Commands: https://mavlink.io/en/messages/common.html#mav_commands")
-        # print(self.mav_cmd_list)
-        # print("Supported Message Requests:  https://mavlink.io/en/messages/common.html#messages")
-        # print(self.mav_msg_id_list)
-        # pass
+            print(f"{msg[0]}:  {msg[1]}")
+
 
     def on_message(self, msg:mavlink.MAVLink_command_long_message # : mavlink  Message
                    ) -> bool: # return True to indicate that the message has been handled

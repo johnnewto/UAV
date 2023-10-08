@@ -90,6 +90,10 @@ async def main(num_cams, udp_encoder):
                     msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION, target_system=222, target_component=mavutil.mavlink.MAV_COMP_ID_CAMERA)
                     print (f"2 MAVLINK_MSG_ID_STORAGE_INFORMATION  {msg }")
 
+                    await gcs.video_start_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    time.sleep(2)
+                    await gcs.video_stop_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
+
                     raise With.Break
 
                     #

@@ -210,7 +210,7 @@ class BaseCamera:
             self.mav.srcSystem = self.source_system
             self.mav.srcComponent = self.source_component
         except AttributeError:
-            self.log.warning("No mav connection")
+            self.log.debug("No mav connection")
             # raise AttributeError
 
     def camera_information_send(self):
@@ -425,7 +425,7 @@ class CV2Camera(BaseCamera):
                                                 bytes(self.image_filename, 'utf-8'),  # file_url
                                                 )
         except AttributeError:
-            self.log.warning("No mav connection")
+            self.log.debug("No mav connection")
 
     def image_start_capture(self, interval, # Image capture interval
                             count, # Number of images to capture (0 for unlimited)f
@@ -554,7 +554,7 @@ class GSTCamera(CV2Camera):
         MAX_FPS = 10
         interval = 1/MAX_FPS if interval < 1/MAX_FPS else interval
         fps = int(1/interval)
-        pipeline = gst_utils.fstringify(pipeline, quality=85, num_buffers=100, width=640, height=480, fps=fps)
+        pipeline = gst_utils.fstringify(pipeline, quality=85, num_buffers=100, width=640, height=480, fps=fps) # todo add settings file
         self._gst_image_save:GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
                                                      on_jpeg_capture=self.on_capture_image,
                                                      loglevel=self._loglevel).startup()
@@ -579,7 +579,7 @@ class GSTCamera(CV2Camera):
             pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['h264_pipeline'])
         else:
             pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['raw_pipeline'])
-        pipeline = gst_utils.fstringify(pipeline, width=640, height=480, fps=10, port=port)
+        pipeline = gst_utils.fstringify(pipeline, width=640, height=480, fps=10, port=port)  # todo add settings file
         self._gst_stream_video:GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
         self.log.info(f"Video streaming started on port {port}")
         pass

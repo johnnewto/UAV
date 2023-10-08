@@ -45,7 +45,7 @@ CAMERA_CAPTURE_STATUS = mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS # https://m
 CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED # https://mavlink.io/en/messages/common.html#CAMERA_IMAGE_CAPTURED
 
 
-# %% ../../nbs/api/22_mavlink.camera.ipynb 29
+# %% ../../nbs/api/22_mavlink.camera.ipynb 24
 from UAV.mavlink.mavcom import MAVCom
 from UAV.mavlink.component import Component, mavutil
 import time
@@ -56,25 +56,25 @@ MAV_TYPE_CAMERA = mavutil.mavlink.MAV_TYPE_CAMERA
 class Cam1(Component):
     def __init__(self, source_component, mav_type, debug=False):
         super().__init__(source_component=source_component, mav_type=mav_type,
-                         debug=debug)
+                         loglevel=LogLevels.DEBUG)
 
 class Cam2(Component):
     def __init__(self, source_component, mav_type, debug=False):
         super().__init__(source_component=source_component, mav_type=mav_type,
-                         debug=debug)
+                         loglevel=LogLevels.DEBUG)
 class Cli(Component):
     def __init__(self, source_component, mav_type, debug=False):
         super().__init__( source_component=source_component, mav_type=mav_type,
-                         debug=debug)
+                         loglevel=LogLevels.DEBUG)
 
-# %% ../../nbs/api/22_mavlink.camera.ipynb 30
+# %% ../../nbs/api/22_mavlink.camera.ipynb 25
 def test_ack():
     # Test sending a command and receiving an ack from client to server
-    with MAVCom("udpin:localhost:14445", source_system=111, debug=False) as client:
-        with MAVCom("udpout:localhost:14445", source_system=222, debug=False) as server:
-            client.add_component(Cli( mav_type=MAV_TYPE_GCS, source_component = 11, debug=False))
-            server.add_component(Cam1( mav_type=MAV_TYPE_CAMERA, source_component = 22, debug=False))
-            server.add_component(Cam1( mav_type=MAV_TYPE_CAMERA, source_component = 23, debug=False))
+    with MAVCom("udpin:localhost:14445", source_system=111, loglevel=LogLevels.DEBUG) as client:
+        with MAVCom("udpout:localhost:14445", source_system=222,loglevel=LogLevels.DEBUG) as server:
+            client.add_component(Cli( mav_type=MAV_TYPE_GCS, source_component = 11))
+            server.add_component(Cam1( mav_type=MAV_TYPE_CAMERA, source_component = 22))
+            server.add_component(Cam1( mav_type=MAV_TYPE_CAMERA, source_component = 23))
             
             for key, comp in client.component.items():
                 if comp.wait_heartbeat(target_system=222, target_component=22, timeout=0.1):
