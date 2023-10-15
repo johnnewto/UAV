@@ -49,7 +49,7 @@ class RunSim:
                  resx: int = 800,  # window size  x
                  resy: int = 600,  # window size  y
                  windowed: str | None = 'windowed',  # windowed or fullscreen
-                 settings: str = "settings.json"):  # settings file
+                 settings: str | Path = "settings.json"):  # settings file
 
         # self.settings = f"/home/$USER/Documents/AirSim/{settings}"
         if Path(settings).is_file():

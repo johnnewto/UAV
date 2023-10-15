@@ -24,11 +24,11 @@ DISPLAY_H264_PIPELINE = to_gst_string([
 DISPLAY_RAW_PIPELINE = to_gst_string([
     # 'udpsrc port={} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
     # 'udpsrc port={} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480',
-    'udpsrc port={} caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB, depth=(string)8, width=(string)640, height=(string)480"',
+    'udpsrc port={} caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB, depth=(string)8, width=(string)1920, height=(string)1080"',
+    # 'udpsrc port={} caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB"',
     'queue ! rtpvrawdepay',
-
-    'videorate',
-    'video/x-raw,framerate=10/1',
+    # 'videorate',
+    # 'video/x-raw,framerate=10/1',
     'videoconvert',
     'fpsdisplaysink sync=true ',
 ])
@@ -70,19 +70,19 @@ async def main(num_cams, udp_encoder):
                     # GCS_client.log.disabled = True
 
                     # add GCS manager
-                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG) )
+                    gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG) )
                     # gcs.log.disabled = True
                     # add UAV cameras, This normally runs on drone
                     cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL).open()
                     # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
-                    UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.CRITICAL))
+                    UAV_server.add_component( CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=24, camera=None, loglevel=LogLevels.WARNING))
 
                     # gimbal_cam_3 = UAV_server.add_component(GimbalServer(mav_type=mavutil.mavlink.MAV_TYPE_GIMBAL, source_component=24, debug=False))
                     # GCS client requests
-                    ret = await gcs.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA)
+                    ret = await gcs.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA)
                     print(f"Heartbeat {ret = }")
                     # await asyncio.sleep(0.1)
                     msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system=222, target_component=mavutil.mavlink.MAV_COMP_ID_CAMERA)
@@ -91,10 +91,10 @@ async def main(num_cams, udp_encoder):
                     print (f"2 MAVLINK_MSG_ID_STORAGE_INFORMATION  {msg }")
 
                     await gcs.video_start_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
-                    time.sleep(2)
+                    time.sleep(5)
                     await gcs.video_stop_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
 
-                    raise With.Break
+                    # raise With.Break
 
                     #
                     # msg = await gcs.request_camera_information(222, 23)

@@ -4,6 +4,7 @@ __all__ = [ 'AirsimCamera', 'videoCamera']
 
 
 import time, os, sys
+from pathlib import Path
 
 from ..logging import logging, LogLevels
 # # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
@@ -27,6 +28,8 @@ import numpy as np
 
 cams = ["high_res", "front_center", "front_right", "front_left", "bottom_center", "back_center"]
 
+WIDTH, HEIGHT = 800, 450
+WIDTH, HEIGHT = 1920, 1080
 class AirsimCamera(GSTCamera):
 
     """ run the airsim enviroment Create a airsim camera component for testing using GStreamer"""
@@ -35,12 +38,12 @@ class AirsimCamera(GSTCamera):
                  camera_dict=None,  # camera_info dict
                  udp_encoder='H264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
-        super().__init__(camera_dict=camera_dict, loglevel=loglevel)
+        super().__init__(camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=loglevel)
 
-        # GstVideoSink(command, width=width, height=height, loglevel=10) as pipeline:
-
-
-        self.rs = RunSim("AirSimNH", settings="config/settings_high_res.json")
+        config_path = Path(__file__).parent.parent / "config"
+        # self.rs = RunSim("AirSimNH", settings=config_path / "airsim_settings_high_res.json")
+        # self.rs = RunSim("AirSimNH", settings=config_path / "airsim_settings.json")
+        self.rs = RunSim("AirSimNH")
         self.asc = AirSimClient()
         print(
               f"{loglevel = } {self._loglevel = }")
@@ -52,9 +55,10 @@ class AirsimCamera(GSTCamera):
         # command = to_gst_string( ['appsrc emit-signals=True is-live=True', 'queue', 'videoconvert',
         #                           'x264enc tune=zerolatency',
         #                           'rtph264pay ! udpsink host=127.0.0.1 port=5000'])
-        width, height = 800, 450
-        self.pipeline = GstVideoSink(command, width=width, height=height, fps=10, loglevel=self._loglevel)
+        self.fps = self.camera_dict['gstreamer']['fps']
+        self.pipeline = GstVideoSink(command, width=WIDTH, height=HEIGHT, fps=self.fps, loglevel=self._loglevel)
         # print(f"{self._loglevel = }")
+
         self.pipeline.startup()
         self._thread = threading.Thread(target=self.run_pipe, daemon=True)
         self._thread.start()
@@ -64,7 +68,7 @@ class AirsimCamera(GSTCamera):
     def run_pipe(self):
         """run the camera pipeline in a thread"""
         cam_num = 0
-        width, height = 800, 450
+        # width, height = 800, 450
         framecounter = 1
         self._running = True
 
@@ -76,8 +80,10 @@ class AirsimCamera(GSTCamera):
             img = self.asc.get_image(cams[cam_num], rgb2bgr=True)
             puttext(img, f"Frame: {framecounter} Pos: {pos.x_val:.2f}, {pos.y_val:.2f}, {pos.z_val:.2f}")
 
-            img = resize(img, width=width)
+            # img = resize(img, width=WIDTH)
             self.pipeline.push(buffer=img)
+            time.sleep(1/self.fps) # set fps to self.fps
+
         self.log.debug("Exiting AirsimCamera thread")
 
     def close(self):

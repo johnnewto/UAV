@@ -1,6 +1,8 @@
 
 
 import threading
+from pathlib import Path
+
 from UAV.airsim.commands import DroneCommands
 from UAV.airsim.client import AirSimClient
 import UAV.airsim_python_client as airsim
@@ -22,8 +24,11 @@ logger.setLevel(params.LOGGING_LEVEL)
 log = ScrollingLog(position=(20, 80), font_scale=1.5, color=(0, 0, 255), thickness=1)
 handler_log = ScrollingLogHandler(log, logger)
 logger.info(f"Hello World...")
+# get absolute path to config directory
+config_path = Path(__file__).parent.parent / "config"
 
-rs = RunSim("AirSimNH", settings="config/settings_high_res.json")
+rs = RunSim("AirSimNH", settings=config_path / "airsim_settings_high_res.json")
+# rs = RunSim("AirSimNH", settings=config_path / "settings.json")
 
 asc = AirSimClient()
 cmd = DroneCommands()

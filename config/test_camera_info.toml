@@ -26,7 +26,7 @@ src_pipeline = [
 #    "videotestsrc pattern=ball is-live=true ! video/x-raw,framerate=10/1 !  autovideosink",
 #    "videotestsrc pattern=ball is-live=true ! video/x-raw,width=640,height=480,framerate=30/1 !  tee name=t",
 #    'videotestsrc  ! video/x-raw,width=640,height=480,framerate=30/1',
-    'videotestsrc  ! video/x-raw,width=800,height=600,framerate=30/1',
+    'videotestsrc  ! video/x-raw,width=1920,height=1080,framerate=30/1',
     'tee name=t',
 
     "t.",
@@ -79,7 +79,8 @@ h264_pipeline = [
             'intervideosrc channel=channel_2',
             # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
             'queue',
-            'videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+#            'videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+            'videoscale ! video/x-raw,width=1920,height=1080,framerate={fps}/1',
             # 'video/x-raw,format=I420,width={width},height={height}',
             # 'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
             # 'videoconvert',
@@ -96,7 +97,8 @@ raw_pipeline = [
             'queue',
 #            'videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
 #            'videoscale'
-            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
+#            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
+            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=1920,height=1080',
             'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
 #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=640,height=480 ',
 #            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',

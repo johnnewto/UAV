@@ -86,7 +86,7 @@ class Component:
 
 
         self.message_callback = None # callback function for when a command is received
-        self._message_callbacks = [] # list of callback functions for when a command is received
+        # self._message_callbacks = [] # list of callback functions for when a command is received
 
         self._heartbeat_que = LeakyQueue(maxsize=10)
         self._ack_que = LeakyQueue(maxsize=10)
@@ -209,7 +209,7 @@ class Component:
                 self.log.debug(format_rcvd_msg(msg, extra='self._heartbeat_que.get() '))
                 # self.log.debug(f"Rcvd Heartbeat from src_sys: {msg.get_srcSystem()}, src_comp: {msg.get_srcComponent()} {msg} ")
                 # check if the heartbeat is from the correct system and component
-                if not msg.get_srcSystem() and not msg.get_srcComponent():
+                if not msg.get_srcSystem() and not msg.get_srcComponent():  # todo check what is this doing
                     if msg.type is None or msg.type == remote_mav_type:
                         return (msg.get_srcSystem(), msg.get_srcComponent())
                 else:
@@ -329,8 +329,8 @@ class Component:
 
     def _on_message_rcvd(self, msg):
         # Callback for when a message is received.
-        for cb in self._message_callbacks:
-            cb(msg)
+        # for cb in self._message_callbacks:
+        #     cb(msg)
         if self.message_callback is not None:
             ok = self.message_callback(msg)
         else:
@@ -376,16 +376,15 @@ class Component:
             self.num_acks_drop += 1
             return False
 
-    def _test_command(self, target_system: int,  # target system
+    async def _test_command(self, target_system: int,  # target system
                       target_component: int,  # target component
-                      camera_id: int = 1):  # camera id (0 for all cams)
+                      camera_id: int):  # camera id (0 for all cams)
         """
-        Use MAV_CMD_DO_DIGICAM_CONTROL to trigger a camera 
+        example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a camera
         """
-        self.set_source_compenent()
-        mav_cmd = mavutil.mavlink.MAV_CMD_DO_DIGICAM_CONTROL
-        rst = self.send_command(target_system, target_component,
-                                mav_cmd,
+        # self.set_source_compenent()
+        await self.send_command(target_system, target_component,
+                                mavlink.MAV_CMD_DO_DIGICAM_CONTROL,
                                 [camera_id,  # param1 (session)  or cam # (0 for all cams)
                                  1,  # param2 (trigger capture)
                                  0,  # param3 (zoom pos)
@@ -395,8 +394,6 @@ class Component:
                                  0,  # param7 (command ID)
                                  ])
 
-        # self.log.debug(f"Sent message to:   {target_system:3d}, comp: {target_component:3d} command MAV_CMD_DO_DIGICAM_CONFIGURE")
-        return rst
 
     def close(self):
         self._t_heartbeat_stop = True

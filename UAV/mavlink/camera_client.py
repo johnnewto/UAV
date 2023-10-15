@@ -81,9 +81,9 @@ class CameraClient(Component):
     """Create a client component to send commands to a companion computer or GCS that will control a camera via a CameraServer instance """
 
     def __init__(self,
-                 source_component,  # used for component indication
-                 mav_type,  # used for heartbeat MAV_TYPE indication
-                 loglevel:LogLevels=LogLevels.INFO,  # logging level
+                 source_component: int,  # used for component indication
+                 mav_type: int,  # used for heartbeat MAV_TYPE indication
+                 loglevel: LogLevels | int = LogLevels.INFO,  # logging level
                  ):
         
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)

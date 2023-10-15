@@ -4,6 +4,7 @@ __all__ = ['CameraCaptureStatus', 'BaseCamera', 'CaptureThread', 'CV2Camera',
 
 
 import time, os, sys
+from typing import List
 
 from ..logging import logging, LogLevels
 # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
@@ -341,12 +342,12 @@ class CV2Camera(BaseCamera):
                 total_memory += len(f.read())
         return total_memory
 
-    def list_files(self) -> str:
+    def list_files(self) -> List:
         """List all files in the MemoryFS."""
-        path = None
+        l  = []
         for path in self.mem_fs.walk.files():
-            print(path)
-        return path
+            l.append(path)
+        return l
 
     def show_image(self, filename=None):
         """Show image using OpenCV."""
@@ -508,14 +509,21 @@ class GSTCamera(CV2Camera):
         self._loglevel = loglevel
 
         self.last_image = None
-        pass
+        self.pipeline = None
+        self._open()
 
-    def open(self):
+    def _open(self):
         """create and start the gstreamer pipeleine for the camera"""
-        command = gst_utils.to_gst_string(self.camera_dict['gstreamer']['src_pipeline'])
-        self.pipeline = GstPipeline(command, loglevel=self._loglevel)
-        self.pipeline.startup()
-        return self
+        # check to see if attribute pipeline exists
+
+        if self.pipeline is None:
+            command = gst_utils.to_gst_string(self.camera_dict['gstreamer']['src_pipeline'])
+            self.pipeline = GstPipeline(command, loglevel=self._loglevel)
+            self.pipeline.startup()
+            return self
+        else:
+            self.log.warning("Pipeline already exists")
+            return self
 
     def pause(self):
         """ Pause the gstreamer pipeline"""
@@ -531,6 +539,14 @@ class GSTCamera(CV2Camera):
         with self.mem_fs.open(filename, "wb") as f:
             f.write(data) # Write to PyFilesystem's Memory Filesystem
         self.log.info(f"Image saved to memory filesystem with name: {filename}")
+
+    def load_image_from_memoryfs(self, filename: str): # filename to load image
+        """Load image from memory filesystem."""
+        with self.mem_fs.open(filename, "rb") as f:
+            data = f.read()
+            # convert to jpeg to numpy array
+            img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+        return img
 
     def on_capture_image(self, data):
         """Call back function from the CaptureThread (images). Gets the next image from camera using GStreamer."""
@@ -621,7 +637,11 @@ class GSTCamera(CV2Camera):
 
 
     def close(self):
-        self.pipeline.shutdown(eos=True) # send EOS event to all sinks
+        try:
+            self.pipeline.shutdown(eos=True) # send EOS event to all sinks
+        except AttributeError as e:
+            # class name
+            self.log.error(f"Check that you called {self.__class__.__name__}.open(): {e}")
         super().close()
 
 

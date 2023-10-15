@@ -14,19 +14,39 @@ DISPLAY_H264_PIPELINE = to_gst_string([
     'videoconvert',
     'fpsdisplaysink ',
 ])
+
+DISPLAY_RAW_PIPELINE = to_gst_string([
+    'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
+    'queue ! rtpvrawdepay ! videoconvert',
+    'fpsdisplaysink sync=false ',
+])
+DISPLAY_RAW_PIPELINE = to_gst_string([
+    # 'udpsrc port={} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
+    # 'udpsrc port={} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480',
+    'udpsrc port=5000 caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB, depth=(string)8, width=(string)1920, height=(string)1080"',
+    'queue ! rtpvrawdepay',
+
+    'videorate',
+    'video/x-raw,framerate=10/1',
+    'videoconvert',
+    'fpsdisplaysink sync=false ',
+])
 if __name__ == '__main__':
+    # udp_encoder = 'h264'
+    udp_encoder = 'rawvideo'
+    display_pipeline = DISPLAY_RAW_PIPELINE if 'raw' in udp_encoder else DISPLAY_H264_PIPELINE
     print (f"{boot_time_str =}")
     config_path = Path("../config")
     with GstContext():
-        with GstPipeline(DISPLAY_H264_PIPELINE) as display_pipeline:
-            with  AirsimCamera(camera_dict=read_camera_dict_from_toml(config_path / "airsim_camera_info.toml"), loglevel=20).open() as air_cam:
+        with GstPipeline(display_pipeline) as disp_pipeline:
+            with  AirsimCamera(camera_dict=read_camera_dict_from_toml(config_path / "airsim_camera_info.toml"), udp_encoder=udp_encoder, loglevel=20).open() as air_cam:
                 # air_cam.image_start_capture(0.1, 5)
                 # # time.sleep(2)
                 # while air_cam._gst_image_save.is_active:
                 #     time.sleep(0.1)
-
-                air_cam.video_start_streaming()
                 time.sleep(5)
+                air_cam.video_start_streaming()
+                time.sleep(10)
                 air_cam.video_stop_streaming()
                 time.sleep(1)
                 print (f"Waiting for capture thread to finish")

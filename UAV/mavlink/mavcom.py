@@ -3,16 +3,14 @@
 
 from __future__ import annotations
 
-__all__ = [ 'MAV_SYSTEM_GCS_CLIENT', 'MAV_TYPE_GCS', 'MAV_SYSTEM_VEHICLE', 'MAV_TYPE_CAMERA',
+__all__ = ['MAV_SYSTEM_GCS_CLIENT', 'MAV_TYPE_GCS', 'MAV_SYSTEM_VEHICLE', 'MAV_TYPE_CAMERA',
            'MAV_COMP_ID_CAMERA', 'MAV_COMP_ID_USER1', 'BaseComponent', 'MAVCom', 'test_MAVCom', 'mavlink']
-
 
 import time, os, sys
 import typing
 
 from ..logging import logging, LogLevels
 from ..utils.general import LeakyQueue, format_rcvd_msg, time_since_boot_ms, time_UTC_usec, date_time_str
-
 
 assert os.environ[
            'MAVLINK20'] == '1', "Set the environment variable before from pymavlink import mavutil  library is imported"
@@ -26,12 +24,10 @@ from pathlib import Path
 
 from pymavlink import mavutil
 
-
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 # from .component import Component
 from .camera_server import CameraServer
 from .camera_client import CameraClient, Component
-
 
 # def get_linenumber():
 #     cf = currentframe()
@@ -91,7 +87,6 @@ class BaseComponent:
         self.source_system = self.mav_connection.source_system
         self.source_component = source_component
 
-
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
         self._log.setLevel(logging.DEBUG if debug else logging.INFO)
 
@@ -118,7 +113,6 @@ class BaseComponent:
         self._t_msg_listen.name = f"{self.__class__.__name__}._t_msg_listen"
         # self.log.info(f"Component Started {self.source_component = }, {self.mav_type = }, {self.source_system = }")
 
-
     def __str__(self) -> str:
         return self.__class__.__name__
 
@@ -135,13 +129,11 @@ class BaseComponent:
         self.master = mav_connection.master
         self.mav = self.master.mav
 
-
     def set_source_compenent(self):
         """Set the source component for the master.mav """
         self.master.mav.srcComponent = self.source_component
 
-
-    def send_ping(self, target_system: int, target_component: int, max_pings = None):
+    def send_ping(self, target_system: int, target_component: int, max_pings=None):
         """Send self.max_pings * ping messages to test if the server is alive."""
 
         if max_pings is not None: self.max_pings = max_pings
@@ -157,8 +149,7 @@ class BaseComponent:
         )
         self.log.info(f"Sent Ping #{self.ping_num} to:   {target_system:3d}, comp: {target_component:3d}")
         self.ping_num += 1
-        
-        
+
     def send_heartbeat(self):
         """Send a heartbeat message to indicate the server is alive."""
         self._t_heartbeat_stop = False
@@ -218,7 +209,6 @@ class BaseComponent:
             else:
                 self.on_message(msg)
 
-
     def on_message(self, msg):
         """Process a message. """
         if msg.get_type() == 'COMMAND_LONG':
@@ -250,6 +240,7 @@ class BaseComponent:
         """Process a command message, Please subclass. """
         self.log.error(f"Please subclass: Received {msg.get_type() = }")
         pass
+
     def on_heartbeat(self, msg):
         """Process a heartbeat message, Please subclass. """
         self.log.error(f"Please subclass: Received {msg.get_type() = }")
@@ -260,7 +251,6 @@ class BaseComponent:
         self.log.error(f"Please subclass: Received {msg.get_type() = }")
         pass
 
-
     def close(self):
         self._t_msg_listen_stop = True
         self._t_heartbeat_stop = True
@@ -269,17 +259,15 @@ class BaseComponent:
         self.log.info(f"{self.__class__.__name__} closed")
 
 
-
-
 class MAVCom:
     """
     Mavlink Base to set up a mavlink_connection for send and receive messages to and from a remote system.
     """
 
-    def __init__(self, connection_string,  # "udpin:localhost:14550"
-                 baudrate=57600,  # baud rate of the serial port
-                 source_system=MAV_SYSTEM_VEHICLE,  # remote or air uav system   1 = vehicle
-                 loglevel:LogLevels=LogLevels.INFO,  # logging level
+    def __init__(self, connection_string: str,  # "udpin:localhost:14550"
+                 baudrate: int = 57600,  # baud rate of the serial port
+                 source_system: int = MAV_SYSTEM_VEHICLE,  # remote or air uav system   1 = vehicle
+                 loglevel: LogLevels | int = LogLevels.INFO,  # logging level
                  ):
 
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
@@ -292,13 +280,12 @@ class MAVCom:
         self.check_message_route(None)
 
         self.message_cnts: {} = {}  # received message counts, indexed by system and message type
-        self.component: {BaseComponent} = {}   # todo fix this typing
+        self.component: {BaseComponent} = {}  # todo fix this typing
         self._t_mav_listen_stop = True
         self._t_mav_listen = None
         self.do_ack = True
         self.start_mavlink()
 
-  
     def start_mavlink(self):
         """Start the MAVLink connection."""
 
@@ -309,7 +296,7 @@ class MAVCom:
 
         # self.log.info(f"see https://mavlink.io/en/messages/common.html#MAV_COMPONENT")
         time.sleep(0.1)  # Todo delay for connection to establish
-        
+
         assert hasattr(self, 'master'), "start_mavlink() must be called before threading.Thread(target=self.listen..."
 
         self._t_mav_listen = threading.Thread(target=self.listen, daemon=True)
@@ -329,7 +316,6 @@ class MAVCom:
     @property
     def log(self) -> logging.Logger:
         return self._log
-
 
     def check_message_route(self, msg,  # message
                             hide_log=False,  # hife log output for messages
@@ -416,8 +402,8 @@ class MAVCom:
                     self.log.error(f" Component {comp_ID} does not exist? ; Exception: {e}")
                     continue
 
-    def add_component(self, comp:"typing.Union[Component, CameraClient, CameraServer" # commponent to add
-                      )->typing.Union[Component, CameraClient, CameraServer, None]: # return the component
+    def add_component(self, comp: "typing.Union[Component, CameraClient, CameraServer"  # commponent to add
+                      ) -> typing.Union[Component, CameraClient, CameraServer, None]:  # return the component
         # append a component to the component dictionary with the key being the source_component
         # Check to see if {comp.source_component = } already exists
 
@@ -469,9 +455,9 @@ class MAVCom:
 def test_MAVCom():
     with MAVCom("udpin:localhost:14445", source_system=111, loglevel=LogLevels.NONE) as client:
         with MAVCom("udpout:localhost:14445", source_system=222, debug=False) as server:
-            server.add_component(BaseComponent(server, mav_type=MAV_TYPE_CAMERA, source_component = 22, debug=False))
-            client.add_component(BaseComponent(client, mav_type=MAV_TYPE_GCS, source_component = 11, debug=False))
-            
+            server.add_component(BaseComponent(server, mav_type=MAV_TYPE_CAMERA, source_component=22, debug=False))
+            client.add_component(BaseComponent(client, mav_type=MAV_TYPE_GCS, source_component=11, debug=False))
+
             time.sleep(0.1)
 
             MAX_PINGS = 4
@@ -480,9 +466,8 @@ def test_MAVCom():
 
     print(f"{server.source_system = };  {server.message_cnts = }")
     print(f"{client.source_system = };  {client.message_cnts = }")
-    
-    test_eq(server.message_cnts[111]['PING'], MAX_PINGS)
-    test_eq(server.message_cnts[111]['HEARTBEAT']>0, True) 
-    test_eq(client.message_cnts[222]['PING'], MAX_PINGS)
-    test_eq(client.message_cnts[222]['HEARTBEAT']>0, True)
 
+    test_eq(server.message_cnts[111]['PING'], MAX_PINGS)
+    test_eq(server.message_cnts[111]['HEARTBEAT'] > 0, True)
+    test_eq(client.message_cnts[222]['PING'], MAX_PINGS)
+    test_eq(client.message_cnts[222]['HEARTBEAT'] > 0, True)
