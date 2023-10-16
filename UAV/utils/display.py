@@ -18,7 +18,10 @@ import moviepy.editor as mvp
 from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
 import logging
 import UAV.params as params
-from nbdev.showdoc import *
+try:
+    from nbdev.showdoc import *
+except:
+    pass
 import inspect
 
 # logging.getLogger('matplotlib.font_manager').disabled = True   # disable matplotlib font manager warnings
