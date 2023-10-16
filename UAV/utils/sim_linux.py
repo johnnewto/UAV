@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 __all__ = ["RunSim", "is_process_running", "find_and_terminate_process", "sim_names", "airsim"]
 
-import random
+
 import subprocess
 import time
-import numpy as np
-import cv2
+
 import UAV
 import UAV.airsim_python_client as airsim
 import psutil

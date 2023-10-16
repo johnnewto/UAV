@@ -1,5 +1,4 @@
-
-
+from __future__ import annotations
 
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
            'CAMERA_IMAGE_CAPTURED', 'CameraClient', 'Component']
