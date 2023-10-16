@@ -3,8 +3,7 @@
 
 __all__ = ['logger', 'start_sim', 'DroneCommands']
 
-
-from fastcore.utils import *
+import sys
 
 from .client import AirSimClient
 import UAV.airsim_python_client as airsim

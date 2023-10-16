@@ -4,7 +4,6 @@
 __all__ = ['logger', 'AirSimClient']
 
 
-from fastcore.utils import *
 import random
 
 import numpy as np
