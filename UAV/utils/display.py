@@ -9,7 +9,6 @@ def _fig_bounds(x):
     return min(5, max(1,r))
 
 
-from fastcore.utils import *
 import cv2
 import numpy as np
 
@@ -27,6 +26,9 @@ import inspect
 # logging.getLogger('matplotlib.font_manager').disabled = True   # disable matplotlib font manager warnings
 logging.getLogger('matplotlib').setLevel(logging.WARNING) # disable matplotlib font manager debug messages
 
+def hasattrs(o,attrs):
+    "Test whether `o` contains all `attrs`"
+    return all(hasattr(o,attr) for attr in attrs)
 
 # Todo Test for ipython  see def in_ipython(): in fastcore  or imports.py
 def show_image(im
@@ -49,7 +51,7 @@ def show_image(im
     if im.shape[-1]==1: im=im[...,0]
     if rgb2bgr:
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    ax = ifnone(ax,ctx)
+    ax = ctx if ax is None else ax
     if figsize is None: figsize = (_fig_bounds(im.shape[0]), _fig_bounds(im.shape[1]))
     if ax is None: fig,ax = plt.subplots(figsize=figsize)
     ax.imshow(im, **kwargs)

@@ -1,15 +1,13 @@
 
 import asyncio
 import PySimpleGUI as sg
-from dataclasses import dataclass
 
-from UAV.manager.asyncio_gui import Btn_State, FButton, ButtonManager, ControlPanel, create_window
 from UAV.logging import LogLevels
 
 from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
 from UAV.utils.general import boot_time_str, read_camera_dict_from_toml
 
-from UAV.camera import GSTCamera
+from UAV.camera.gst_cam import GSTCamera
 from gstreamer import  GstPipeline, Gst, GstContext, GstPipes
 from gstreamer.utils import to_gst_string
 import time
