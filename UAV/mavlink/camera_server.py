@@ -347,9 +347,10 @@ class CameraServer(Component):
         """Start video streaming"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
         try:
-            self.camera.video_start_streaming(port = 5000+self.source_component)
-            self.log.info(f"Started video streaming on port {5000+self.source_component}")
-            self.log.info(f"{msg = }")
+            streamId = msg.param1
+            self.camera.video_start_streaming(streamId)
+            self.log.info(f"Started video streaming: {streamId = }")
+            # self.log.info(f"{msg = }")
         except AttributeError as err:
             self.log.error(f"{err = }")
 

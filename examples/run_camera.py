@@ -1,10 +1,10 @@
 from UAV.logging import LogLevels
 
 from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
-from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml
+from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml, find_config_dir
 from UAV.mavlink.camera_client import CAMERA_IMAGE_CAPTURED
 
-from UAV.camera import GSTCamera
+from UAV.camera.gst_cam import GSTCamera
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
 from gstreamer.utils import to_gst_string
 
@@ -33,17 +33,17 @@ DISPLAY_RAW_PIPELINE = to_gst_string([
     'fpsdisplaysink sync=true ',
 ])
 
-def display(num_cams=2, udp_encoder='h264'):
-    """ Display video from drone"""
-    if '264' in udp_encoder:
-        display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5100+i)) for i in range(num_cams)]
-    else:
-        display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5100 + i)) for i in range(num_cams)]
-
-    with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
-        with GstPipes(display_pipelines, loglevel=LogLevels.INFO):  # this will show the video on fpsdisplaysink
-            while any(p.is_active for p in display_pipelines):
-                time.sleep(.5)
+# def display(num_cams=2, udp_encoder='h264'):
+#     """ Display video from drone"""
+#     if '264' in udp_encoder:
+#         display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5100+i)) for i in range(num_cams)]
+#     else:
+#         display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5100 + i)) for i in range(num_cams)]
+#
+#     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
+#         with GstPipes(display_pipelines, loglevel=LogLevels.INFO):  # this will show the video on fpsdisplaysink
+#             while any(p.is_active for p in display_pipelines):
+#                 time.sleep(.5)
 
 
 con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
@@ -54,14 +54,14 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 async def main(num_cams, udp_encoder):
     # logger.disabled = True
     print (f"{boot_time_str =}")
-    config_path = Path("../config")
+
     # if True:
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
 
         if '264' in udp_encoder:
-            display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5100 + i)) for i in range(num_cams)]
+            display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5000 + i )) for i in range(num_cams)]
         else:
-            display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5100 + i)) for i in range(num_cams)]
+            display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5000 + i)) for i in range(num_cams)]
         # if True:
         with GstPipes(display_pipelines, loglevel=LogLevels.INFO):  # this will show the video on fpsdisplaysink
             with MAVCom(con1, source_system=111, loglevel=LogLevels.CRITICAL) as GCS_client: # This normally runs on GCS
@@ -73,10 +73,10 @@ async def main(num_cams, udp_encoder):
                     gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG) )
                     # gcs.log.disabled = True
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL).open()
-                    # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.INFO)
+                    # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
-                    UAV_server.add_component( CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.CRITICAL))
+                    UAV_server.add_component( CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component=24, camera=None, loglevel=LogLevels.WARNING))
 
@@ -85,14 +85,15 @@ async def main(num_cams, udp_encoder):
                     ret = await gcs.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA)
                     print(f"Heartbeat {ret = }")
                     # await asyncio.sleep(0.1)
-                    msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system=222, target_component=mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system=222, target_component=mavlink.MAV_COMP_ID_CAMERA)
                     print (f"1 MAVLINK_MSG_ID_CAMERA_INFORMATION {msg }")
-                    msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION, target_system=222, target_component=mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION, target_system=222, target_component=mavlink.MAV_COMP_ID_CAMERA)
                     print (f"2 MAVLINK_MSG_ID_STORAGE_INFORMATION  {msg }")
-
-                    await gcs.video_start_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
-                    time.sleep(5)
-                    await gcs.video_stop_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
+                    for i in range(2):
+                        await gcs.video_start_streaming(222, mavlink.MAV_COMP_ID_CAMERA)
+                        time.sleep(2)
+                        await gcs.video_stop_streaming(222, mavlink.MAV_COMP_ID_CAMERA)
+                        time.sleep(2)
 
                     # raise With.Break
 
@@ -108,8 +109,8 @@ async def main(num_cams, udp_encoder):
                     # await gcs.video_start_streaming(222, mavutil.mavlink.MAV_COMP_ID_CAMERA)
 
 
-                    await asyncio.sleep(5)
-                    print("###### Shutdown  #################")
+                    await asyncio.sleep(1)
+                    # print("###### Shutdown  #################")
                     raise With.Break
 
 

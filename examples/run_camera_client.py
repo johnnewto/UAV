@@ -23,10 +23,10 @@ con1 = "udpout:192.168.122.84:14445"
 con1 = "udpout:localhost:14445"
 if __name__ == '__main__':
     print (f"{boot_time_str =}")
-    config_path = Path("../config")
 
-    # cam_gst_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"))
-    # cam_cv2_1 = CV2Camera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"))
+
+    # cam_gst_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"))
+    # cam_cv2_1 = CV2Camera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"))
     with GstPipeline(SINK_PIPELINE) as rcv_pipeline: # this will show the video on fpsdisplaysink
         with MAVCom(con1, source_system=111, debug=False) as client:
             with MAVCom(con2, source_system=222, debug=False) as server:

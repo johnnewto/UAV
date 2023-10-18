@@ -5,7 +5,7 @@ import PySimpleGUI as sg
 from UAV.logging import LogLevels
 
 from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
-from UAV.utils.general import boot_time_str, read_camera_dict_from_toml
+from UAV.utils.general import boot_time_str, read_camera_dict_from_toml, find_config_dir
 
 from UAV.camera.gst_cam import GSTCamera
 from gstreamer import  GstPipeline, Gst, GstContext, GstPipes
@@ -58,7 +58,7 @@ async def main(encoder):
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
     # logger.disabled = True
     print (f"{boot_time_str =}")
-    config_path = Path("../config")
+
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
 
         with GstPipes(display_pipelines): # this will show the video on fpsdisplaysink
@@ -71,8 +71,8 @@ async def main(encoder):
                     gcs:CameraClient = GCS_client.add_component( CameraClient(mav_type=mavutil.mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.INFO))
 
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.DEBUG)
-                    cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.DEBUG)
+                    cam_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.DEBUG)
+                    cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"), udp_encoder=encoder, loglevel=LogLevels.DEBUG)
                     UAV_server.add_component( CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.DEBUG))
                     UAV_server.add_component(CameraServer(mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, source_component= mavutil.mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.DEBUG))
 

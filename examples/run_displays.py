@@ -4,7 +4,7 @@ from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, Gimba
 from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml
 from UAV.mavlink.camera_client import CAMERA_IMAGE_CAPTURED
 
-from UAV.camera import GSTCamera
+
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
 from gstreamer.utils import to_gst_string
 

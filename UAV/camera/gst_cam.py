@@ -1,6 +1,6 @@
 
 __all__ = ['CameraCaptureStatus', 'BaseCamera', 'CaptureThread', 'CV2Camera',
-           'GSTCamera', 'create_toml_file']
+           'GSTCamera']
 
 
 import time, os, sys
@@ -33,7 +33,7 @@ from fs.memoryfs import MemoryFS
 from dataclasses import dataclass
 
 
-def create_toml_file(filename):
+def todo_remove_create_toml_file(filename):  # todo remove
     """Create a TOML file for testing."""
     camera_info = {
         'vendor_name': 'John Doe                   ',  # >= 32 bytes
@@ -59,74 +59,107 @@ def create_toml_file(filename):
         'yaw': 0.0,
     }
     # GStreamer pipeline for video streaming and image capturing
-    gstreamer = {
-    'src_pipeline':[
-        #    "videotestsrc pattern=ball is-live=true ! video/x-raw,framerate=10/1 !  autovideosink",
-        "videotestsrc pattern=ball is-live=true ! video/x-raw,width=640,height=480,framerate=30/1 !  tee name=t",
+    gstreamer_src_intervideosink = {
+        'width': 640,
+        'height': 480,
+        'fps': 10,
 
-        "t.",
-        'queue ! autovideosink',
+        'pipeline':[
+            #    "videotestsrc pattern=ball is-live=true ! video/x-raw,framerate=10/1 !  autovideosink",
+            "videotestsrc pattern=ball is-live=true ! video/x-raw,width=640,height=480,framerate=30/1 !  tee name=t",
 
-        "t.",
-        'queue leaky=2 ! intervideosink channel=channel_0',
+            "t.",
+            'queue ! autovideosink',
 
-        "t.",
-        'queue leaky=2 ! intervideosink channel=channel_1',
+            "t.",
+            'queue leaky=2 ! intervideosink channel=channel_0',
 
-        "t.",
-        'queue leaky=2 ! videoconvert ! videorate drop-only=true ! intervideosink channel=channel_2 ',
+            "t.",
+            'queue leaky=2 ! intervideosink channel=channel_1',
 
-    ],
+            "t.",
+            'queue leaky=2 ! videoconvert ! videorate drop-only=true ! intervideosink channel=channel_2 ',
 
-    'ai_pipeline':[
-        'intervideosrc channel=channel_0',
-        # 'videotestsrc pattern=ball num-buffers={num_buffers}',
-        'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1,format=(string)BGR',
-        'appsink name=ai_sink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
-    ],
-
-    'jpg_pipeline':[
-        'intervideosrc channel=channel_1  ',
-        # 'videotestsrc pattern=ball num-buffers={num_buffers}',
-        'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
-        'queue',
-        'jpegenc quality={quality}',  # Quality of encoding, default is 85
-        # "queue",
-        'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
-    ],
-
-    'udp_pipeline':[
-        'intervideosrc channel=channel_2',
-        # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
-        'queue',
-        'videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
-        # 'video/x-raw,format=I420,width={width},height={height}',
-        # 'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
-        # 'videoconvert',
-        # 'queue',
-        # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-        'x264enc tune=zerolatency',
-        'rtph264pay ! udpsink host=127.0.0.1 port={port}',
-    ],
+        ],
     }
 
+    gstreamer_ai_appsink = {
+        'width': 640,
+        'height': 480,
+        'fps': 10,
+
+        'pipeline': [
+            'intervideosrc channel=channel_0',
+            # 'videotestsrc pattern=ball num-buffers={num_buffers}',
+            'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1,format=(string)BGR',
+            'appsink name=ai_sink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
+        ],
+    }
+
+    gstreamer_jpg_filesink = {
+        'width': 640,
+        'height': 480,
+        'fps': 10,
+
+        'pipeline':[
+            'intervideosrc channel=channel_1  ',
+            # 'videotestsrc pattern=ball num-buffers={num_buffers}',
+            'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+            'queue',
+            'jpegenc quality={quality}',  # Quality of encoding, default is 85
+            # "queue",
+            'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
+        ],
+    }
+    gstreamer_h264_udpsink ={
+        'width': 640,
+        'height': 480,
+        'fps': 10,
+        'pipeline': [
+            'intervideosrc channel=channel_2',
+            # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
+            'queue',
+            'videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+            # 'video/x-raw,format=I420,width={width},height={height}',
+            # 'queue leaky=2 ! video/x-raw,format=I420,width={width},height={height}',
+            # 'videoconvert',
+            # 'queue',
+            # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+            'x264enc tune=zerolatency',
+            'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+        ],
+    }
+
+    gstreamer_raw_udpsink = {
+        'width': 640,
+        'height': 480,
+        'fps': 10,
+
+        'pipeline': [
+            'intervideosrc channel=channel_2',
+            # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
+            'queue',
+            #            'videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+            #            'videoscale'
+            #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
+            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=1920,height=1080',
+            'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+            #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=640,height=480 ',
+            #            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',
+        ]
+    }
     
     camera_dict = {
         'camera_info': camera_info,
         'camera_position': camera_position,
-        'gstreamer': gstreamer,
+        'gstreamer_src_intervideosink': gstreamer_src_intervideosink,
+        'gstreamer_ai_appsink': gstreamer_ai_appsink,
+        'gstreamer_jpg_filesink': gstreamer_jpg_filesink,
+        'gstreamer_raw_udpsink': gstreamer_raw_udpsink,
     }
     with open(filename, "wb") as f:
         toml.dump(camera_dict, f)
 
-
-
-
-# def read_camera_dict_from_toml(toml_file_path # path to TOML file
-#                                )->dict: # camera_info dict
-#     """Read MAVLink camera info from a TOML file."""
-#     camera_dict = toml.load(toml_file_path)
-#     return camera_dict
 
 @dataclass
 class CameraCaptureStatus:
@@ -517,8 +550,11 @@ class GSTCamera(CV2Camera):
         # check to see if attribute pipeline exists
 
         if self.pipeline is None:
-            command = gst_utils.to_gst_string(self.camera_dict['gstreamer']['src_pipeline'])
-            self.pipeline = GstPipeline(command, loglevel=self._loglevel)
+            _dict = self.camera_dict['gstreamer_src_intervideosink']
+            width, height, fps, loglevel = _dict['width'], _dict['height'], _dict['fps'], _dict['loglevel']
+            pipeline = gst_utils.format_pipeline(**_dict )
+
+            self.pipeline = GstPipeline(pipeline, loglevel=self._loglevel)
             self.pipeline.startup()
             return self
         else:
@@ -565,12 +601,20 @@ class GSTCamera(CV2Camera):
         self.camera_capture_status.image_status = 1
         self.camera_capture_status.image_interval = interval
         self.max_count = count
+        _dict = self.camera_dict['gstreamer_jpg_filesink']
+        # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
+        _dict['fps'] = int(1/interval) if interval > 0 else _dict['fps']
+        pipeline = gst_utils.format_pipeline(**_dict)
 
-        pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['jpg_pipeline'])
-        MAX_FPS = 10
-        interval = 1/MAX_FPS if interval < 1/MAX_FPS else interval
-        fps = int(1/interval)
-        pipeline = gst_utils.fstringify(pipeline, quality=85, num_buffers=100, width=640, height=480, fps=fps) # todo add settings file
+        # fps = int(1 / interval) if interval > 0 else fps
+        # pipeline = gst_utils.to_gst_string(_dict['pipeline'])
+        # print(f'{width=}, {height=}, {fps=}')
+        # pipeline = gst_utils.fstringify(pipeline, width=width, height=height, fps=fps, quality=quality)
+
+        # MAX_FPS = 10
+        # interval = 1/fps if interval < 1/fps else interval
+        # fps = int(1/interval)
+
         self._gst_image_save:GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
                                                      on_jpeg_capture=self.on_capture_image,
                                                      loglevel=self._loglevel).startup()
@@ -588,16 +632,19 @@ class GSTCamera(CV2Camera):
         """Call back function from the GstStreamUDP Thread (video)."""
         pass
 
-    def video_start_streaming(self, port=5000): # Stream ID (0 for all streams
+    def video_start_streaming(self, streamId=0): # Stream ID (0 for all streams
         """Start video streaming."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-        if '264' in self.udp_encoder:
-            pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['h264_pipeline'])
-        else:
-            pipeline = gst_utils.to_gst_string(self.camera_dict['gstreamer']['raw_pipeline'])
-        pipeline = gst_utils.fstringify(pipeline, width=640, height=480, fps=10, port=port)  # todo add settings file
+
+        _dict = self.camera_dict['gstreamer_h264_udpsink'] if 'h264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
+        _dict['port'] += int(streamId)
+        # width, height, fps, port  = _dict['width'], _dict['height'], _dict['fps'], _dict['port']
+        pipeline = gst_utils.format_pipeline(**_dict)
+        # pipeline = gst_utils.to_gst_string(_dict['pipeline'])
+        # pipeline = gst_utils.fstringify(pipeline, width=width, height=height, fps=fps, port=port)
+
         self._gst_stream_video:GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
-        self.log.info(f"Video streaming started on port {port}")
+        self.log.info(f"Video streaming started on port {_dict['port']}")
         pass
 
     def video_stop_streaming(self): # Stream ID (0 for all streams

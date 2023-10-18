@@ -1,9 +1,9 @@
 import cv2
 
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
-from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml
+from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml, find_config_dir
 
-from UAV.camera import GSTCamera
+from UAV.camera.gst_cam import GSTCamera
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
 import gstreamer.utils as gst_utils
 
@@ -21,9 +21,8 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
 print(f"{boot_time_str =}")
-config_path = Path("../config")
 
-cam_uav = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml"))
+cam_uav = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"))
 
 
 async def doit():
@@ -38,7 +37,7 @@ async def doit():
 
                 ret = await gcs.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA)
                 print(f"Heartbeat received {ret = }")
-                time.sleep(0.1)
+                time.sleep(10)
                 msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system=222,
                                                 target_component=mavlink.MAV_COMP_ID_CAMERA)
                 print(f"1 MAVLINK_MSG_ID_CAMERA_INFORMATION {msg}")

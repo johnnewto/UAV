@@ -12,14 +12,15 @@ def _fig_bounds(x):
 
 import cv2
 import numpy as np
-from fastcore import *
-import matplotlib.pyplot as plt
-import moviepy.editor as mvp
-from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
+
+
 import logging
 import UAV.params as params
 
 try:
+    import matplotlib.pyplot as plt
+    import moviepy.editor as mvp
+    from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
     from nbdev.showdoc import *
 except:
     pass

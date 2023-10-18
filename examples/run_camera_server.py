@@ -7,6 +7,8 @@ import time
 from pathlib import Path
 import cv2
 
+from UAV.utils import find_config_dir
+
 MAV_TYPE_GCS = mavutil.mavlink.MAV_TYPE_GCS
 MAV_TYPE_CAMERA = mavutil.mavlink.MAV_TYPE_CAMERA
 # cli = GimbalClient(mav_connection=None, source_component=11, mav_type=MAV_TYPE_GCS, debug=False)
@@ -18,9 +20,8 @@ con2 = "udpin:localhost:14445"
 
 if __name__ == '__main__':
     print (f"boot_time_str = {boot_time_str = }")
-    config_path = Path("../config")
 
-    cam_gst_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(config_path / "test_camera_info.toml")).open()
+    cam_gst_1 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"))
 
     with MAVCom(con2, source_system=222, debug=False) as server:
 

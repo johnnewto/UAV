@@ -13,6 +13,8 @@ import psutil
 from pathlib import Path
 from tempfile import TemporaryFile
 
+import logging
+
 sim_names = ["AirSimNH", "LandscapeMountains", "Blocks", "Coastline"]
 
 
@@ -53,13 +55,18 @@ class RunSim:
                  settings: str | Path = "settings.json"):  # settings file
 
         # self.settings = f"/home/$USER/Documents/AirSim/{settings}"
+        self.set_log(logging.INFO)
+
         if Path(settings).is_file():
             self.settings = settings
         elif Path(f"{UAV.UAV_DIR}/{settings}").is_file():
             self.settings = f"{UAV.UAV_DIR}/{settings}"
+        elif Path(f"{UAV.UAV_DIR}/config/{settings}").is_file():
+            self.settings = f"{UAV.UAV_DIR}/config/{settings}"
         else:
             self.settings = None
-            print(f"Settings file {settings} not found.")
+            self.log.error(f"Settings file {settings} not found.")
+            "/home/jn/PycharmProjects/UAV/config/airsim_settings_high_res.json"
             # assert False
         # self.settings = f"{Path.cwd()}/{settings}"
         # self.settings = settings
@@ -77,12 +84,20 @@ class RunSim:
 
         self._shell = False
 
+    def set_log(self, loglevel):
+        self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
+        self._log.setLevel(int(loglevel))
+
+    @property
+    def log(self) -> logging.Logger:
+        return self._log
+
     def load(self):
         """Load the simulator without shell"""
         self._shell = False
         if not is_process_running(f"{self.name}"):  # check if process is running
             # avoid using the shell
-            script_path = [f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']
+            script_path = [f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']  # todo move this to config
             if self.windowed is not None:
                 script_path.append(f'-ResX={self.resx}')
                 script_path.append(f'-ResY={self.resy}')
@@ -103,7 +118,7 @@ class RunSim:
         self._shell = True
         if not is_process_running(f"{self.name}"):
 
-            script_path = f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}.sh '
+            script_path = f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}.sh '   # todo put this in settings filen
             if self.windowed is not None:
                 script_path += f' -ResX={self.resx} -ResY={self.resy} -{self.windowed} '
             if self.settings is not None:

@@ -1,6 +1,6 @@
 
 __all__ = [ 'boot_time', 'boot_time_str', 'get_linenumber', 'format_rcvd_msg', 'time_since_boot_ms',
-           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'read_camera_dict_from_toml', 'With']
+           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'find_root_dir', 'find_config_dir', 'read_camera_dict_from_toml', 'With']
 
 from pathlib import Path
 
@@ -12,6 +12,18 @@ import time
 from inspect import currentframe, getframeinfo
 import toml
 
+
+def find_root_dir():
+    import subprocess
+    # Run a Git command to get the root directory
+    project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
+    return project_dir
+
+def find_config_dir():
+    import subprocess
+    # Run a Git command to get the root directory
+    project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
+    return Path(project_dir) / 'config'
 
 def get_linenumber():
     cf = currentframe()

@@ -3,62 +3,82 @@
     "SimMode": "Multirotor",
     "ViewMode": "",
     "ClockSpeed": 1,
-    "Vehicles" : {
-        "Drone1" : {
-            "VehicleType" : "SimpleFlight",
-            "X": 0, "Y": 0, "Z": 0,
+    "Vehicles": {
+        "Drone1": {
+            "VehicleType": "SimpleFlight",
+            "X": 0,
+            "Y": 0,
+            "Z": 0,
             "Yaw": 0,
-            "Cameras" : {
+            "Cameras": {
                 "high_res": {
-                    "CaptureSettings" : [
+                    "CaptureSettings": [
                         {
-                            "ImageType" : 0,
-                            "Width" : 1920,
-                            "Height" : 1080
+                            "ImageType": 0,
+                            "Width": 1980,
+                            "Height": 1080
                         }
                     ],
-                    "X": 0.0, "Y": 0.00, "Z": -0.20,
-                    "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": -0.2,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 0.0
                 },
                 "low_res": {
-                    "CaptureSettings" : [
+                    "CaptureSettings": [
                         {
-                            "ImageType" : 0,
-                            "Width" : 256,
-                            "Height" : 144
+                            "ImageType": 0,
+                            "Width": 256,
+                            "Height": 144
                         }
                     ],
-                    "X": 0.50, "Y": 0.00, "Z": 0.10,
-                    "Pitch": 30, "Roll": 0.0, "Yaw": 0.0
+                    "X": 0.5,
+                    "Y": 0.0,
+                    "Z": 0.1,
+                    "Pitch": 30,
+                    "Roll": 0.0,
+                    "Yaw": 0.0
                 }
             }
         },
-        "Drone2" : {
-            "VehicleType" : "SimpleFlight",
-            "X": 2.5, "Y": 0, "Z": -2,
+        "Drone2": {
+            "VehicleType": "SimpleFlight",
+            "X": 2.5,
+            "Y": 0,
+            "Z": -2,
             "Yaw": 45,
-            "Cameras" : {
+            "Cameras": {
                 "high_res": {
-                    "CaptureSettings" : [
+                    "CaptureSettings": [
                         {
-                            "ImageType" : 0,
-                            "Width" : 800,
-                            "Height" : 450
+                            "ImageType": 0,
+                            "Width": 800,
+                            "Height": 450
                         }
                     ],
-                    "X": 0.50, "Y": 0.00, "Z": -0.10,
-                    "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0
+                    "X": 0.5,
+                    "Y": 0.0,
+                    "Z": -0.1,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 0.0
                 },
                 "low_res": {
-                    "CaptureSettings" : [
+                    "CaptureSettings": [
                         {
-                            "ImageType" : 0,
-                            "Width" : 256,
-                            "Height" : 144
+                            "ImageType": 0,
+                            "Width": 256,
+                            "Height": 144
                         }
                     ],
-                    "X": 0.50, "Y": 0.00, "Z": 0.10,
-                    "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0
+                    "X": 0.5,
+                    "Y": 0.0,
+                    "Z": 0.1,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 0.0
                 }
             }
         }
