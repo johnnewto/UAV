@@ -31,6 +31,7 @@ DISPLAY_RAW_PIPELINE = gst_utils.to_gst_string([
     'videoconvert',
     'fpsdisplaysink sync=false ',
 ])
+# gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 if __name__ == '__main__':
     gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
     udp_encoder = 'h264'
@@ -40,9 +41,9 @@ if __name__ == '__main__':
 
     with GstContext():
         with GstPipeline(display_pipeline) as disp_pipeline:
-            with AirsimCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "airsim_camera_info.toml"), udp_encoder=udp_encoder, loglevel=20).open() as air_cam:
+            camera_dict = read_camera_dict_from_toml(find_config_dir() / "airsim_camera_info.toml")
+            with AirsimCamera(camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=10).open() as air_cam:
                 # air_cam.image_start_capture(0.1, 5)
-                # # time.sleep(2)
                 # while air_cam._gst_image_save.is_active:
                 #     time.sleep(0.1)
                 time.sleep(2)

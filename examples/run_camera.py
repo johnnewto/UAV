@@ -18,6 +18,7 @@ import gstreamer.utils as gst_utils
 DISPLAY_H264_PIPELINE = to_gst_string([
     'udpsrc port={} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
     'queue ! rtph264depay ! avdec_h264',
+    'videoconvert',
     'fpsdisplaysink ',
 ])
 # gst-launch-1.0 udpsrc port=5000 ! application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)RAW,sampling=(string)RGB ! rtpvrawdepay ! videoconvert ! autovideosink
@@ -49,7 +50,7 @@ DISPLAY_RAW_PIPELINE = to_gst_string([
 con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 
 
-# gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
+gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 # if __name__ == '__main__':
 async def main(num_cams, udp_encoder):
     # logger.disabled = True

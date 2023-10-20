@@ -97,7 +97,11 @@ class RunSim:
         self._shell = False
         if not is_process_running(f"{self.name}"):  # check if process is running
             # avoid using the shell
-            script_path = [f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']  # todo move this to config
+            # find home dir using pathlib
+            script_path = [f'{Path.home()}/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']
+
+            # script_path = [f'~/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']  # todo move this to config
+            # script_path = [f'/home/jn/Airsim/{self.name}/LinuxNoEditor/{self.name}/Binaries/Linux/{self.name}']  # todo move this to config
             if self.windowed is not None:
                 script_path.append(f'-ResX={self.resx}')
                 script_path.append(f'-ResY={self.resy}')

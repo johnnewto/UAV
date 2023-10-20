@@ -47,22 +47,7 @@ def on_capture(buffer,):
     with open(filename, 'wb') as f:
         f.write(buffer)
         count += 1
-# if True:
-# with GstContext(debug=False):  # GST main loop in thread
-#     with GstPipeline(command1, debug=False) as pipeline1:
 
-        # for i in range(1):
-        #     vs = GstVideoSave(f'file{i:03d}.mp4', 1280, 720, status_interval=1, on_status_video_capture=on_capture, debug=False).startup()
-        #     time.sleep(2)
-        #     vs.end_stream()
-        #     # time.sleep(1)
-        #     # vs.shutdown()
-
-# je = GstJpegEnc(1280, 720, interval=1, max_count=10, on_jpeg_capture=on_capture, debug=False)
-# time.sleep(1)
-# je.startup()
-# time.sleep(3)
-# je.shutdown()
 
 
 from gstreamer import GstVideoSource

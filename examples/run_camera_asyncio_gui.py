@@ -20,6 +20,7 @@ from UAV.manager import Gui
 DISPLAY_H264_PIPELINE = to_gst_string([
     'udpsrc port={} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
     'queue ! rtph264depay ! avdec_h264',
+    'videoconvert',
     'fpsdisplaysink ',
 ])
 # gst-launch-1.0 udpsrc port=5000 ! application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)RAW,sampling=(string)RGB ! rtpvrawdepay ! videoconvert ! autovideosink
@@ -39,14 +40,14 @@ DISPLAY_RAW_PIPELINE = to_gst_string([
 ])
 # display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5100+i)) for i in range(num_cams)]
 num_cams = 2
-display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5100 + i)) for i in range(num_cams)]
+display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5000 + i)) for i in range(num_cams)]
 
 def display(num_cams=2, udp_encoder='h264'):
     """ Display video from drone"""
     if udp_encoder == 'h264':
-        display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5100+i)) for i in range(num_cams)]
+        display_pipelines = [GstPipeline(DISPLAY_H264_PIPELINE.format(5000+i)) for i in range(num_cams)]
     else:
-        display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5100 + i)) for i in range(num_cams)]
+        display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5000 + i)) for i in range(num_cams)]
 
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
         with GstPipes(display_pipelines, loglevel=LogLevels.INFO):  # this will show the video on fpsdisplaysink
@@ -91,8 +92,8 @@ async def main(encoder):
 
 
 if __name__ == '__main__':
-    UDP_ENCODER = 'rawvideo'  # 'h264'
-    # ENCODER = 'h264'
+    # UDP_ENCODER = 'rawvideo'  # 'h264'
+    UDP_ENCODER = 'h264'
     graph = sg.Graph(canvas_size=(700, 300),
                      graph_bottom_left=(0, 0),
                      graph_top_right=(700, 300),
