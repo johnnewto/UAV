@@ -1,0 +1,137 @@
+[camera_info]
+vendor_name = "John Doe                   "
+model_name = "Fake Camera                  "
+firmware_version = 1
+focal_length = 8.0
+sensor_size_h = 6.0
+sensor_size_v = 4.0
+resolution_h = 1920
+resolution_v = 1080
+lens_id = 0
+flags = 0
+cam_definition_version = 1
+cam_definition_uri = "http://example.com/camera_definition.xml"
+
+[camera_position]
+x = 0.0
+y = 0.0
+z = 0.0
+roll = 0.0
+pitch = 0.0
+yaw = 0.0
+
+[gstreamer_src_intervideosink]
+fps = 10   # Frames per second
+width = 640
+height = 480
+loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
+
+pipeline = [
+    'videotestsrc pattern=ball is-live=true',
+    'capsfilter caps=video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+    'tee name=t',
+
+    "t.",
+    'queue ! videoconvert ! autovideosink',
+
+    "t.",
+    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
+
+    "t.",
+    'queue leaky=2 ! intervideosink channel=channel_1  sync=false',
+
+    "t.",
+    'queue leaky=2 ! intervideosink channel=channel_2  sync=false',
+]
+
+
+[gstreamer_jpg_filesink]
+fps = 10   # Frames per second
+width = 640
+height = 480
+quality = 85
+pipeline = [
+    'intervideosrc channel=channel_1  ',
+    'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+    'queue',
+    'jpegenc quality={quality}',  # Quality of encoding, default is 85
+    'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
+    ]
+
+# todo add video save pipeline
+
+# streaming pipelines
+
+[gstreamer_h264_udpsink]
+fps = 10   # Frames per second
+width = 640
+height = 480
+port = 5000
+pipeline = [
+    'intervideosrc channel=channel_2',
+    'queue',
+    'videoconvert',
+    'videoscale ! video/x-raw,fwidth={width},height={height},framerate={fps}/1',
+    # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+    'x264enc tune=zerolatency',
+    'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+    ]
+
+
+[gstreamer_raw_udpsink]
+fps = 10   # Frames per second
+width = 640
+height = 480
+port = 5000
+pipeline = [
+    'intervideosrc channel=channel_2',
+    'queue',
+    'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
+    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+    ]
+
+
+[gstreamer_ai_appsink]
+fps = 10   # Frames per second
+width = 640
+height = 480
+pipeline = [
+    'intervideosrc channel=channel_0',
+    'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1,format=(string)BGR',
+    'appsink name=ai_sink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
+    ]
+
+
+[gstreamer_h264_udp_displaysink]
+port = 5000
+pipeline = [
+    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
+    'queue',
+    'rtph264depay ! avdec_h264',
+    'videoconvert',
+    'fpsdisplaysink ',
+]
+
+[gstreamer_raw_udp_displaysink]
+port = 5000
+width = 640   # raw needs width and height
+height = 480
+pipeline = [
+    'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
+    'queue ! rtpvrawdepay ! videoconvert',
+    'fpsdisplaysink sync=false ',
+]
+
+[gstreamer_videotestsrc]
+port = 5000
+width = 640
+height = 480
+fps = 30   # Frames per second
+pipeline = [
+    'videotestsrc pattern=ball is-live=true',
+    'capsfilter caps=video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+    'videoconvert',
+    'x264enc tune=zerolatency',
+    'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+
+]

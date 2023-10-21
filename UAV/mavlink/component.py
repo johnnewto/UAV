@@ -2,51 +2,33 @@ from __future__ import annotations
 
 __all__ = ['mavlink_command_to_string', 'Component']
 
-import time, os, sys
+# from UAV.imports import *   # TODO why is this relative import on nbdev_export?
+import asyncio
+import os
+import queue
+# logging.getLogger("uav").setLevel(logging.DEBUG)
+# logging.root.setLevel(logging.INFO)
+import threading
+import time
+import typing as typ
+
+import pymavlink.dialects.v20.ardupilotmega as mavlink
+from pymavlink import mavutil
+from pymavlink.dialects.v20.ardupilotmega import MAVLink
 
 from ..logging import logging, LogLevels
-from ..utils.general import LeakyQueue
+from ..utils.general import LeakyQueue, get_linenumber, format_rcvd_msg
 
 # os.environ['MAVLINK20'] == '1' should be placed in UAV.__init__.py
 assert os.environ[
            'MAVLINK20'] == '1', "Set the environment variable before from pymavlink import mavutil  library is imported"
 
-# logging.getLogger("uav").setLevel(logging.DEBUG)
-# logging.root.setLevel(logging.INFO)
-import threading
-import queue
-import typing as typ
-from pathlib import Path
-from inspect import currentframe, getframeinfo
-from pymavlink import mavutil
-from pymavlink.dialects.v20.ardupilotmega import MAVLink
-import pymavlink.dialects.v20.ardupilotmega as mavlink
-
-# from UAV.imports import *   # TODO why is this relative import on nbdev_export?
-import asyncio
-
 
 # from .mavcom import MAVCom, BaseComponent, get_linenumber, format_rcvd_msg
 
 
 # from .mavcom import MAVCom, BaseComponent, get_linenumber, format_rcvd_msg
 
-def get_linenumber():
-    cf = currentframe()
-    filename = Path(getframeinfo(cf).filename).name
-    return f"{filename}:{cf.f_back.f_lineno}"
-
-def format_rcvd_msg(msg, extra=''):
-    """ Format a message for logging."""
-    s = f"{str(msg)} ... {extra}"
-    try:
-        s = f"Rcvd {msg.get_srcSystem():3d}/{msg.get_srcComponent():3d} {s}"
-    except:
-        try:
-            s = f"Rcvd {'???'}/{msg.get_srcComponent():3d} {s}"
-        except:
-            s = f"Rcvd {'???'}/{'???'} {s}"
-    return s
 
 def mavlink_command_to_string(command_id):
     try:
@@ -54,16 +36,19 @@ def mavlink_command_to_string(command_id):
     except:
         return command_id
 
+
 class Component:
     """Create a mavlink Component with an ID  for MAV_COMPONENT"""
 
     def __init__(self,
                  source_component,  # used for component indication
                  mav_type,  # used for heartbeat MAV_TYPE indication
-                 loglevel:LogLevels=LogLevels.INFO,  # logging level
+                 loglevel: LogLevels = LogLevels.INFO,  # logging level
                  ):
 
-
+        self._log = None
+        self.mav_com = None
+        self.source_system = None
         self.source_component = source_component
         self.mav_type = mav_type
         self.set_log(loglevel)
@@ -75,7 +60,7 @@ class Component:
         self.num_msgs_rcvd = 0
         self.num_cmds_sent = 0
         self.num_cmds_rcvd = 0
-        self.num_acks_sent     = 0
+        self.num_acks_sent = 0
         self.num_acks_rcvd = 0
         self.num_acks_drop = 0
         self.message_cnts: {} = {}  # received message counts, indexed by system and message type
@@ -83,9 +68,7 @@ class Component:
         self.target_system = None
         self.target_component = None
 
-
-
-        self.message_callback = None # callback function for when a command is received
+        self.message_callback = None  # callback function for when a command is received
         # self._message_callbacks = [] # list of callback functions for when a command is received
 
         self._heartbeat_que = LeakyQueue(maxsize=10)
@@ -119,14 +102,13 @@ class Component:
     #     """Register a callback for a message received from the server"""
     #     self._message_callbacks.append(callback)
 
-
     def set_mav_connection(self, mav_com: "MAVCom"):
 
         # def start_mav_connection(self, mav_connection: "MAVCom"):
         """Set the mav_connection for the component"""
         self.mav_com = mav_com
         self.master = mav_com.master
-        self.mav:MAVLink = mav_com.master.mav
+        self.mav: MAVLink = mav_com.master.mav
         self.source_system = mav_com.source_system
         self.log.debug(f"set_mav_connection {self.__class__.__name__} {get_linenumber()} {self.mav_com = }")
         self._t_heartbeat.start()
@@ -148,7 +130,6 @@ class Component:
     def _set_message_callback(self, callback: typ.Callable):
         """Set the callback function for when a command is received."""
         self.message_callback = callback
-
 
     def send_ping(self, target_system: int, target_component: int, ping_num: int = None):
         """Send self.max_pings * ping messages to test if the server is alive."""
@@ -189,15 +170,15 @@ class Component:
             time.sleep(1)  # Send every second
 
     async def wait_heartbeat(self, remote_mav_type=None,  # type of remote system
-                       target_system=None,  # target system
-                       target_component=None,  # target component
-                       timeout: int = 1,):  # seconds
+                             target_system=None,  # target system
+                             target_component=None,  # target component
+                             timeout: int = 1, ):  # seconds
 
         """Wait for a heartbeat from target_system and target_component."""
         # Todo is this correct ? Wait for a heartbeat, so we know the target system IDs (also it seems to need it to start receiving commands)
 
         self.log.debug(
-                f"Waiting for heartbeat from {remote_mav_type} from {target_system = }:  {target_component = }")
+            f"Waiting for heartbeat from {remote_mav_type} from {target_system = }:  {target_component = }")
 
         _time = 0
         _TIME_STEP = 0.1
@@ -209,12 +190,13 @@ class Component:
                 self.log.debug(format_rcvd_msg(msg, extra='self._heartbeat_que.get() '))
                 # self.log.debug(f"Rcvd Heartbeat from src_sys: {msg.get_srcSystem()}, src_comp: {msg.get_srcComponent()} {msg} ")
                 # check if the heartbeat is from the correct system and component
-                if not msg.get_srcSystem() and not msg.get_srcComponent():  # todo check what is this doing
-                    if msg.type is None or msg.type == remote_mav_type:
-                        return (msg.get_srcSystem(), msg.get_srcComponent())
+                if msg.get_srcSystem() ==  target_system and msg.get_srcComponent() == target_component:
+                    # if not msg.get_srcSystem() and not msg.get_srcComponent():  # todo check what is this doing
+                    if remote_mav_type is None or msg.type == remote_mav_type:
+                        return msg.get_srcSystem(), msg.get_srcComponent()
                 else:
                     if msg.type == remote_mav_type:
-                        return (msg.get_srcSystem(), msg.get_srcComponent())
+                        return msg.get_srcSystem(), msg.get_srcComponent()
 
             except queue.Empty:  # i.e time out
                 await asyncio.sleep(_TIME_STEP)
@@ -236,15 +218,16 @@ class Component:
                 msg.get_srcSystem(),  # target_system = msg.get_srcSystem(),  # target_system
                 msg.get_srcComponent(),  # target_component = msg.get_srcComponent(),  # target_component
             )
-            self.log.debug(f"Sent ACK for {mavlink_command_to_string(msg.command)}:{msg.command} to system: {msg.get_srcSystem()} comp: {msg.get_srcComponent()}")
+            self.log.debug(
+                f"Sent ACK for {mavlink_command_to_string(msg.command)}:{msg.command} to system: {msg.get_srcSystem()} comp: {msg.get_srcComponent()}")
             self.num_acks_sent += 1
         except Exception as e:
             self.log.warning(f"Error sending ACK {e}")
 
-
-    async def wait_ack(self, target_system, target_component, command_id=None, timeout = 0.1) -> bool:
+    async def wait_ack(self, target_system, target_component, command_id=None, timeout=0.1) -> bool:
         """Wait for an ack from target_system and target_component."""
-        self.log.debug(f"Waiting for ACK: {target_system}/{target_component} : {mavlink_command_to_string(command_id)}:{command_id}")
+        self.log.debug(
+            f"Waiting for ACK: {target_system}/{target_component} : {mavlink_command_to_string(command_id)}:{command_id}")
         _time = 0
         _TIME_STEP = 0.1
         while _time < timeout:
@@ -254,13 +237,17 @@ class Component:
                 msg = self._ack_que.get_nowait()
                 # msg = self._ack_que.get(timeout=_TIME_STEP)
                 # self.log.debug(f"ACK received from src_sys: {msg.get_srcSystem()}, src_comp: {msg.get_srcComponent()} {msg}")
-                if (command_id == msg.command or command_id is None)  and msg.get_srcSystem() == target_system and msg.get_srcComponent() == target_component:
-                    self.log.debug(f"Rcvd ACK: {msg.get_srcSystem()}/{msg.get_srcComponent()} {mavlink_command_to_string(msg.command)}:{msg.command} {msg.get_srcComponent()} {msg}")
+                if (
+                        command_id == msg.command or command_id is None) and msg.get_srcSystem() == target_system and msg.get_srcComponent() == target_component:
+                    self.log.debug(
+                        f"Rcvd ACK: {msg.get_srcSystem()}/{msg.get_srcComponent()} {mavlink_command_to_string(msg.command)}:{msg.command} {msg.get_srcComponent()} {msg}")
                     return True
                 else:
-                    self.log.warning(f"**** ACK not handled {mavlink_command_to_string(msg.command)}:{msg.command} from : {msg.get_srcSystem()}/{msg.get_srcComponent()} {msg}")
+                    self.log.warning(
+                        f"**** ACK not handled {mavlink_command_to_string(msg.command)}:{msg.command} from : {msg.get_srcSystem()}/{msg.get_srcComponent()} {msg}")
                     # print(f"{command_id = } {msg.get_srcSystem() = }, {target_system = },  {msg.get_srcComponent() = }, {target_component = }")
-                    self.log.warning(f"      command_id = {mavlink_command_to_string(msg.command)} {msg.get_srcSystem() = }, {target_system = },  {msg.get_srcComponent() = }, {target_component = }")
+                    self.log.warning(
+                        f"      command_id = {mavlink_command_to_string(msg.command)} {msg.get_srcSystem() = }, {target_system = },  {msg.get_srcComponent() = }, {target_component = }")
 
             except queue.Empty:  # i.e time out
                 await asyncio.sleep(_TIME_STEP)
@@ -268,11 +255,12 @@ class Component:
 
         self.log.debug("!!!!*** No ACK received")
         return False
+
     def count_message(self, msg):
         """ Count a message by adding it to the message_cnts dictionary. indexed by system and message type"""
         try:
             self.message_cnts[msg.get_srcSystem()][msg.get_type()] += 1
-        except Exception as e:
+        except:
             # print(f"!!!! new Message type {msg.get_type()} from system {msg.get_srcSystem()}")
             sys = msg.get_srcSystem()
             if sys not in self.message_cnts:
@@ -290,7 +278,7 @@ class Component:
 
             try:
                 msg = self._message_que.get(timeout=timeout)
-                if msg.get_type() != 'HEARTBEAT':   # todo change to msg.get_msgId() == MAVLink.MAVLINK_MSG_ID_HEARTBEAT
+                if msg.get_type() != 'HEARTBEAT':  # todo change to msg.get_msgId() == MAVLink.MAVLINK_MSG_ID_HEARTBEAT
                     # print (f"{MAVLink.MAVLINK_MSG_ID_HEARTBEAT = }")
                     self.log.debug(format_rcvd_msg(msg))
                 self.num_msgs_rcvd += 1
@@ -347,12 +335,13 @@ class Component:
         self.target_component = target_component
 
     async def send_command(self, target_system: int,  # target system
-                     target_component: int,  # target component
-                     command_id: int,  # mavutil.mavlink.MAV_CMD....
-                     params: list,  # list of parameters
-                     timeout = 0.5,  # seconds
-                     ):
-        self.log.debug(f"Sending: {target_system}/{target_component} : {mavlink_command_to_string(command_id)}:{(command_id)} ")
+                           target_component: int,  # target component
+                           command_id: int,  # mavutil.mavlink.MAV_CMD....
+                           params: list,  # list of parameters
+                           timeout=0.5,  # seconds
+                           ):
+        self.log.debug(
+            f"Sending: {target_system}/{target_component} : {mavlink_command_to_string(command_id)}:{command_id} ")
         self.set_source_compenent()
         self.master.mav.command_long_send(
             target_system,  # target_system   Todo Tried using self.master.target_system but it didn't work
@@ -365,7 +354,7 @@ class Component:
 
         ret = await self.wait_ack(target_system, target_component, command_id=command_id, timeout=timeout)
         if ret:
-        # if self.wait_ack(target_system, target_component, command_id=command_id, timeout=timeout):
+            # if self.wait_ack(target_system, target_component, command_id=command_id, timeout=timeout):
             self.log.debug(
                 f"Rcvd ACK: {target_system}/{target_component} {mavlink_command_to_string(command_id)}:{command_id}")
             self.num_acks_rcvd += 1
@@ -377,8 +366,8 @@ class Component:
             return False
 
     async def _test_command(self, target_system: int,  # target system
-                      target_component: int,  # target component
-                      camera_id: int):  # camera id (0 for all cams)
+                            target_component: int,  # target component
+                            camera_id: int):  # camera id (0 for all cams)
         """
         example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a camera
         """
@@ -394,11 +383,7 @@ class Component:
                                  0,  # param7 (command ID)
                                  ])
 
-
     def close(self):
         self._t_heartbeat_stop = True
         self._t_heartbeat.join()
         self.log.info(f"{self.__class__.__name__} closed")
-
-
-

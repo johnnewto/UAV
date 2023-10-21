@@ -84,29 +84,6 @@ also exposes APIs to retrieve data and control vehicles in a platform
 independent way. [![AirSim Drone Demo
 Video](images/demo_video.png)](https://youtu.be/-WfTr1-OBGQ)
 
-#### Install msgpack-rpc-python with tornado 4.5.3
-
-To run airsim in jupyter you need msgpack-rpc-python to have an old
-version of tornado. The latest version of msgpack-rpc-python is 0.4.1,
-which requires tornado 4.5.3. The latest version of tornado is 6.1,
-which is not compatible with msgpack-rpc-python.
-
-The repo
-<https://github.com/xaedes/msgpack-rpc-python/tree/with_tornado_453> is
-a fork of msgpack-rpc-python which includes tornado 4.5.3 directly in
-the repo. This is not the best solution, but it works. This may not be
-the best solution, but for me it solves the issue. I can now use
-jupyterlab and notebook together with msgpack-rpc-python. The example
-works. It is hard to interrupt the server side tho…
-
-To use it, just clone it and checkout the branch with_tornado_453.
-Remove any existing installation of msgpack-rpc-python: pip uninstall
-msgpack-rpc-python
-
-Install msgpack-rpc-python with integrated tornado from the local
-directory in which you cloned fork, for example when you are currently
-in this directory: `pip install ~/../msgpack-rpc-python`
-
 #### Install Airsim
 
 For the binary releases of Airsim see
@@ -155,6 +132,26 @@ pip install pre-commit
 
 see [nbdev Pre-Commit
 Hooks](https://nbdev.fast.ai/tutorials/pre_commit.html) for more details
+
+#### Install msgpack-rpc-python with tornado 4.5.3
+
+To run airsim in or beside jupyter notebook you need msgpack-rpc-python
+to have an old version of tornado. The latest version of
+msgpack-rpc-python is 0.4.1, which requires tornado 4.5.3. The latest
+version of tornado is 6.1, which is not compatible with
+msgpack-rpc-python.
+
+The repo
+<https://github.com/xaedes/msgpack-rpc-python/tree/with_tornado_453> is
+a fork of msgpack-rpc-python which includes tornado 4.5.3 directly in
+the repo.
+
+Install msgpack-rpc-python with integrated tornado, pip install from
+this repo
+<https://github.com/johnnewto/msgpack-rpc-python/tree/with_tornado_453>
+
+    pip uninstall msgpack-rpc-python
+    pip install git+https://github.com/johnnewto/msgpack-rpc-python.git@with_tornado_453
 
 ### Preview Docs
 

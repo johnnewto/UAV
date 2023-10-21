@@ -533,7 +533,7 @@ class GSTCamera(CV2Camera):
 
     def __init__(self,
                  camera_dict=None,  # camera_info dict
-                 udp_encoder='H264',  # encoder for video streaming
+                 udp_encoder='h264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
         super().__init__( camera_dict, loglevel)
 
@@ -556,18 +556,29 @@ class GSTCamera(CV2Camera):
 
             self.pipeline = GstPipeline(pipeline, loglevel=self._loglevel)
             self.pipeline.startup()
+            self.pipeline.pipeline.set_name('gstreamer_src_intervideosink')
+            self.pause()
             return self
         else:
             self.log.warning("Pipeline already exists")
             return self
 
+    def get_name(self) :
+        """Get the name of the gstreamer pipeline"""
+        return self.pipeline.pipeline.get_name()
+
     def pause(self):
         """ Pause the gstreamer pipeline"""
         self.pipeline.pipeline.set_state(Gst.State.PAUSED)
+        # if self.pipeline.pipeline.get_state(Gst.CLOCK_TIME_NONE) == Gst.StateChangeReturn.FAILURE:
+        #     self.log.error(f"{self.get_name()}: failed to pause")
+        self.log.info(f"{self.get_name()}: paused")
+        # print(f"{self.pipeline.pipeline.get_state(Gst.CLOCK_TIME_NONE)}")
 
     def play(self):
         """ Play the gstreamer pipeline"""
         self.pipeline.pipeline.set_state(Gst.State.PLAYING)
+        self.log.info(f"{self.get_name()}: playing")
 
     def save_image_to_memoryfs(self, data: bytes, # jpeg encoded image to save
                                filename: str): # filename to save image
@@ -636,8 +647,8 @@ class GSTCamera(CV2Camera):
         """Start video streaming."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
 
-        _dict = self.camera_dict['gstreamer_h264_udpsink'] if 'h264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
-        _dict['port'] += int(streamId)
+        _dict = self.camera_dict['gstreamer_h264_udpsink'] if '264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
+        _dict['port'] += int(streamId*10)   # todo fix this port allocation
         # width, height, fps, port  = _dict['width'], _dict['height'], _dict['fps'], _dict['port']
         pipeline = gst_utils.format_pipeline(**_dict)
         # pipeline = gst_utils.to_gst_string(_dict['pipeline'])

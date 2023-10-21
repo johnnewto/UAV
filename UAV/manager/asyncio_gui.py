@@ -254,71 +254,9 @@ class Gui():
         print("run_gui exit")
 
 
-
-
-if __name__ == '__main__':
-    async def snapshot_task(client, start=True, comp=22, timeout=5):
-        if start:
-            print(f'!!!Run the task {snapshot_task.__name__} _asyncio.sleep({timeout=}) ')
-            ret = await client.image_start_capture(222, 22, interval=0.2, count=5)
-        else:
-            print(f'Cancel the task {snapshot_task.__name__} _asyncio.sleep({timeout=}) ')
-            ret =  await client.image_stop_capture(222, 22)
-
-
-        if ret and start:
-            yield Btn_State.RUNNING
-        elif ret and not start:
-            yield Btn_State.READY
-            return
-        else:
-            yield Btn_State.FAILED
-            return
-
-        while True:
-            ret = await client.wait_for_message(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
-            print(f"Image Request {comp = } {ret = }")
-            if not ret:
-                print(f"BREAK Image Request {comp = } {ret = }")
-                break
-            # await asyncio.sleep(1)
-        # await asyncio.sleep(5)
-        yield Btn_State.READY, "f{snapshot_func.__name__} Ready"
-
-
-    async def _snapshot_task(client, button=None, run=True, timeout=5):
-        if run:
-            print(f'Run the {button = } {button.state = } task {_snapshot_task.__name__} _asyncio.sleep({timeout=}) ')
-        else:
-            print(f'Cancel the {button = } task {_snapshot_task.__name__} _asyncio.sleep({timeout=}) ')
-
-        # print (f'{button.state = }, button_color = {button.button_color}, {button.key = }')
-
-        await asyncio.sleep(timeout)
-        return Btn_State.FAILED, "f{snapshot_func.__name__} Failed"
-
-    async def stream_task(client, button=None, run=True, timeout=5):
-        if run:
-            print(f'Run the {button = } {button.state = } task {stream_task.__name__} asyncio.sleep({timeout=}) ')
-            await asyncio.sleep(timeout)
-            return Btn_State.RUNNING, "f{stream_func.__name__} RUNNING"
-        else:
-            print(f'Stop the {button = } {button.state = }  task {stream_task.__name__} asyncio.sleep({timeout=}) ')
-            await asyncio.sleep(timeout)
-            return Btn_State.READY, "f{stream_func.__name__} Stopped"
-
-    async def record_task(button=None, run=True, timeout=5):
-        print(f'executing the {button = } task {record_task.__name__} asyncio.sleep({timeout=}) ')
-        print (f'{button.state = }, button_color = {button.button_color}, {button.key = }')
-        await asyncio.sleep(timeout)
-        return Btn_State.DONE, "f{record_func.__name__} Done"
-
-
 if __name__ == '__main__':
 
     btn_manager = ButtonManager()
-
-
     async def main():
         comp = 0
         window = create_window()

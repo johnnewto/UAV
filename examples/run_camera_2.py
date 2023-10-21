@@ -1,7 +1,7 @@
 import cv2
 
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
-from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml, find_config_dir
+from UAV.utils.general import boot_time_str, With, toml_load, config_dir
 
 from UAV.camera.gst_cam import GSTCamera
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
@@ -23,7 +23,7 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 
 print(f"{boot_time_str =}")
 
-cam_uav = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_info.toml"))
+cam_uav = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_0.toml"))
 
 
 async def doit():

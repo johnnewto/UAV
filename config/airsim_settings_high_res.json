@@ -11,7 +11,7 @@
             "Z": 0,
             "Yaw": 0,
             "Cameras": {
-                "high_res": {
+                "front": {
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
@@ -21,10 +21,40 @@
                     ],
                     "X": 0.0,
                     "Y": 0.0,
-                    "Z": -0.2,
+                    "Z": -0.4,
                     "Pitch": 0.0,
                     "Roll": 0.0,
                     "Yaw": 0.0
+                },
+                "left": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 1280,
+                            "Height": 720
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": -0.4,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": -90.0
+                },
+                "right": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 1980,
+                            "Height": 1080
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": -0.4,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 90.0
                 },
                 "low_res": {
                     "CaptureSettings": [

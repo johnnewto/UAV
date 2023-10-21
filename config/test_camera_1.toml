@@ -66,7 +66,7 @@ pipeline = [
 fps = 10   # Frames per second
 width = 640
 height = 480
-port = 5000
+port = 5001
 pipeline = [
     'intervideosrc channel=channel_2',
     'queue',
@@ -82,7 +82,7 @@ pipeline = [
 fps = 10   # Frames per second
 width = 640
 height = 480
-port = 5000
+port = 5001
 pipeline = [
     'intervideosrc channel=channel_2',
     'queue',
@@ -102,16 +102,36 @@ pipeline = [
     ]
 
 
-[gstreamer_udp_displaysink]
+[gstreamer_h264_udp_displaysink]
 port = 5000
-width = 640
-height = 480
-fps = 10   # Frames per second
 pipeline = [
-#    'videotestsrc pattern=ball is-live=true ! video/x-raw,width={width},height={height},framerate={fps}/1',
     'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
     'queue',
     'rtph264depay ! avdec_h264',
     'videoconvert',
     'fpsdisplaysink ',
+]
+
+[gstreamer_raw_udp_displaysink]
+port = 5001
+width = 640   # raw needs width and height
+height = 480
+pipeline = [
+    'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
+    'queue ! rtpvrawdepay ! videoconvert',
+    'fpsdisplaysink sync=false ',
+]
+
+[gstreamer_videotestsrc]
+port = 5001
+width = 640
+height = 480
+fps = 30   # Frames per second
+pipeline = [
+    'videotestsrc pattern=ball is-live=true',
+    'capsfilter caps=video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+    'videoconvert',
+    'x264enc tune=zerolatency',
+    'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+
 ]

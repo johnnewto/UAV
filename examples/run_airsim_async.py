@@ -1,5 +1,4 @@
-
-
+import asyncio
 import threading
 from pathlib import Path
 
@@ -27,19 +26,16 @@ handler_log = ScrollingLogHandler(log, logger)
 logger.info(f"Hello World...")
 
 
-rs = RunSim("AirSimNH", settings=config_dir() / "airsim_settings_high_res.json")
-# rs = RunSim("AirSimNH", settings=find_config_dir() / "settings.json")
+async def main():
+    asc = AirSimClient()
+    # cmd = DroneCommands()
+    # t = threading.Thread(target=cmd.do_tasklist, daemon=True)  # tasklist is a generator that returns tasks = [self.arm, self.takeoff, self.do_NH_path, self.rth, self.land, self.disarm]
+    # t.start()
 
-asc = AirSimClient()
-cmd = DroneCommands()
-t = threading.Thread(target=cmd.do_tasklist, daemon=True)  # tasklist is a generator that returns tasks = [self.arm, self.takeoff, self.do_NH_path, self.rth, self.land, self.disarm]
-t.start()
+    framecounter = 1
+    cam_num = 0
+    cams = ["high_res", "front_center", "front_right", "front_left", "bottom_center", "back_center"]
 
-framecounter = 1
-cam_num = 0
-cams = ["high_res", "front_center", "front_right", "front_left", "bottom_center", "back_center"]
-
-if True:
     while (True):
         framecounter += 1
         state = asc.getMultirotorState()
@@ -54,16 +50,7 @@ if True:
         log.draw(img)
         cv2.imshow("Camera", img)
 
-
-        # video.add(img_bgr)
         k = cv2.waitKey(10)
-        if k == ord('q') or k == ord('Q'):
-            # logger.info("......cancelLastTask")
-            asc.cancelLastTask()
-            # print(f"Landed state:  {state.landed_state}")
-            if state.landed_state == 0:
-                logger.info("Landed state = 0,  so quiting")
-                break
 
         if k == ord('c') or k == ord('C'):
             cam_num += 1
@@ -73,15 +60,19 @@ if True:
             logger.info(f"Camera: {cams[cam_num]}")
 
         if k == 27:
-            cmd.stop()
-            time.sleep(1)
+            # cmd.stop()
+            # time.sleep(1)
             break
 
         # if framecounter > 50:
         #     break
 
-cmd.disarm()
-t.join(timeout=5)
-cv2.destroyAllWindows()
-rs.exit()
+    # cmd.disarm()
+    # t.join(timeout=5)
+    cv2.destroyAllWindows()
 
+
+if __name__ == '__main__':
+    rs = RunSim("AirSimNH", settings=config_dir() / "airsim_settings_high_res.json")
+    asyncio.run(main())
+    rs.exit()

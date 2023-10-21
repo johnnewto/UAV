@@ -1,10 +1,11 @@
 
 __all__ = [ 'boot_time', 'boot_time_str', 'get_linenumber', 'format_rcvd_msg', 'time_since_boot_ms',
-           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'find_root_dir', 'find_config_dir', 'read_camera_dict_from_toml', 'With']
+           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'find_root_dir', 'config_dir',
+            'toml_load', 'With']
 
 from pathlib import Path
 
-# from fastcore.utils import *
+
 import numpy as np # Scientific computing library for Python
 import queue
 import typing as typ
@@ -19,7 +20,7 @@ def find_root_dir():
     project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
     return project_dir
 
-def find_config_dir():
+def config_dir():
     import subprocess
     # Run a Git command to get the root directory
     project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
@@ -84,8 +85,8 @@ class LeakyQueue(queue.Queue):
     def dropped(self):
         return self._dropped
 
-def read_camera_dict_from_toml(toml_file_path # path to TOML file
-                               )->dict: # camera_info dict
+def toml_load(toml_file_path  # path to TOML file
+              )->dict: # camera_info dict
     """Read MAVLink camera info from a TOML file."""
     camera_dict = toml.load(toml_file_path)
     return camera_dict

@@ -1,12 +1,13 @@
 import asyncio
 
+from UAV.mavlink.component import Component, mavlink
 from UAV.mavlink.mavcom import MAVCom
-from UAV.mavlink.component import Component, mavutil, mavlink
-import time
+
 
 def on_message(message):
     print(f"on_message: {message}")
-    return True # Return True to indicate that command was ok and send ack
+    return True  # Return True to indicate that command was ok and send ack
+
 
 class Cam1(Component):
     def __init__(self, source_component, mav_type, debug=False):
@@ -36,7 +37,8 @@ async def run_test_client_server(con1="udpin:localhost:14445", con2="udpout:loca
 
             for key, comp in client.component.items():
                 # result = await comp.wait_heartbeat(target_system=222, target_component=22)
-                result = await comp.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA, target_system=222, target_component=22)
+                result = await comp.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA, target_system=222,
+                                                   target_component=22)
                 print(f"Component {comp}, Heartbeat: {result = }")
 
             Num_Iters = 3

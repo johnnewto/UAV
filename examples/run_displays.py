@@ -1,7 +1,7 @@
 from UAV.logging import LogLevels
 
 from UAV.mavlink import CameraClient, CameraServer,  MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
-from UAV.utils.general import boot_time_str, With, read_camera_dict_from_toml
+from UAV.utils.general import boot_time_str, With, toml_load
 from UAV.mavlink.camera_client import CAMERA_IMAGE_CAPTURED
 
 

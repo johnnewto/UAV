@@ -5,11 +5,7 @@ import typing as typ
 from enum import Enum
 
 LOG_BASE_NAME = 'uav'
-# LOG_FORMAT = '%(levelname)-6.6s | %(name)-20s | %(asctime)s.%(msecs)03d | %(threadName)s | %(message)s'
-# LOG_DATE_FORMAT = '%d.%m %H:%M:%S'
-# LOG_FORMAT = '%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename)10s:%(lineno)3d] %(message)s'
-LOG_FORMAT = '%(log_color)s%(levelname)-6.6s | %(name)-15.15s | %(asctime)s.%(msecs)03d | %(filename)10s:%(lineno)3d | %(threadName)-18.18s | %(message)s'
-# LOG_DATE_FORMAT = '%H:%M:%S'
+LOG_FORMAT = '%(log_color)s%(levelname)-5.5s|%(asctime)s.%(msecs)03d| %(name)-15.15s | %(filename)-10.10s:%(lineno)3d | %(threadName)10.10s | %(processName)-10.10s | %(message)s'
 LOG_DATE_FORMAT = '%S'
 
 
@@ -42,8 +38,7 @@ def setup_logging(verbose: int = logging.DEBUG):
     root_logger.setLevel(logging.DEBUG if verbose > 0 else logging.INFO)
 
     log_handler = logging.StreamHandler()
-    log_handler.setFormatter(ColoredFormatter(
-        fmt=LOG_FORMAT, datefmt=LOG_DATE_FORMAT))
+    log_handler.setFormatter(ColoredFormatter(fmt=LOG_FORMAT, datefmt=LOG_DATE_FORMAT))
 
     local_logger = logging.getLogger(LOG_BASE_NAME)
     local_logger.setLevel(verbose)

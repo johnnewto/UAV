@@ -27,7 +27,7 @@ height = 1080
 loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 
 pipeline = [
-    'appsrc emit-signals=True is-live=True',
+    'appsrc name=appsrc_0 emit-signals=True is-live=True',
     'tee name=t',
 
 #    "t.",
@@ -42,7 +42,7 @@ pipeline = [
     "t.",
 #    'queue leaky=2 ! videoconvert ! videorate drop-only=true ! intervideosink channel=channel_2 ',
     'queue leaky=2 ! intervideosink channel=channel_2 sync=false', # connect to streaming pipeline
-#    'queue leaky=2 ! intervideosink channel=channel_2', # connect to streaming pipeline
+
     ]
 [gstreamer_ai_appsink]
 fps = 10   # Frames per second
@@ -105,3 +105,28 @@ pipeline = [
 #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=640,height=480 ',
 #            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',
         ]
+
+[gstreamer_h264_udp_displaysink]
+port = 5000
+width = 640
+height = 480
+fps = 10   # Frames per second
+pipeline = [
+#    'videotestsrc pattern=ball is-live=true ! video/x-raw,width={width},height={height},framerate={fps}/1',
+    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
+    'queue',
+    'rtph264depay ! avdec_h264',
+    'videoconvert',
+    'fpsdisplaysink ',
+]
+
+[gstreamer_raw_udp_displaysink]
+port = 5000
+width = 640
+height = 480
+fps = 10   # Frames per second
+pipeline = [
+    'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
+    'queue ! rtpvrawdepay ! videoconvert',
+    'fpsdisplaysink sync=false ',
+]
