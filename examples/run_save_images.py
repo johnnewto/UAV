@@ -1,8 +1,10 @@
 
-from gstreamer import GstPipeline, GstContext, GstVideoSave, GstVideoSink, GstVidSrcValve, GstApp, Gst, GstVideo, GstJpegEnc
-from gstreamer.utils import *
-import time, threading
+import time
+
 from UAV.logging import LogLevels
+from gstreamer import GstContext, GstJpegEnc
+from gstreamer.utils import *
+
 command1 = to_gst_string(['videotestsrc pattern=ball ! video/x-raw,width=640,height=480,framerate=10/1 ! tee name=t allow-not-linked=true',
 
                         "t.",
@@ -48,9 +50,6 @@ def on_capture(buffer,):
         f.write(buffer)
         count += 1
 
-
-
-from gstreamer import GstVideoSource
 
 width, height, num_buffers = 1920, 1080, 100
 caps_filter = 'capsfilter caps=video/x-raw,format=RGB,width={},height={}'.format(width, height)

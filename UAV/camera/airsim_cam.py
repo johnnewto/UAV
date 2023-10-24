@@ -31,17 +31,15 @@ class AirsimCamera(GSTCamera):
                  camera_dict=None,  # camera_info dict
                  udp_encoder='h264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
-        super().__init__(camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=loglevel)
+
         self.camera_name = camera_name
+        _dict = camera_dict['gstreamer_video_src']
         config_file = config_dir() / "airsim_settings_high_res.json"
-        _dict = camera_dict['gstreamer_src_intervideosink']
-        print(f"{_dict = }")
         self.check_airsm_camera_resolution(config_file, camera_name, _dict['width'], _dict['height'])
         self.rs = RunSim("AirSimNH", settings=config_file)
-
-        # self.rs = RunSim("AirSimNH", settings=find_config_dir() / "airsim_settings.json")
         self.asc = AirSimClient()
-        self.open()
+        self._dont_wait = threading.Event()  # used to pause or resume the thread
+        super().__init__(camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=loglevel)
 
     def check_airsm_camera_resolution(self, settings_file_path, camera_name, desired_width, desired_height):
         """check the airsim camera resolution and update if necessary"""
@@ -78,19 +76,22 @@ class AirsimCamera(GSTCamera):
         except Exception as e:
             self.log.error(f"Error updating {camera_name} width and height settings in {settings_file_path}: {e}")
 
-    def open(self):
-        """create and start the gstreamer pipeleine for the camera"""
+    def _open(self):
+        """
+          Override GSTCamera ._open()
+          create and start the gstreamer pipeleine for the camera
+        """
         if hasattr(self, "_running"):
-            self.log.error("AirsimCamera is already opened, Check to see if you have called open() ")
+            self.log.error("AirsimCamera is already opened, Check to see if you have called _open() ")
             return self
 
-
-        _dict = self.camera_dict['gstreamer_src_intervideosink']
+        _dict = self.camera_dict['gstreamer_video_src']
         self.width, self.height, self.fps = _dict['width'], _dict['height'], _dict['fps']
         pipeline = gst_utils.format_pipeline(**_dict)
         self.pipeline = GstVideoSink(pipeline, width=self.width, height=self.height, fps=self.fps, loglevel=self._loglevel)
 
         self.pipeline.startup()
+
         self._thread = threading.Thread(target=self.run_pipe, args=[self.camera_name], daemon=True)
         self._thread.start()
 
@@ -99,11 +100,14 @@ class AirsimCamera(GSTCamera):
     def run_pipe(self, camera_name):
         """run the camera pipeline in a thread"""
 
+        self._dont_wait.set()
         framecounter = 1
         self._running = True
 
+
         while self._running:
             framecounter += 1
+            self._dont_wait.wait()
             # print(f"{framecounter = }")
             img = self.asc.get_image(camera_name, rgb2bgr=True)
             # self.log.info(f"pushing {camera_name} : {img.shape = } on {self.camera_dict['gstreamer_h264_udpsink']}")
@@ -117,10 +121,20 @@ class AirsimCamera(GSTCamera):
 
         self.log.debug("Exiting AirsimCamera thread")
 
+    def pause(self):
+        """Pause the camera component."""
+        self._dont_wait.set()  # pause the thread
+        super().pause()
+
+    def play(self):
+        """Play the camera component."""
+        self._dont_wait.clear()
+        super().play()
+
     def close(self):
         """Close the camera component."""
         if not hasattr(self, "_running"):
-            self.log.error("AirsimCamera was not opened, Check to see if you have called open() ")
+            self.log.error("AirsimCamera was not opened, Check to see if you have called _open() ")
         else:
             self._running = False
         try:

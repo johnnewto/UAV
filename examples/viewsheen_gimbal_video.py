@@ -4,18 +4,15 @@ viewsheen_sdk gimbal control
 
 """
 
-import cv2
-import numpy as np
-from UAV.camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
-# from UAV.camera_sdks.viewsheen import GST_Video
-from gstreamer import GstPipeline, GstContext, GstVidSrcValve, GstApp, Gst, GstVideo, gst_buffer_to_ndarray
-import gstreamer.utils as gst_utils
 import socket
 import time
-import datetime
 
-from pathlib import Path
+import cv2
+import numpy as np
 
+# from UAV.camera_sdks.viewsheen import GST_Video
+import gstreamer.utils as gst_utils
+from UAV.camera_sdks.viewsheen.gimbal_cntrl import VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
 from UAV.mavlink.vs_gimbal import GimbalClient, GimbalServer, mavutil, MAVCom
 
 # self.video_source = f'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue'
@@ -87,7 +84,7 @@ def main(sock=None):
 
             print('Initialising stream...')
             waited = 0
-            pipeline = GstVidSrcValve(DEFAULT_PIPELINE, leaky=True)
+            pipeline = GstVideoSource(DEFAULT_PIPELINE, leaky=True)
             pipeline.startup()
 
             while True:

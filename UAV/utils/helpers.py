@@ -1,14 +1,16 @@
 __all__ = ['start_displays', 'dotest']
 
 import time
-from UAV.logging import LogLevels
 from multiprocessing import Process
 from typing import Dict
 
-import gstreamer.utils as gst_utils
-
 from UAV.utils import toml_load, config_dir
-from gstreamer import GstPipeline, GstContext, GstPipes
+
+try:
+    from gstreamer import GstPipeline, GstContext, GstPipes
+    import gstreamer.utils as gst_utils
+except:
+    print("GStreamer is not installed")
 
 
 # display_pipelines = [GstPipeline(DISPLAY_RAW_PIPELINE.format(5000 + i)) for i in range(num_cams)]
@@ -45,10 +47,11 @@ def start_displays(_dict: Dict = None,  # camera dict
             time.sleep(.5)
         gp.shutdown()
 
-
     _p = Process(target=display, args=(num_cams, port))
     _p.start()
+    time.sleep(0.1)  # wait for display to start
     return _p
+
 
 def dotest():
     def _dotest():

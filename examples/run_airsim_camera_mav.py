@@ -2,6 +2,7 @@ import asyncio
 import time
 
 from UAV.camera.airsim_cam import AirsimCamera
+from UAV.manager import Gui
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink
 from UAV.utils import helpers
 from UAV.utils.general import toml_load, config_dir
@@ -24,16 +25,28 @@ async def main():
 
             ret = await gcs.wait_heartbeat(target_system=222, target_component=22, timeout=1)
             print(f"Heartbeat {ret = }")
-            time.sleep(1)
-            await gcs.video_start_streaming(222, 22, )
-            time.sleep(2)
-            await gcs.video_stop_streaming(222, 22, )
+            for i in range (5):
+                await gcs.video_start_streaming(222, 22, )
+                time.sleep(2)
+                await gcs.video_stop_streaming(222, 22, )
+                time.sleep(2)
+                #
+                # await gcs.video_start_streaming(222, 23, )
+                # time.sleep(2)
+                # await gcs.video_stop_streaming(222, 23, )
 
-            time.sleep(1)
-            
-            await gcs.video_start_streaming(222, 23, )
-            time.sleep(2)
-            await gcs.video_stop_streaming(222, 23, )
+            gui = Gui(client=gcs)
+
+            t1 = asyncio.create_task(gui.find_cameras())
+            t2 = asyncio.create_task(gui.run_gui())
+
+            try:
+                await asyncio.gather(t1, t2)
+            except asyncio.CancelledError:
+                print("CancelledError")
+                pass
+
+
 if __name__ == '__main__':
     p = helpers.start_displays(num_cams=2, port=5000)
     asyncio.run(main())

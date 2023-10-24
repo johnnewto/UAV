@@ -17,25 +17,21 @@ if __name__ == '__main__':
 
     with GstContext():
         with AirsimCamera(camera_name='front', camera_dict=camera_dict_0, loglevel=LogLevels.INFO) as air_cam_0:
+            # if True:
             with AirsimCamera(camera_name='left', camera_dict=camera_dict_1, loglevel=LogLevels.INFO) as air_cam_1:
-                pass
-                # air_cam.image_start_capture(0.1, 5)
-                # while air_cam._gst_image_save.is_active:
-                #     time.sleep(0.1)
-                # time.sleep(0)
-                # air_cam_0.pause()
 
-                air_cam_0.video_start_streaming()
-                air_cam_1.video_start_streaming()
-                for i in range(5):
-                    air_cam_0.pause()    todo fix pause is not working for airsim camera  GstVideoSink is pushed so does not have pause..
-                    air_cam_1.pause()
-                    time.sleep(1)
-                    air_cam_0.play()
-                    air_cam_1.play()
-                    time.sleep(1)
-                air_cam_0.video_stop_streaming()
-                air_cam_1.video_stop_streaming()
+
+                # air_cam_1.video_start_streaming()
+                for i in range(10):
+                    air_cam_0.video_start_streaming()
+                    air_cam_1.video_start_streaming()
+                     # air_cam_1.pause()
+                    time.sleep(2)
+                    air_cam_0.video_stop_streaming()
+                    air_cam_1.video_stop_streaming()
+
+                    time.sleep(2)
+                # air_cam_1.video_stop_streaming()
                 time.sleep(1)
                 print(f"Waiting for capture thread to finish")
 

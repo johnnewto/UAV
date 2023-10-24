@@ -1,8 +1,9 @@
 
-from gstreamer import GstPipeline, GstContext, GstVideoSave, GstVideoSink, GstVidSrcValve, GstApp, Gst, GstVideo, GstJpegEnc
-from gstreamer.utils import *
-import time, threading
+import time
+
 from UAV.logging import LogLevels
+from gstreamer import GstPipeline, GstContext, GstVideoSave
+from gstreamer.utils import *
 
 command1 = to_gst_string(['videotestsrc pattern=ball ! video/x-raw,width=640,height=480,framerate=10/1 ! tee name=t allow-not-linked=true',
 

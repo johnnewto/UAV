@@ -1,7 +1,5 @@
-
 __all__ = ['CameraCaptureStatus', 'BaseCamera', 'CaptureThread', 'CV2Camera',
            'GSTCamera']
-
 
 import time, os, sys
 from typing import List
@@ -10,12 +8,12 @@ from ..logging import logging, LogLevels
 # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..mavlink.component import Component, mavutil, mavlink, MAVLink
+
 try:
     from gstreamer import GstPipeline, GstVideoSource, GstVideoSave, GstJpegEnc, GstStreamUDP, Gst
     import gstreamer.utils as gst_utils
 except:
     print("GStreamer is not installed")
-    pass
 
 import threading
 import cv2
@@ -37,9 +35,9 @@ def todo_remove_create_toml_file(filename):  # todo remove
     """Create a TOML file for testing."""
     camera_info = {
         'vendor_name': 'John Doe                   ',  # >= 32 bytes
-        'model_name': 'Fake Camera                  ', # >= 32 bytes
+        'model_name': 'Fake Camera                  ',  # >= 32 bytes
         'firmware_version': 1,
-        'focal_length': 8.0,   # mm
+        'focal_length': 8.0,  # mm
         'sensor_size_h': 6.0,  # mm
         'sensor_size_v': 4.0,  # mm
         'resolution_h': 1920,
@@ -59,12 +57,12 @@ def todo_remove_create_toml_file(filename):  # todo remove
         'yaw': 0.0,
     }
     # GStreamer pipeline for video streaming and image capturing
-    gstreamer_src_intervideosink = {
+    gstreamer_video_src = {
         'width': 640,
         'height': 480,
         'fps': 10,
 
-        'pipeline':[
+        'pipeline': [
             #    "videotestsrc pattern=ball is-live=true ! video/x-raw,framerate=10/1 !  autovideosink",
             "videotestsrc pattern=ball is-live=true ! video/x-raw,width=640,height=480,framerate=30/1 !  tee name=t",
 
@@ -101,7 +99,7 @@ def todo_remove_create_toml_file(filename):  # todo remove
         'height': 480,
         'fps': 10,
 
-        'pipeline':[
+        'pipeline': [
             'intervideosrc channel=channel_1  ',
             # 'videotestsrc pattern=ball num-buffers={num_buffers}',
             'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
@@ -111,7 +109,7 @@ def todo_remove_create_toml_file(filename):  # todo remove
             'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
         ],
     }
-    gstreamer_h264_udpsink ={
+    gstreamer_h264_udpsink = {
         'width': 640,
         'height': 480,
         'fps': 10,
@@ -148,11 +146,11 @@ def todo_remove_create_toml_file(filename):  # todo remove
             #            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',
         ]
     }
-    
+
     camera_dict = {
         'camera_info': camera_info,
         'camera_position': camera_position,
-        'gstreamer_src_intervideosink': gstreamer_src_intervideosink,
+        'gstreamer_video_src': gstreamer_video_src,
         'gstreamer_ai_appsink': gstreamer_ai_appsink,
         'gstreamer_jpg_filesink': gstreamer_jpg_filesink,
         'gstreamer_raw_udpsink': gstreamer_raw_udpsink,
@@ -182,45 +180,47 @@ class BaseCamera:
     def __init__(self,
                  camera_dict=None,  # camera_info dict
                  loglevel=LogLevels.INFO):  # debug log flag
-        if camera_dict is  None:
-            self.camera_dict = {'camera_info':{
-                    'vendor_name': 'UAV',
-                    'model_name': 'FakeCamera',
-                    'firmware_version': 1,
-                    'focal_length': 2.8,
-                    'sensor_size_h': 3.2,
-                    'sensor_size_v': 2.4,
-                    'resolution_h': 640,
-                    'resolution_v': 480,
-                    'lens_id': 0,
-                    'flags': 0,
-                    'cam_definition_version': 1,
-                    'cam_definition_uri': '',
-                    }}
+        if camera_dict is None:
+            self.camera_dict = {'camera_info': {
+                'vendor_name': 'UAV',
+                'model_name': 'FakeCamera',
+                'firmware_version': 1,
+                'focal_length': 2.8,
+                'sensor_size_h': 3.2,
+                'sensor_size_v': 2.4,
+                'resolution_h': 640,
+                'resolution_v': 480,
+                'lens_id': 0,
+                'flags': 0,
+                'cam_definition_version': 1,
+                'cam_definition_uri': '',
+            }}
         else:
             self.camera_dict = camera_dict
         self._loglevel = loglevel
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
         self._log.setLevel(int(loglevel))
 
-        self.camera_info = self.get_camera_info(self.camera_dict)   # camera_info dict
+        self.camera_info = self.get_camera_info(self.camera_dict)  # camera_info dict
 
         self.model_name = self.camera_dict['camera_info']['model_name']
-        self.mav:MAVLink = None  # camera_server.on_mav_connection() callback sets this  (line 84)
-        self.source_system = None # camera_server.on_mav_connection() callback sets this  (line 84)
-        self.source_component = None # camera_server.on_mav_connection() callback sets this  (line 84)
+        self.mav: MAVLink = None  # camera_server.on_mav_connection() callback sets this  (line 84)
+        self.source_system = None  # camera_server.on_mav_connection() callback sets this  (line 84)
+        self.source_component = None  # camera_server.on_mav_connection() callback sets this  (line 84)
 
     def __str__(self) -> str:
         return self.__class__.__name__
 
     def __repr__(self) -> str:
         return "<{}>".format(self)
+
     @property
     def log(self) -> logging.Logger:
         return self._log
 
     def get_camera_info(self, camera_dict):
         """get  MAVLink camera info from a TOML dict."""
+
         def make_length_32(s: str) -> str:
             if len(s) > 32:
                 return s[:32]
@@ -233,7 +233,7 @@ class BaseCamera:
         camera_info['vendor_name'] = [int(b) for b in camera_info['vendor_name'].encode()]
         camera_info['model_name'] = [int(b) for b in camera_info['model_name'].encode()]
 
-        s = str(''.join(chr(i) for i in camera_info['vendor_name']) )
+        s = str(''.join(chr(i) for i in camera_info['vendor_name']))
         print(s)
 
         return camera_info
@@ -254,18 +254,18 @@ class BaseCamera:
         try:
             self.set_source_compenent()
             self.mav.camera_information_send(time_since_boot_ms(),  # time_boot_ms
-                                                self.camera_info['vendor_name'],         # vendor name
-                                                self.camera_info['model_name'],          # model name
-                                                self.camera_info['firmware_version'],    # firmware version
-                                                self.camera_info['focal_length'],        # focal length
-                                                self.camera_info['sensor_size_h'],       # sensor size h
-                                                self.camera_info['sensor_size_v'],       # sensor size v
-                                                self.camera_info['resolution_h'],        # resolution h
-                                                self.camera_info['resolution_v'],        # resolution v
-                                                self.camera_info['lens_id'],             # lend_id
-                                                self.camera_info['flags'],               # flags
-                                                self.camera_info['cam_definition_version'],          # cam definition version
-                                                bytes(self.camera_info['cam_definition_uri'], 'utf-8'), # cam definition uri
+                                             self.camera_info['vendor_name'],  # vendor name
+                                             self.camera_info['model_name'],  # model name
+                                             self.camera_info['firmware_version'],  # firmware version
+                                             self.camera_info['focal_length'],  # focal length
+                                             self.camera_info['sensor_size_h'],  # sensor size h
+                                             self.camera_info['sensor_size_v'],  # sensor size v
+                                             self.camera_info['resolution_h'],  # resolution h
+                                             self.camera_info['resolution_v'],  # resolution v
+                                             self.camera_info['lens_id'],  # lend_id
+                                             self.camera_info['flags'],  # flags
+                                             self.camera_info['cam_definition_version'],  # cam definition version
+                                             bytes(self.camera_info['cam_definition_uri'], 'utf-8'),  # cam definition uri
                                              )
             self.log.debug(f"{self.mav.srcSystem = } {self.mav.srcComponent = }")
             self.log.debug(f"camera_information_send {self.camera_info = } {self.mav = }")
@@ -273,13 +273,14 @@ class BaseCamera:
             self.log.warning("No mav connection")
             # raise AttributeError
 
-    def close(self) :
+    def close(self):
         pass
 
 
 class CaptureThread():
     """Managed the Capture of images or video in a separate thread."""
-    def __init__(self, interval=1, max_count=1, on_timer=None, on_stop= None):
+
+    def __init__(self, interval=1, max_count=1, on_timer=None, on_stop=None):
         self._thread = None
         self._stop_event = threading.Event()
         self.interval = interval
@@ -302,7 +303,6 @@ class CaptureThread():
         if self.on_stop is not None:
             self.on_stop()
 
-
     def start(self):
         if self._thread is None or not self._thread.is_alive():
             self._stop_event.clear()
@@ -322,9 +322,10 @@ class CaptureThread():
 
 class CV2Camera(BaseCamera):
     """Create a fake camera component for testing"""
+
     def __init__(self,
-                 camera_dict=None, # camera_info dict
-                 loglevel=LogLevels.INFO): # log flag
+                 camera_dict=None,  # camera_info dict
+                 loglevel=LogLevels.INFO):  # log flag
         super().__init__(camera_dict, loglevel)
         # self.mav:MAVLink = mav
         # if camera_dict is not None:
@@ -351,9 +352,8 @@ class CV2Camera(BaseCamera):
         # todo add settings file
         # read parameters from settings file  # todo add settings file
 
-
-    def save_image_to_memoryfs(self, img: np.ndarray, # image to save
-                               filename: str): # filename to save image
+    def save_image_to_memoryfs(self, img: np.ndarray,  # image to save
+                               filename: str):  # filename to save image
         """Save image to memory filesystem."""
         # Convert OpenCV image to JPEG byte stream
         success, buffer = cv2.imencode(".jpg", img)
@@ -377,7 +377,7 @@ class CV2Camera(BaseCamera):
 
     def list_files(self) -> List:
         """List all files in the MemoryFS."""
-        l  = []
+        l = []
         for path in self.mem_fs.walk.files():
             l.append(path)
         return l
@@ -398,10 +398,10 @@ class CV2Camera(BaseCamera):
         try:
             self.set_source_compenent()
             self.mav.camera_settings_send(time_since_boot_ms(),  # time_boot_ms
-                                                0,   # mode_id (int)
-                                                0,    # zoomLevel (float)
-                                                0,    # focusLevel (float)
-                                             )
+                                          0,  # mode_id (int)
+                                          0,  # zoomLevel (float)
+                                          0,  # focusLevel (float)
+                                          )
         except AttributeError:
             self.log.warning("No mav connection")
 
@@ -412,15 +412,15 @@ class CV2Camera(BaseCamera):
         try:
             self.set_source_compenent()
             self.mav.storage_information_send(time_since_boot_ms(),  # time_boot_ms
-                                                0,   # storage_id
-                                                1,    # storage_count
-                                                0,    # status
-                                                self.fs_size,    # total_capacity
-                                                self.calculate_memory_usage(),    # used_capacity
-                                                self.fs_size-self.calculate_memory_usage(),    # available_capacity
-                                                0,    # read_speed
-                                                0,    # write_speed
-                                             )
+                                              0,  # storage_id
+                                              1,  # storage_count
+                                              0,  # status
+                                              self.fs_size,  # total_capacity
+                                              self.calculate_memory_usage(),  # used_capacity
+                                              self.fs_size - self.calculate_memory_usage(),  # available_capacity
+                                              0,  # read_speed
+                                              0,  # write_speed
+                                              )
         except AttributeError:
             self.log.warning("No mav connection")
 
@@ -432,13 +432,13 @@ class CV2Camera(BaseCamera):
         try:
             self.set_source_compenent()
             self.mav.camera_capture_status_send(time_since_boot_ms(),  # time_boot_ms
-                                                ccs.image_status,   # image_status
-                                                ccs.video_status,    # video_status
-                                                ccs.image_interval,    # image_interval
-                                                ccs.recording_time_ms,    # recording_time_ms
-                                                ccs.video_status,    # available_capacity
-                                                ccs.image_count,    # image_count
-                                             )
+                                                ccs.image_status,  # image_status
+                                                ccs.video_status,  # video_status
+                                                ccs.image_interval,  # image_interval
+                                                ccs.recording_time_ms,  # recording_time_ms
+                                                ccs.video_status,  # available_capacity
+                                                ccs.image_count,  # image_count
+                                                )
         except AttributeError:
             self.log.warning("No mav connection")
 
@@ -461,8 +461,8 @@ class CV2Camera(BaseCamera):
         except AttributeError:
             self.log.debug("No mav connection")
 
-    def image_start_capture(self, interval, # Image capture interval
-                            count, # Number of images to capture (0 for unlimited)f
+    def image_start_capture(self, interval,  # Image capture interval
+                            count,  # Number of images to capture (0 for unlimited)f
                             ):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
@@ -470,10 +470,9 @@ class CV2Camera(BaseCamera):
         self.camera_capture_status.image_status = 1
         self.camera_capture_status.image_interval = interval
         self.max_count = count
-        self._image_capture_thread = CaptureThread(interval=interval, max_count=count, on_timer=self.on_capture_image, on_stop= self.on_stop_image_capture)
+        self._image_capture_thread = CaptureThread(interval=interval, max_count=count, on_timer=self.on_capture_image, on_stop=self.on_stop_image_capture)
         self._image_capture_thread.start()
         self.on_start_image_capture()
-
 
     def on_capture_image(self, data):
         """Call back function for Get next image from camera. Simulate an image capture using OpenCV"""
@@ -489,7 +488,6 @@ class CV2Camera(BaseCamera):
         """Call back function when image capture thread is started."""
         pass
 
-
     def on_stop_image_capture(self):
         """Call back function when image capture thread is stopped."""
         pass
@@ -500,14 +498,11 @@ class CV2Camera(BaseCamera):
         self.camera_capture_status.image_status = 0
         self._image_capture_thread.stop()
 
-
     def time_UTC_usec(self):
         return int(time.time() * 1e6)
 
-
     def image_capture_thread_is_running(self):
         return self._image_capture_thread.is_running()
-
 
     def close(self):
         if self._image_capture_thread is not None:
@@ -527,7 +522,6 @@ class CV2Camera(BaseCamera):
         return False  # re-raise any exceptions
 
 
-
 class GSTCamera(CV2Camera):
     """ Create a fake camera component for testing using GStreamer"""
 
@@ -535,7 +529,7 @@ class GSTCamera(CV2Camera):
                  camera_dict=None,  # camera_info dict
                  udp_encoder='h264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
-        super().__init__( camera_dict, loglevel)
+        super().__init__(camera_dict, loglevel)
 
         self.camera_dict = camera_dict
         self.udp_encoder = udp_encoder
@@ -544,50 +538,55 @@ class GSTCamera(CV2Camera):
         self.last_image = None
         self.pipeline = None
         self._open()
+        self._setup_video_stream()
 
     def _open(self):
         """create and start the gstreamer pipeleine for the camera"""
         # check to see if attribute pipeline exists
 
         if self.pipeline is None:
-            _dict = self.camera_dict['gstreamer_src_intervideosink']
+            _dict = self.camera_dict['gstreamer_video_src']
             width, height, fps, loglevel = _dict['width'], _dict['height'], _dict['fps'], _dict['loglevel']
-            pipeline = gst_utils.format_pipeline(**_dict )
+            pipeline = gst_utils.format_pipeline(**_dict)
 
             self.pipeline = GstPipeline(pipeline, loglevel=self._loglevel)
             self.pipeline.startup()
-            self.pipeline.pipeline.set_name('gstreamer_src_intervideosink')
-            self.pause()
+            self.pipeline.pipeline.set_name('gstreamer_video_src')
+            # self.pause()
             return self
         else:
             self.log.warning("Pipeline already exists")
             return self
 
-    def get_name(self) :
+    def get_name(self):
         """Get the name of the gstreamer pipeline"""
         return self.pipeline.pipeline.get_name()
 
     def pause(self):
         """ Pause the gstreamer pipeline"""
         self.pipeline.pipeline.set_state(Gst.State.PAUSED)
+        self.log.info(f"{self.get_name()}: paused")
+        # self.pipeline.set_valve_state("myvalve", True)
         # if self.pipeline.pipeline.get_state(Gst.CLOCK_TIME_NONE) == Gst.StateChangeReturn.FAILURE:
         #     self.log.error(f"{self.get_name()}: failed to pause")
-        self.log.info(f"{self.get_name()}: paused")
+
+        # self.log.info(f"{self.get_name()}: paused (using valve element)")
         # print(f"{self.pipeline.pipeline.get_state(Gst.CLOCK_TIME_NONE)}")
 
     def play(self):
-        """ Play the gstreamer pipeline"""
+        """ Resume the gstreamer pipeline"""
+        # self.pipeline.set_valve_state("myvalve", False)
         self.pipeline.pipeline.set_state(Gst.State.PLAYING)
         self.log.info(f"{self.get_name()}: playing")
 
-    def save_image_to_memoryfs(self, data: bytes, # jpeg encoded image to save
-                               filename: str): # filename to save image
+    def save_image_to_memoryfs(self, data: bytes,  # jpeg encoded image to save
+                               filename: str):  # filename to save image
         """Save image to memory filesystem."""
         with self.mem_fs.open(filename, "wb") as f:
-            f.write(data) # Write to PyFilesystem's Memory Filesystem
+            f.write(data)  # Write to PyFilesystem's Memory Filesystem
         self.log.info(f"Image saved to memory filesystem with name: {filename}")
 
-    def load_image_from_memoryfs(self, filename: str): # filename to load image
+    def load_image_from_memoryfs(self, filename: str):  # filename to load image
         """Load image from memory filesystem."""
         with self.mem_fs.open(filename, "rb") as f:
             data = f.read()
@@ -603,8 +602,8 @@ class GSTCamera(CV2Camera):
         self.camera_capture_status.image_count += 1
         self.camera_image_captured_send()
 
-    def image_start_capture(self, interval, # Image capture interval
-                            count, # Number of images to capture (0 for unlimited)
+    def image_start_capture(self, interval,  # Image capture interval
+                            count,  # Number of images to capture (0 for unlimited)
                             ):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
@@ -614,7 +613,7 @@ class GSTCamera(CV2Camera):
         self.max_count = count
         _dict = self.camera_dict['gstreamer_jpg_filesink']
         # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
-        _dict['fps'] = int(1/interval) if interval > 0 else _dict['fps']
+        _dict['fps'] = int(1 / interval) if interval > 0 else _dict['fps']
         pipeline = gst_utils.format_pipeline(**_dict)
 
         # fps = int(1 / interval) if interval > 0 else fps
@@ -626,9 +625,9 @@ class GSTCamera(CV2Camera):
         # interval = 1/fps if interval < 1/fps else interval
         # fps = int(1/interval)
 
-        self._gst_image_save:GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
-                                                     on_jpeg_capture=self.on_capture_image,
-                                                     loglevel=self._loglevel).startup()
+        self._gst_image_save: GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
+                                                      on_jpeg_capture=self.on_capture_image,
+                                                      loglevel=self._loglevel).startup()
 
     def image_stop_capture(self):
         """Stop image capture sequence."""
@@ -643,38 +642,39 @@ class GSTCamera(CV2Camera):
         """Call back function from the GstStreamUDP Thread (video)."""
         pass
 
-    def video_start_streaming(self, streamId=0): # Stream ID (0 for all streams
-        """Start video streaming."""
+    def _setup_video_stream(self, streamId=0):  # Stream ID (0 for all streams
+        """Creates a GStreamer pipeline for streaming video,."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-
-        _dict = self.camera_dict['gstreamer_h264_udpsink'] if '264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
-        _dict['port'] += int(streamId*10)   # todo fix this port allocation
+        self._stream_dict = self.camera_dict['gstreamer_h264_udpsink'] if '264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
+        self._stream_dict['port'] += int(streamId * 10)  # todo fix this port allocation
         # width, height, fps, port  = _dict['width'], _dict['height'], _dict['fps'], _dict['port']
-        pipeline = gst_utils.format_pipeline(**_dict)
-        # pipeline = gst_utils.to_gst_string(_dict['pipeline'])
-        # pipeline = gst_utils.fstringify(pipeline, width=width, height=height, fps=fps, port=port)
+        pipeline = gst_utils.format_pipeline(**self._stream_dict)
+        self._pipeline_stream_udp: GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
+        self._pipeline_stream_udp.pipeline.set_name('gstreamer_h264_udpsink')
+        self.log.info(f'Video streaming pipeline "{self._pipeline_stream_udp.pipeline.get_name()}" created on port {self._stream_dict["port"]}')
+        time.sleep(0.1)
+        self.video_stop_streaming()
 
-        self._gst_stream_video:GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
-        self.log.info(f"Video streaming started on port {_dict['port']}")
-        pass
+    def video_start_streaming(self, streamId=0):  # Stream ID (0 for all streams
+        """Start video streaming. Creates a GStreamer pipeline for streaming video, if it does not exist otherwise resumes it."""
+        # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
+        self._pipeline_stream_udp.set_valve_state("myvalve", False)
+        self.log.info(f'Video streaming "{self._pipeline_stream_udp.pipeline.get_name()}" resumed on port {self._stream_dict["port"]}')
 
-    def video_stop_streaming(self): # Stream ID (0 for all streams
-        """Stop video streaming."""
+    def video_stop_streaming(self):  # Stream ID (0 for all streams
+        """Stop video streaming by pause on gstreamer valve element."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
-        try:
-            self._gst_stream_video.shutdown()
-        except Exception as e :
-            self.log.warning(f"Video streaming not running {e = }")
+        self._pipeline_stream_udp.set_valve_state("myvalve", True)
+        self.log.info(f'Video streaming "{self._pipeline_stream_udp.pipeline.get_name()}" stopped (paused) on port {self._stream_dict["port"]}')
 
-    def video_start_capture(self, stream_id, # Stream ID (0 for all streams)
-                            frequency): # Frequency CAMERA_CAPTURE_STATUS messages sent (0 for no messages, otherwise frequency)
+    def video_start_capture(self, stream_id,  # Stream ID (0 for all streams)
+                            frequency):  # Frequency CAMERA_CAPTURE_STATUS messages sent (0 for no messages, otherwise frequency)
         """Start video capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
         self.camera_capture_status.video_status = 1
-        interval = None if frequency == 0 else max(1/(frequency+0.000000001), 1) # reporting interval in seconds
-        i= 1
+        interval = None if frequency == 0 else max(1 / (frequency + 0.000000001), 1)  # reporting interval in seconds
+        i = 1
         self._gst_vid_save = GstVideoSave(f'file{i:03d}.mp4', 1280, 720, status_interval=interval, on_status_video_capture=self.on_status_video_capture, loglevel=self._loglevel).startup()
-
 
     def on_status_video_capture(self):
         """Call back function when video capture thread ontimer"""
@@ -692,16 +692,17 @@ class GSTCamera(CV2Camera):
         self._gst_vid_save.stop()
         # self.pipeline.set_valve_state("video_valve", False)
 
-
-
     def close(self):
+        """Close  gstreamer pipelines opened by the camera"""
         try:
-            self.pipeline.shutdown(eos=True) # send EOS event to all sinks
+            self.pipeline.shutdown(eos=True)  # send EOS event to all sinks
         except AttributeError as e:
             # class name
             self.log.error(f"Check that you called {self.__class__.__name__}.open(): {e}")
         super().close()
-
-
-
+        # trying to fix interpipe gstinterpipe.c:236:gst_inter_pipe_leave_node_priv: Node video_src not found. Could not leave node.
+        time.sleep(0.1) # todo fix this Node video_src not found
+        if self._pipeline_stream_udp is not None:
+            self._pipeline_stream_udp.shutdown()
+            self.log.info(f'!!!!!! Closed "{self._pipeline_stream_udp.pipeline.get_name()}" ')
 

@@ -20,7 +20,7 @@ roll = 0.0
 pitch = 0.0
 yaw = 0.0
 
-[gstreamer_src_intervideosink]
+[gstreamer_video_src]
 fps = 10   # Frames per second
 width = 640
 height = 480
@@ -29,19 +29,19 @@ loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 pipeline = [
     'videotestsrc pattern=ball is-live=true',
     'capsfilter caps=video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
-    'tee name=t',
-
-    "t.",
-    'queue ! videoconvert ! autovideosink',
-
-    "t.",
-    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
-
-    "t.",
-    'queue leaky=2 ! intervideosink channel=channel_1  sync=false',
-
-    "t.",
-    'queue leaky=2 ! intervideosink channel=channel_2  sync=false',
+#    'tee name=t',
+#
+#    "t.",
+#    'queue ! videoconvert ! autovideosink',
+#
+#    "t.",
+#    'queue leaky=2 ! intervideosink channel=channel_0  sync=true',
+#
+#    "t.",
+#    'queue leaky=2 ! intervideosink channel=channel_1  sync=true',
+#
+#    "t.",
+    'interpipesink name=video_src ',
 ]
 
 
@@ -68,14 +68,17 @@ width = 640
 height = 480
 port = 5000
 pipeline = [
-    'intervideosrc channel=channel_2',
+
+    'interpipesrc listen-to=video_src is-live=true allow-renegotiation=true format=time',
+    'valve name=myvalve drop=False ',
     'queue',
+#    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
     'videoconvert',
-    'videoscale ! video/x-raw,fwidth={width},height={height},framerate={fps}/1',
-    # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-    'x264enc tune=zerolatency',
-    'rtph264pay ! udpsink host=127.0.0.1 port={port}',
+     'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+#    'x264enc tune=zerolatency',
+    'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
     ]
+
 
 
 [gstreamer_raw_udpsink]

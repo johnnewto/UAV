@@ -20,10 +20,10 @@ roll = 0.0
 pitch = 0.0
 yaw = 0.0
 
-[gstreamer_src_intervideosink]
+[gstreamer_video_src]
 fps = 10   # Frames per second
-width = 1980
-height = 1080
+width = 800
+height = 600
 loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 
 pipeline = [
@@ -40,33 +40,24 @@ pipeline = [
     'queue leaky=2 ! intervideosink channel=channel_1 sync=false', # connect to jpgfile pipeline
 
     "t.",
-#    'queue leaky=2 ! videoconvert ! videorate drop-only=true ! intervideosink channel=channel_2 ',
-    'queue leaky=2 ! intervideosink channel=channel_2 sync=false', # connect to streaming pipeline
+    'interpipesink name=video_src_0 ',
 
     ]
-[gstreamer_ai_appsink]
-fps = 10   # Frames per second
-width = 640
-height = 480
-pipeline = [
-            'intervideosrc channel=channel_0',
-            # 'videotestsrc pattern=ball num-buffers={num_buffers}',
-            'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1,format=(string)BGR',
-            'appsink name=ai_sink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
-        ]
+
+
 [gstreamer_jpg_filesink]
 fps = 10   # Frames per second
 width = 640
 height = 480
 pipeline = [
-            'intervideosrc channel=channel_1  ',
-            # 'videotestsrc pattern=ball num-buffers={num_buffers}',
-            'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
-            'queue',
-            'jpegenc quality={quality}',  # Quality of encoding, default is 85
-            # "queue",
-            'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
-        ]
+        'intervideosrc channel=channel_1  ',
+        # 'videotestsrc pattern=ball num-buffers={num_buffers}',
+        'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+        'queue',
+        'jpegenc quality={quality}',  # Quality of encoding, default is 85
+        # "queue",
+        'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
+]
 
 # todo add video save pipeline
 
@@ -74,24 +65,25 @@ pipeline = [
 
 [gstreamer_h264_udpsink]
 fps = 10   # Frames per second
-width = 1920
-height = 1080
+width = 800
+height = 600
 port = 5000
 pipeline = [
-            'intervideosrc channel=channel_2',
-            'queue',
-            'videoconvert',
-            'videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
-            # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-            'x264enc tune=zerolatency',
-            'rtph264pay ! udpsink host=127.0.0.1 port={port}',
-        ]
+    'interpipesrc listen-to=video_src_0 is-live=true allow-renegotiation=true format=time',
+    'valve name=myvalve drop=False ',
+    'queue',
+#    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
+    'videoconvert',
+     'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+#    'x264enc tune=zerolatency',
+    'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
+    ]
 
 
 [gstreamer_raw_udpsink]
 fps = 10   # Frames per second
-width = 1920
-height = 1080
+width = 800
+height = 600
 port = 5000
 pipeline = [
             'intervideosrc channel=channel_2',
@@ -105,28 +97,3 @@ pipeline = [
 #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=640,height=480 ',
 #            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',
         ]
-
-[gstreamer_h264_udp_displaysink]
-port = 5000
-width = 640
-height = 480
-fps = 10   # Frames per second
-pipeline = [
-#    'videotestsrc pattern=ball is-live=true ! video/x-raw,width={width},height={height},framerate={fps}/1',
-    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
-    'queue',
-    'rtph264depay ! avdec_h264',
-    'videoconvert',
-    'fpsdisplaysink ',
-]
-
-[gstreamer_raw_udp_displaysink]
-port = 5000
-width = 640
-height = 480
-fps = 10   # Frames per second
-pipeline = [
-    'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)RAW, sampling=(string)RGB,depth=(string)8, width=(string)640, height=(string)480, payload=(int)96',
-    'queue ! rtpvrawdepay ! videoconvert',
-    'fpsdisplaysink sync=false ',
-]

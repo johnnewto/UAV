@@ -186,7 +186,7 @@ class VideoWidget(QMainWindow):
 
 
 # from gstreamer.utils import to_gst_string
-# from gstreamer import GstPipeline, Gst, GstContext, GstPipes, GstReceiveUDP, GstVidSrcValve, LogLevels
+# from gstreamer import GstPipeline, Gst, GstContext, GstPipes, GstReceiveUDP, LogLevels
 
 SRC_PIPELINE = to_gst_string([
             # 'videotestsrc pattern=ball is-live=true num-buffers=1000 ! video/x-raw,framerate=20/1 ! tee name=t',
@@ -217,7 +217,7 @@ SINK_PIPELINE = to_gst_string([
 def run_src(num_cams=2, udp_encoder='h264'):
     num_buffers = 40
 
-    # with GstVidSrcValve(SRC_PIPELINE, leaky=True) as pipeline:
+    # with GstVideoSource(SRC_PIPELINE, leaky=True) as pipeline:
     with GstPipeline(SRC_PIPELINE) as pipeline:
         while pipeline.is_active:
             time.sleep(0.1)
@@ -249,7 +249,7 @@ if __name__ == '__main__':
 
     # num_buffers = 40
     # with GstPipeline(SINK_PIPELINE) as rcv_pipeline:
-    #     with GstVidSrcValve(SRC_PIPELINE, leaky=True) as pipeline:
+    #     with GstVideoSource(SRC_PIPELINE, leaky=True) as pipeline:
     #         buffers = []
     #         count = 0
     #         dropstate = False

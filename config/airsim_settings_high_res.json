@@ -15,8 +15,8 @@
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
-                            "Width": 1980,
-                            "Height": 1080
+                            "Width": 800,
+                            "Height": 600
                         }
                     ],
                     "X": 0.0,
@@ -30,8 +30,8 @@
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
-                            "Width": 1280,
-                            "Height": 720
+                            "Width": 800,
+                            "Height": 600
                         }
                     ],
                     "X": 0.0,
@@ -45,8 +45,8 @@
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
-                            "Width": 1980,
-                            "Height": 1080
+                            "Width": 800,
+                            "Height": 600
                         }
                     ],
                     "X": 0.0,
