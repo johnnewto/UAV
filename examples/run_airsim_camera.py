@@ -11,8 +11,8 @@ if __name__ == '__main__':
 
     UDP_ENCODER = 'h264'
     # UDP_ENCODER = 'raw-video'
-    camera_dict_0 = toml_load(config_dir() / "airsim_cam_0.toml")
-    camera_dict_1 = toml_load(config_dir() / "airsim_cam_1.toml")
+    camera_dict_0 = toml_load(config_dir() / "airsim_cam_front.toml")
+    camera_dict_1 = toml_load(config_dir() / "airsim_cam_left.toml")
     p = start_displays(num_cams=2, port=5000)
 
     with GstContext():

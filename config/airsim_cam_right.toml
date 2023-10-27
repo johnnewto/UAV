@@ -21,6 +21,7 @@ pitch = 0.0
 yaw = 0.0
 
 [gstreamer_video_src]
+name = 'cam_right'
 fps = 10   # Frames per second
 width = 800
 height = 600
@@ -28,6 +29,8 @@ loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 
 pipeline = [
     'appsrc name=appsrc_0 emit-signals=True is-live=True',
+    'timeoverlay',
+    'textoverlay text={name}  valignment=top halignment=center font-desc="Sans, 18" shaded-background=true',
     'tee name=t',
 
 #    "t.",
@@ -40,7 +43,7 @@ pipeline = [
     'queue leaky=2 ! intervideosink channel=channel_1 sync=false', # connect to jpgfile pipeline
 
     "t.",
-    'interpipesink name=video_src_0 ',
+    'interpipesink name={name} ',
 
     ]
 
@@ -64,36 +67,40 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_h264_udpsink]
+name = 'cam_right'
 fps = 10   # Frames per second
 width = 800
 height = 600
-port = 5000
+bitrate = 2000
+port = 5002
+
 pipeline = [
-    'interpipesrc listen-to=video_src_0 is-live=true allow-renegotiation=true format=time',
+    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
     'queue',
 #    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
     'videoconvert',
-     'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+     'x264enc tune=zerolatency bitrate={bitrate}  speed-preset=superfast',
 #    'x264enc tune=zerolatency',
     'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
     ]
 
 
 [gstreamer_raw_udpsink]
+name = 'cam_right'
 fps = 10   # Frames per second
 width = 800
 height = 600
-port = 5000
+port = 5002
 pipeline = [
-            'intervideosrc channel=channel_2',
-            # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
-            'queue',
-#            'videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
-#            'videoscale'
-#            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=1920,height=1080',
-            'videoconvert ! videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
-            'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
-#            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=640,height=480 ',
-#            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',
-        ]
+    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
+    # 'videotestsrc pattern=ball flip=true is-live=true ! video/x-raw,framerate={fps}/1',
+    'queue',
+    #            'videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+    #            'videoscale'
+    #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=1920,height=1080',
+    'videoconvert ! videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+    #            'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width=640,height=480 ',
+    #            'rtpvrawpay ! udpsink host=127.0.0.1 port=5100',
+    ]

@@ -9,9 +9,10 @@ import cv2
 
 import PySimpleGUI as sg
 
-from GST_Video import GST_Video
+# from GST_Video import GST_Video
 # from viewsheen_sdk import GST_Video
 from UAV.camera_sdks.viewsheen import gimbal_cntrl
+from UAV.camera_sdks.viewsheen.GST_Video import GST_Video
 
 data_received = ''
 

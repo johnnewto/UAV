@@ -56,57 +56,18 @@
                     "Roll": 0.0,
                     "Yaw": 90.0
                 },
-                "low_res": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 256,
-                            "Height": 144
-                        }
-                    ],
-                    "X": 0.5,
-                    "Y": 0.0,
-                    "Z": 0.1,
-                    "Pitch": 30,
-                    "Roll": 0.0,
-                    "Yaw": 0.0
-                }
-            }
-        },
-        "Drone2": {
-            "VehicleType": "SimpleFlight",
-            "X": 2.5,
-            "Y": 0,
-            "Z": -2,
-            "Yaw": 45,
-            "Cameras": {
-                "high_res": {
+                "down": {
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
                             "Width": 800,
-                            "Height": 450
+                            "Height": 600
                         }
                     ],
-                    "X": 0.5,
+                    "X": 0.0,
                     "Y": 0.0,
-                    "Z": -0.1,
-                    "Pitch": 0.0,
-                    "Roll": 0.0,
-                    "Yaw": 0.0
-                },
-                "low_res": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 256,
-                            "Height": 144
-                        }
-                    ],
-                    "X": 0.5,
-                    "Y": 0.0,
-                    "Z": 0.1,
-                    "Pitch": 0.0,
+                    "Z": 0.01,
+                    "Pitch": -90.0,
                     "Roll": 0.0,
                     "Yaw": 0.0
                 }

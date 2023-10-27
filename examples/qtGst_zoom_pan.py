@@ -54,9 +54,9 @@ class VideoWidget(QMainWindow):
         Gst.init(None)
 
         # Initialize GStreamer pipeline
-        command = to_gst_string(['videotestsrc name=src', 'videobox name=videobox', 'xvimagesink'])
+
         command = to_gst_string([
-            'udpsrc port=5000 name = src ! application/x-rtp, media=video, clock-rate=90000, encoding-name=H264, payload=96',
+            'udpsrc port=5003 name = src ! application/x-rtp, media=video, clock-rate=90000, encoding-name=H264, payload=96',
             'queue',
             'rtph264depay ! avdec_h264',
             'videoconvert name = videoconv0',
@@ -65,12 +65,7 @@ class VideoWidget(QMainWindow):
             # 'queue',
             'xvimagesink sync=false'
         ])
-        # SINK_PIPELINE = to_gst_string([
-        #     'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
-        #     'rtph264depay ! avdec_h264',
-        #     'xvimagesink sync=false',
-        #     # 'autovideosink',
-        # ])
+
         self.video_height = 480
         self.video_width = 640
 
@@ -176,7 +171,7 @@ class VideoWidget(QMainWindow):
             # 'videotestsrc pattern=ball is-live=true num-buffers=1000 ! video/x-raw,framerate=20/1 ! tee name=t',
             'videotestsrc is-live=true  ! video/x-raw,format=I420, width=640,height=480,framerate=20/1',
             'x264enc tune=zerolatency',
-            'rtph264pay ! udpsink host=127.0.0.1 port=5000',
+            'rtph264pay ! udpsink host=127.0.0.1 port=5003',
 
         ])
         self.test_src_pipeline = GstPipeline(SRC_PIPELINE).startup()
@@ -188,99 +183,67 @@ class VideoWidget(QMainWindow):
 # from gstreamer.utils import to_gst_string
 # from gstreamer import GstPipeline, Gst, GstContext, GstPipes, GstReceiveUDP, LogLevels
 
-SRC_PIPELINE = to_gst_string([
-            # 'videotestsrc pattern=ball is-live=true num-buffers=1000 ! video/x-raw,framerate=20/1 ! tee name=t',
-            'videotestsrc is-live=true num-buffers=1000 ! video/x-raw,format=I420, width=640,height=480,framerate=20/1',
-            'tee name=t',
-            't.',
-            'queue leaky=2',
-            # 'video/x-raw,format=I420,width=640,height=480',
-            # 'textoverlay text="Frame: " valignment=top halignment=left shaded-background=true',
-            # 'timeoverlay valignment=top halignment=right shaded-background=true',
+# SRC_PIPELINE = to_gst_string([
+#             # 'videotestsrc pattern=ball is-live=true num-buffers=1000 ! video/x-raw,framerate=20/1 ! tee name=t',
+#             'videotestsrc is-live=true num-buffers=1000 ! video/x-raw,format=I420, width=640,height=480,framerate=20/1',
+#             'tee name=t',
+#             't.',
+#             'queue leaky=2',
+#             # 'video/x-raw,format=I420,width=640,height=480',
+#             # 'textoverlay text="Frame: " valignment=top halignment=left shaded-background=true',
+#             # 'timeoverlay valignment=top halignment=right shaded-background=true',
+#
+#             # 'videoconvert',
+#             # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
+#             'x264enc tune=zerolatency',
+#             'rtph264pay ! udpsink host=127.0.0.1 port=5003',
+#             't.',
+#             'queue leaky=2 ! videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR',
+#             'videoconvert ! appsink name=mysink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
+#         ])
+#
+# SINK_PIPELINE = to_gst_string([
+#             'udpsrc port=5003 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
+#             'rtph264depay ! avdec_h264',
+#             'xvimagesink sync=false',
+#             # 'autovideosink',
+#         ])
 
-            # 'videoconvert',
-            # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-            'x264enc tune=zerolatency',
-            'rtph264pay ! udpsink host=127.0.0.1 port=5000',
-            't.',
-            'queue leaky=2 ! videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR',
-            'videoconvert ! appsink name=mysink emit-signals=true  sync=false async=false  max-buffers=2 drop=true ',
-        ])
-
-SINK_PIPELINE = to_gst_string([
-            'udpsrc port=5000 ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
-            'rtph264depay ! avdec_h264',
-            'xvimagesink sync=false',
-            # 'autovideosink',
-        ])
-
-def run_src(num_cams=2, udp_encoder='h264'):
-    num_buffers = 40
-
-    # with GstVideoSource(SRC_PIPELINE, leaky=True) as pipeline:
-    with GstPipeline(SRC_PIPELINE) as pipeline:
-        while pipeline.is_active:
-            time.sleep(0.1)
-
-
-        buffers = []
-        count = 0
-        dropstate = False
-        while len(buffers) < num_buffers:
-            time.sleep(0.1)
-            # count += 1
-            # if count % 10 == 0:
-            #     print(f'Count = : {count}')
-            #     dropstate = not dropstate
-            #     pipeline.set_valve_state("myvalve", dropstate)
-            buffer = pipeline.pop()
-            if buffer:
-                buffers.append(buffer)
-                if len(buffers) % 10 == 0:
-                    print(f'Got: {len(buffers)} buffers of {pipeline.queue_size}')
-        print('Got: {} buffers'.format(len(buffers)))
-
-
-
+# def run_src(num_cams=2, udp_encoder='h264'):
+#     num_buffers = 40
+#
+#     # with GstVideoSource(SRC_PIPELINE, leaky=True) as pipeline:
+#     with GstPipeline(SRC_PIPELINE) as pipeline:
+#         while pipeline.is_active:
+#             time.sleep(0.1)
+#
+#
+#         buffers = []
+#         count = 0
+#         dropstate = False
+#         while len(buffers) < num_buffers:
+#             time.sleep(0.1)
+#             # count += 1
+#             # if count % 10 == 0:
+#             #     print(f'Count = : {count}')
+#             #     dropstate = not dropstate
+#             #     pipeline.set_valve_state("myvalve", dropstate)
+#             buffer = pipeline.pop()
+#             if buffer:
+#                 buffers.append(buffer)
+#                 if len(buffers) % 10 == 0:
+#                     print(f'Got: {len(buffers)} buffers of {pipeline.queue_size}')
+#         print('Got: {} buffers'.format(len(buffers)))
+#
+#
+#
 
 
 
 if __name__ == '__main__':
 
-    # num_buffers = 40
-    # with GstPipeline(SINK_PIPELINE) as rcv_pipeline:
-    #     with GstVideoSource(SRC_PIPELINE, leaky=True) as pipeline:
-    #         buffers = []
-    #         count = 0
-    #         dropstate = False
-    #         while len(buffers) < num_buffers:
-    #             time.sleep(0.1)
-    #             count += 1
-    #             if count % 10 == 0:
-    #                 print(f'Count = : {count}')
-    #                 dropstate = not dropstate
-    #                 pipeline.set_valve_state("myvalve", dropstate)
-    #             buffer = pipeline.pop()
-    #             if buffer:
-    #
-    #                 buffers.append(buffer)
-    #                 if len(buffers) % 10 == 0:
-    #                     print(f'Got: {len(buffers)} buffers of {pipeline.queue_size}')
-    #         print('Got: {} buffers'.format(len(buffers)))
-
-    from multiprocessing import Process
-    #
-    # p1 = Process(target=run_src,)   #  todo put this into the app  fix no caps
-    # p2 = Process(target=run_sink,)
-    #
-    # p1.start()
-    # starting process 2
-    # p2.start()
-    # p1.join()
-    # sys.exit(0)
-    # test_src_pipeline = GstPipeline(SRC_PIPELINE).startup()
     app = QApplication(sys.argv)
-    window = VideoWidget(test=True)
+    window = VideoWidget(test=False)
     window.show()
     # app.exec_()
     sys.exit(app.exec_())

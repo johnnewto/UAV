@@ -15,6 +15,8 @@ from tempfile import TemporaryFile
 
 import logging
 
+from UAV.utils import config_dir
+
 sim_names = ["AirSimNH", "LandscapeMountains", "Blocks", "Coastline"]
 
 
@@ -52,9 +54,12 @@ class RunSim:
                  resx: int = 800,  # window size  x
                  resy: int = 600,  # window size  y
                  windowed: str | None = 'windowed',  # windowed or fullscreen
-                 settings: str | Path = "settings.json"):  # settings file
+                 settings: str | Path | None = None):  # settings file
 
-        # self.settings = f"/home/$USER/Documents/AirSim/{settings}"
+        self.process = None
+        if settings is None:
+            settings = config_dir() / "airsim_settings_high_res.json"
+
         self.set_log(logging.INFO)
 
         if Path(settings).is_file():
@@ -66,8 +71,9 @@ class RunSim:
         else:
             self.settings = None
             self.log.error(f"Settings file {settings} not found.")
-            "/home/jn/PycharmProjects/UAV/config/airsim_settings_high_res.json"
-            # assert False
+
+        self.log.info(f"Settings file {self.settings} found.")
+
         # self.settings = f"{Path.cwd()}/{settings}"
         # self.settings = settings
         # print(self.settings)
@@ -142,6 +148,9 @@ class RunSim:
         if self._shell:
             find_and_terminate_process(self.name)
             print("Stopped Airsim")
+            return
+
+        if self.process is None:
             return
 
         self.process.terminate()

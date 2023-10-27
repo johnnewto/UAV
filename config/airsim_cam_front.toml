@@ -1,0 +1,101 @@
+[camera_info]
+vendor_name = "Maui63                   "
+model_name = "Airsim Camera                  "
+firmware_version = 1
+focal_length = 8.0
+sensor_size_h = 6.0
+sensor_size_v = 4.0
+resolution_h = 1920
+resolution_v = 1080
+lens_id = 0
+flags = 0
+cam_definition_version = 1
+cam_definition_uri = "http://example.com/camera_definition.xml"
+
+[camera_position]
+x = 0.0
+y = 0.0
+z = 0.0
+roll = 0.0
+pitch = 0.0
+yaw = 0.0
+
+[gstreamer_video_src]
+name = 'cam_front'
+fps = 10   # Frames per second
+width = 800
+height = 600
+loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
+
+pipeline = [
+    'appsrc name=appsrc_0 emit-signals=True is-live=True',
+    'timeoverlay',
+    'textoverlay text={name}  valignment=top halignment=center font-desc="Sans, 18" shaded-background=true',
+    'tee name=t',
+
+#    "t.",
+#    'queue ! videoconvert ! autovideosink sync=false',
+
+    "t.",
+    'queue leaky=2 ! intervideosink channel=channel_0 sync=false',
+
+    "t.",
+    'queue leaky=2 ! intervideosink channel=channel_1 sync=false', # connect to jpgfile pipeline
+
+    "t.",
+    'interpipesink name={name}  ',
+
+    ]
+
+
+[gstreamer_jpg_filesink]
+fps = 10   # Frames per second
+width = 640
+height = 480
+pipeline = [
+        'intervideosrc channel=channel_1  ',
+        # 'videotestsrc pattern=ball num-buffers={num_buffers}',
+        'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+        'queue',
+        'jpegenc quality={quality}',  # Quality of encoding, default is 85
+        # "queue",
+        'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
+]
+
+# todo add video save pipeline
+
+# streaming pipelines
+
+[gstreamer_h264_udpsink]
+name = 'cam_front'
+fps = 10   # Frames per second
+width = 800
+height = 600
+bitrate = 2000
+port = 5000
+
+pipeline = [
+    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
+    'valve name=myvalve drop=False ',
+    'queue',
+#    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
+    'videoconvert',
+     'x264enc tune=zerolatency bitrate={bitrate} speed-preset=superfast',
+#    'x264enc tune=zerolatency',
+    'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
+    ]
+
+
+[gstreamer_raw_udpsink]
+name = 'cam_front'
+fps = 10   # Frames per second
+width = 800
+height = 600
+port = 5000
+pipeline = [
+    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
+    'queue',
+    'videoconvert ! videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+
+    ]

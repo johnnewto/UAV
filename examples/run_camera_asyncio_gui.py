@@ -10,6 +10,8 @@ from UAV.utils import helpers
 from UAV.utils.general import boot_time_str, toml_load, config_dir
 from gstreamer import GstContext
 
+def auto():
+    print("Running auto")
 
 async def main():
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
@@ -27,19 +29,19 @@ async def main():
 
                 # add UAV cameras, This normally runs on drone
                 cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_0.toml"), loglevel=LogLevels.DEBUG)
-                # cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_1.toml"), loglevel=LogLevels.DEBUG)
+                cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_1.toml"), loglevel=LogLevels.DEBUG)
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=LogLevels.DEBUG))
-                # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.DEBUG))
+                UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.DEBUG))
 
                 ret = await gcs.wait_heartbeat(target_system=222, target_component=22, timeout=1)
                 print(f"Heartbeat {ret = }")
-
-                await gcs.video_start_streaming(222, mavlink.MAV_COMP_ID_CAMERA, )
-                time.sleep(2)
-                await gcs.video_stop_streaming(222, mavlink.MAV_COMP_ID_CAMERA, )
+                #
+                # await gcs.video_start_streaming(222, mavlink.MAV_COMP_ID_CAMERA, )
+                # time.sleep(2)
+                # await gcs.video_stop_streaming(222, mavlink.MAV_COMP_ID_CAMERA, )
 
                 # Run the main function using asyncio.run
-                gui = Gui(client=gcs)
+                gui = Gui(client=gcs, auto=auto)
 
                 t1 = asyncio.create_task(gui.find_cameras())
                 t2 = asyncio.create_task(gui.run_gui())
@@ -52,6 +54,6 @@ async def main():
 
 
 if __name__ == '__main__':
-    p = helpers.start_displays(num_cams=2, port=5000)
+    p = helpers.start_displays(display_type='cv2', num_cams=2, port=5000)
     asyncio.run(main())
     p.terminate()

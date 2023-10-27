@@ -117,17 +117,19 @@ class AirsimCamera(GSTCamera):
             if img.shape != (self.height, self.width, 3):  # numpy array are rows by columns = height by width
                 self.log.error(f"Airsim img.shape = {img.shape} != {(self.height, self.width, 3)}")
 
-            time.sleep(1 / self.fps)  # set fps to self.fps
+            time.sleep(1 / self.fps)  # set fps to self.fps  todo use timer to cac  fps as its too slow
+            if framecounter % 100 == 0:
+                self.log.info(f"Frame: {framecounter} {img.shape = }")
 
         self.log.debug("Exiting AirsimCamera thread")
 
     def pause(self):
-        """Pause the camera component."""
+        """Pause the airsim camera grab thread ."""
         self._dont_wait.set()  # pause the thread
         super().pause()
 
     def play(self):
-        """Play the camera component."""
+        """Play the airsim camera grab thread."""
         self._dont_wait.clear()
         super().play()
 
