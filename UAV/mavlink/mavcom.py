@@ -6,6 +6,7 @@ __all__ = ['MAV_SYSTEM_GCS_CLIENT', 'MAV_TYPE_GCS', 'MAV_SYSTEM_VEHICLE', 'MAV_T
 import time, os, sys
 import typing
 
+
 from ..logging import logging, LogLevels
 from ..utils.general import LeakyQueue, format_rcvd_msg, time_since_boot_ms, time_UTC_usec, date_time_str
 
@@ -25,6 +26,7 @@ from pymavlink import mavutil
 # from .component import Component
 from .camera_server import CameraServer
 from .camera_client import CameraClient, Component
+from .vs_gimbal import GimbalClient
 
 # def get_linenumber():
 #     cf = currentframe()
@@ -400,7 +402,7 @@ class MAVCom:
                     continue
 
     def add_component(self, comp: "typing.Union[Component, CameraClient, CameraServer"  # commponent to add
-                      ) -> typing.Union[Component, CameraClient, CameraServer, None]:  # return the component
+                      ) -> typing.Union[Component, CameraClient, CameraServer, GimbalClient, None]:  # return the component
         # append a component to the component dictionary with the key being the source_component
         # Check to see if {comp.source_component = } already exists
 

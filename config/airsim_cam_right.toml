@@ -23,14 +23,14 @@ yaw = 0.0
 [gstreamer_video_src]
 name = 'cam_right'
 fps = 10   # Frames per second
-width = 800
-height = 600
+width = 1600
+height = 1200
 loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 
 pipeline = [
     'appsrc name=appsrc_0 emit-signals=True is-live=True',
-    'timeoverlay',
-    'textoverlay text={name}  valignment=top halignment=center font-desc="Sans, 18" shaded-background=true',
+#    'timeoverlay',
+#    'textoverlay text={name}  valignment=top halignment=center font-desc="Sans, 18" shaded-background=true',
     'tee name=t',
 
 #    "t.",
@@ -50,8 +50,8 @@ pipeline = [
 
 [gstreamer_jpg_filesink]
 fps = 10   # Frames per second
-width = 640
-height = 480
+width = 1600
+height = 1200
 pipeline = [
         'intervideosrc channel=channel_1  ',
         # 'videotestsrc pattern=ball num-buffers={num_buffers}',
@@ -69,8 +69,9 @@ pipeline = [
 [gstreamer_h264_udpsink]
 name = 'cam_right'
 fps = 10   # Frames per second
-width = 800
-height = 600
+width = 1600
+height = 1200
+
 bitrate = 2000
 port = 5002
 
@@ -89,8 +90,8 @@ pipeline = [
 [gstreamer_raw_udpsink]
 name = 'cam_right'
 fps = 10   # Frames per second
-width = 800
-height = 600
+width = 1920
+height = 1080
 port = 5002
 pipeline = [
     'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',

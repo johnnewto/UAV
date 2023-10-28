@@ -51,6 +51,8 @@ async def main():
                 except asyncio.CancelledError:
                     print("CancelledError")
                     pass
+                cam_1.close()
+                cam_2.close()
 
 
 if __name__ == '__main__':

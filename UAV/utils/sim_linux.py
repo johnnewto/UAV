@@ -51,8 +51,8 @@ class RunSim:
 
     def __init__(self,
                  name: str = "Coastline",  # name of the simulator environment
-                 resx: int = 800,  # window size  x
-                 resy: int = 600,  # window size  y
+                 resx: int = 1600,  # window size  x
+                 resy: int = 1200,  # window size  y
                  windowed: str | None = 'windowed',  # windowed or fullscreen
                  settings: str | Path | None = None):  # settings file
 
@@ -83,10 +83,6 @@ class RunSim:
         self.windowed = windowed
         # self.load_with_shell()
         self.load()
-        time.sleep(3)
-
-        # self.client = airsim.MultirotorClient()
-        # self.client.confirmConnection()
 
         self._shell = False
 
@@ -120,8 +116,20 @@ class RunSim:
                 self.process = subprocess.Popen(script_path, stdout=f, stderr=f,)
 
             print("Started Airsim " + self.name)
+
+            # wait for the process to start
+
+            #     t = time.time()
+            #     while not is_process_running(f"{self.name}"):
+            #         if time.time() - t > 3:
+            #             print("Airsim failed to start.")
+            #             return False
+            #         time.sleep(0.5)
+            time.sleep(3)
+            return True
         else:
             print(f"Airsim {self.name} already running.")
+            return False
             
     def load_with_shell(self):
         """ load with shell, this is needed for `*.sh` files"""
@@ -151,6 +159,7 @@ class RunSim:
             return
 
         if self.process is None:
+            print("Airsim not running as subprocess so not closing")
             return
 
         self.process.terminate()

@@ -5,9 +5,6 @@ import time
 from ..logging import LogLevels
 from ..utils import config_dir
 
-# # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-# from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-# from ..mavlink.component import Component, mavutil, mavlink, MAVLink
 try:
     # allow import of gstreamer to fail if not installed (for github actions)
     from gstreamer import GstPipeline, GstVideoSource, GstVideoSave, GstJpegEnc, GstStreamUDP, GstVideoSink
@@ -20,7 +17,7 @@ from ..utils.sim_linux import RunSim
 from ..airsim.client import AirSimClient
 import threading
 
-cams = ["high_res", "front_center", "front_right", "front_left", "bottom_center", "back_center"]
+# cams = ["high_res", "front_center", "front_right", "front_left", "bottom_center", "back_center"]
 
 
 class AirsimCamera(GSTCamera):
@@ -34,12 +31,17 @@ class AirsimCamera(GSTCamera):
 
         self.camera_name = camera_name
         _dict = camera_dict['gstreamer_video_src']
+        self._dont_wait = threading.Event()  # used to pause or resume the thread
+
         config_file = config_dir() / "airsim_settings_high_res.json"
-        self.check_airsm_camera_resolution(config_file, camera_name, _dict['width'], _dict['height'])
+        # self.check_airsm_camera_resolution(config_file, camera_name, _dict['width'], _dict['height'])
         self.rs = RunSim("AirSimNH", settings=config_file)
+        # time.sleep(1)
         self.asc = AirSimClient()
+
         self._dont_wait = threading.Event()  # used to pause or resume the thread
         super().__init__(camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=loglevel)
+        self.log.info(f"***** AirsimCamera: {camera_name = } ******")
 
     def check_airsm_camera_resolution(self, settings_file_path, camera_name, desired_width, desired_height):
         """check the airsim camera resolution and update if necessary"""
@@ -109,13 +111,17 @@ class AirsimCamera(GSTCamera):
             framecounter += 1
             self._dont_wait.wait()
             # print(f"{framecounter = }")
-            img = self.asc.get_image(camera_name, rgb2bgr=True)
-            # self.log.info(f"pushing {camera_name} : {img.shape = } on {self.camera_dict['gstreamer_h264_udpsink']}")
+            try:
+                img = self.asc.get_image(camera_name, rgb2bgr=True)
+                # self.log.info(f"pushing {camera_name} : {img.shape = } on {self.camera_dict['gstreamer_h264_udpsink']}")
 
-            self.pipeline.push(buffer=img)
-            # self.log.info(f"pushed {self.pipeline.pipeline.get_name()}")
-            if img.shape != (self.height, self.width, 3):  # numpy array are rows by columns = height by width
-                self.log.error(f"Airsim img.shape = {img.shape} != {(self.height, self.width, 3)}")
+                self.pipeline.push(buffer=img)
+                # self.log.info(f"pushed {self.pipeline.pipeline.get_name()}")
+                if img.shape != (self.height, self.width, 3):  # numpy array are rows by columns = height by width
+                    self.log.error(f"Airsim img.shape = {img.shape} != {(self.height, self.width, 3)}")
+            except Exception as e:
+                self.log.error(f'Error getting image from Camera "{camera_name}":  {e}')
+                time.sleep(0.1)
 
             time.sleep(1 / self.fps)  # set fps to self.fps  todo use timer to cac  fps as its too slow
             if framecounter % 100 == 0:

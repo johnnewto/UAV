@@ -127,7 +127,7 @@ def create_window(layout=None):
             [sg.Button('Add Control Panel'), sg.B('Cancel'), sg.Button('Exit')],
             # panel.get_layout(),
         ]
-    window = sg.Window('Extend Layout Example', layout)
+    window = sg.Window('Basic Camera Manager', layout)
     return window
 
 
@@ -222,11 +222,11 @@ class Gui:
         if self.client is None:
             logging.warning("Gui has no client")
         if not callable(self.auto):
-            logging.error("Gui auto is not callable")
+            logging.warning("Gui auto is not callable")
         if not callable(self.reset):
-            logging.error("Gui reset is not callable")
+            logging.warning("Gui reset is not callable")
         if not callable(self.pause):
-            logging.error("Gui pause is not callable")
+            logging.warning("Gui pause is not callable")
 
         btn_manager = ButtonManager()
         window = create_window([[sg.Button('Info'), sg.B('Auto'), sg.B('Reset'), sg.B('Pause'), sg.Button('Exit')]]).finalize()

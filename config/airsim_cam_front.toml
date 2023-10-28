@@ -23,14 +23,14 @@ yaw = 0.0
 [gstreamer_video_src]
 name = 'cam_front'
 fps = 10   # Frames per second
-width = 800
-height = 600
+width = 1600
+height = 1200
 loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 
 pipeline = [
     'appsrc name=appsrc_0 emit-signals=True is-live=True',
-    'timeoverlay',
-    'textoverlay text={name}  valignment=top halignment=center font-desc="Sans, 18" shaded-background=true',
+#    'timeoverlay',
+#    'textoverlay text={name}  valignment=top halignment=center font-desc="Sans, 18" shaded-background=true',
     'tee name=t',
 
 #    "t.",
@@ -43,15 +43,15 @@ pipeline = [
     'queue leaky=2 ! intervideosink channel=channel_1 sync=false', # connect to jpgfile pipeline
 
     "t.",
-    'interpipesink name={name}  ',
+    ' queue ! interpipesink name={name}  ',
 
     ]
 
 
 [gstreamer_jpg_filesink]
 fps = 10   # Frames per second
-width = 640
-height = 480
+width = 1920
+height = 1080
 pipeline = [
         'intervideosrc channel=channel_1  ',
         # 'videotestsrc pattern=ball num-buffers={num_buffers}',
@@ -69,28 +69,29 @@ pipeline = [
 [gstreamer_h264_udpsink]
 name = 'cam_front'
 fps = 10   # Frames per second
-width = 800
-height = 600
+
+width = 1600
+height = 1200
+
 bitrate = 2000
 port = 5000
 
 pipeline = [
-    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
+    'interpipesrc listen-to={name} is-live=true allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
     'queue',
 #    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
     'videoconvert',
-     'x264enc tune=zerolatency bitrate={bitrate} speed-preset=superfast',
+     'x264enc tune=zerolatency bitrate={bitrate} ',
 #    'x264enc tune=zerolatency',
     'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
     ]
 
-
 [gstreamer_raw_udpsink]
 name = 'cam_front'
 fps = 10   # Frames per second
-width = 800
-height = 600
+width = 1920
+height = 1080
 port = 5000
 pipeline = [
     'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',

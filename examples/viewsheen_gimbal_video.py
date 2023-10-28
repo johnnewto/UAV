@@ -3,7 +3,7 @@
 viewsheen_sdk gimbal control
 
 """
-
+import asyncio
 import socket
 import time
 
@@ -12,8 +12,11 @@ import numpy as np
 
 # from UAV.camera_sdks.viewsheen import GST_Video
 import gstreamer.utils as gst_utils
+from UAV import MAVCom
+from UAV.mavlink import mavlink
 from UAV.camera_sdks.viewsheen.gimbal_cntrl import VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
-from UAV.mavlink.vs_gimbal import GimbalClient, GimbalServer, mavutil, MAVCom
+from UAV.mavlink.vs_gimbal import GimbalClient, GimbalServer
+from gstreamer import GstVideoSource
 
 # self.video_source = f'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue'
 # # self.video_codec = '! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264'
@@ -55,7 +58,7 @@ def gst_to_opencv(sample):
         buffer=buf.extract_dup(0, buf.get_size()), dtype=np.uint8)
     return array
 
-def main(sock=None):
+async def main(sock=None):
 
 
     cv2.namedWindow('Receive', cv2.WINDOW_NORMAL)
@@ -63,20 +66,20 @@ def main(sock=None):
     # video = GST_Video.GST_Video()
 
 
-    MAV_TYPE_GCS = mavutil.mavlink.MAV_TYPE_GCS
-    MAV_TYPE_CAMERA = mavutil.mavlink.MAV_TYPE_CAMERA
-    MAV_TYPE_GIMBAL = mavutil.mavlink.MAV_TYPE_GIMBAL
+    MAV_TYPE_GCS = mavlink.MAV_TYPE_GCS
+    MAV_TYPE_CAMERA = mavlink.MAV_TYPE_CAMERA
+    MAV_TYPE_GIMBAL = mavlink.MAV_TYPE_GIMBAL
 
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
     # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
-    with MAVCom(con1, source_system=111, debug=False) as client:
-        with MAVCom(con2, source_system=222, debug=False) as server:
-            gimbal: GimbalClient = client.add_component(
-                GimbalClient(mav_type=MAV_TYPE_GCS, source_component=11, debug=False))
-            server.add_component(GimbalServer(mav_type=MAV_TYPE_GIMBAL, source_component=22, debug=False))
+    with MAVCom(con1, source_system=111) as client:
+        with MAVCom(con2, source_system=222, ) as server:
+            gimbal:GimbalClient = client.add_component(GimbalClient(mav_type=MAV_TYPE_GCS, source_component=11, loglevel=10))
+            server.add_component(GimbalServer(mav_type=MAV_TYPE_GIMBAL, source_component=22, loglevel=10))
 
+            ret = await gimbal.wait_heartbeat(target_system=222, target_component=22, timeout=1)
+            print(f"Heartbeat {ret = }")
 
-            gimbal.wait_heartbeat(target_system=222, target_component=22, timeout=0.99)
             time.sleep(0.1)
             gimbal.set_target(222, 22)
 
@@ -110,49 +113,49 @@ def main(sock=None):
 
                 if k == ord('d'):  # Right arrow key
                     print("Right arrow key pressed")
-                    gimbal.set_attitude(NAN, NAN, 0.0, 0.2)
+                    await gimbal.set_attitude(NAN, NAN, 0.0, 0.2)
                     # pan_tilt(gimbal_speed)
                     KeyReleaseThread().start()
 
                 if k == ord('a'):  # Left arrow key
                     print("Left arrow key pressed")
-                    gimbal.set_attitude(NAN, NAN, 0.0, -0.2)
+                    await gimbal.set_attitude(NAN, NAN, 0.0, -0.2)
                     KeyReleaseThread().start()
 
                 if k == ord('w'):
                     print("Up arrow key pressed")
-                    gimbal.set_attitude(NAN, NAN, 0.2, 0.0)
+                    await gimbal.set_attitude(NAN, NAN, 0.2, 0.0)
                     KeyReleaseThread().start()
 
                 if k == ord('s'):
                     print("Down arrow key pressed")
-                    gimbal.set_attitude(NAN, NAN, -0.2, 0.0)
+                    await gimbal.set_attitude(NAN, NAN, -0.2, 0.0)
                     KeyReleaseThread().start()
 
                 if k == ord('1'):
                     print("Zoom in pressed")
-                    gimbal.set_zoom(1)
+                    await gimbal.set_zoom(1)
 
                 if k == ord('2'):
                     print("Zoom out pressed")
-                    gimbal.set_zoom(2)
+                    await gimbal.set_zoom(2)
 
                 if k == ord('3'):
                     print("Zoom stop pressed")
-                    gimbal.set_zoom(3)
+                    await gimbal.set_zoom(3)
 
                 if k == ord('4'):
                     print("Zoom  = 1")
-                    gimbal.set_zoom(4)
+                    await gimbal.set_zoom(4)
 
                 if k == ord('5'):
                     print("Zoom x2 in")
-                    gimbal.set_zoom(5)
+                    await gimbal.set_zoom(5)
 
 
                 if k == ord('6'):
                     print("Zoom x2 out")
-                    gimbal.set_zoom(6)
+                    await gimbal.set_zoom(6)
 
                 if k == ord('c'):
                     print("Snapshot in pressed")
@@ -167,6 +170,6 @@ if __name__ == '__main__':
     # Connect to viewsheen_sdk gimbal
     sock.connect((VS_IP_ADDRESS, VS_PORT))
 
-    main(sock)
+    asyncio.run(main(sock))
     sock.close()
     cv2.destroyAllWindows()

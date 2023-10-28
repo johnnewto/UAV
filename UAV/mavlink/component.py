@@ -41,9 +41,9 @@ class Component:
     """Create a mavlink Component with an ID  for MAV_COMPONENT"""
 
     def __init__(self,
-                 source_component,  # used for component indication
-                 mav_type,  # used for heartbeat MAV_TYPE indication
-                 loglevel: LogLevels = LogLevels.INFO,  # logging level
+                 source_component: int,  # used for component indication
+                 mav_type: int,  # used for heartbeat MAV_TYPE indication
+                 loglevel: LogLevels | int = LogLevels.INFO,  # logging level
                  ):
 
         self._log = None
@@ -384,6 +384,5 @@ class Component:
                                  ])
 
     def close(self):
-        self._t_heartbeat_stop = True
-        self._t_heartbeat.join()
-        self.log.info(f"{self.__class__.__name__} closed")
+        # self._t_heartbeat.join() # don't wait as its a daemon thread
+        self.log.info(f"{self.__class__.__name__} closed (not waiting for _t_heartbeat daemon thread)")

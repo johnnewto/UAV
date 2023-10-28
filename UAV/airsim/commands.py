@@ -187,4 +187,4 @@ class DroneCommands():
         try:
             self._t.join(timeout=5)
         except Exception as e:
-            logger.warning(f'Error joining DroneCommands() thread: "{e}"')
+            logger.warning(f'Closing DroneCommands() thread: "{e}"')
