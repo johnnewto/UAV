@@ -3,7 +3,7 @@ from __future__ import annotations
 Viewsheen Gimbal Component
 https://mavlink.io/en/services/gimbal_v2.html
 The gimbal protocol allows MAVLink control over the attitude/orientation of cameras (or other sensors) mounted on the drone. The orientation can be: controlled by the pilot in real time 
-(e.g. using a joystick from a ground station), set as part of a mission, or moved based on camera tracking.
+(e.g. using a joystick from a ground station), set as part of a mission, or moved based on cameras tracking.
 The protocol also defines what status information is published for developers, configurators, as well as users of the drone. It additionally provides ways to assign control to different sources.
 The protocol supports a number of hardware setups, and enables gimbals with varying capabilities
 """
@@ -48,7 +48,7 @@ class GimbalClient(Component):
     #     self.log.debug(f"Sent {msg}")
     #
     # # def set_target(self, target_system, gimbal_comp = None,  camera_comp = None):
-    # #     """Set the target system and component for the gimbal / camera"""
+    # #     """Set the target system and component for the gimbal / cameras"""
     # #     self.target_system = target_system
     # #     self.gimbal_target_component = gimbal_comp
     # #     self.camera_target_component = camera_comp
@@ -85,7 +85,7 @@ class GimbalClient(Component):
         #     return False
     
     def set_zoom(self, value):
-        """ Set the camera zoom"""
+        """ Set the cameras zoom"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
         return self.send_command(self.target_system, self.target_component,
         MAV_CMD_SET_CAMERA_ZOOM,
@@ -172,7 +172,7 @@ class GimbalServer(Component):
             return False
         
     def set_zoom(self, msg):
-        """ Set the viewsheen camera zoom """
+        """ Set the viewsheen cameras zoom """
         # print(msg.get_type())
         # print(f"Zoom {msg.param2 = }")
         data = zoom(int(msg.param2))

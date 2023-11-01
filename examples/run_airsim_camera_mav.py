@@ -2,9 +2,11 @@ import asyncio
 import time
 
 from UAV.airsim.commands import DroneCommands
-from UAV.camera.airsim_cam import AirsimCamera
+from UAV.cameras.airsim_cam import AirsimCamera
+from UAV.gimbals.airsim_gimbal import AirsimGimbal
+from UAV.logging import LogLevels
 from UAV.manager import Gui
-from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink
+from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink, GimbalServer, GimbalManagerClient
 from UAV.utils import helpers
 from UAV.utils.general import toml_load, config_dir
 
@@ -16,50 +18,62 @@ async def main():
     with MAVCom(con1, source_system=111, loglevel=20) as gcs_mavlink:  # ground control station mavlink
         with MAVCom(con2, source_system=222, loglevel=20) as drone_mavlink:  # drone mavlink
 
-            # connect to the camera manager
+            # connect to the cameras manager
             gcs_cam_manager = gcs_mavlink.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=20))
+            gcs_gim: GimbalManagerClient = gcs_mavlink.add_component(GimbalManagerClient(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=12, loglevel=LogLevels.INFO))
 
             # start cameras, This would run on a drone companion computer
             cam_front = AirsimCamera(camera_name='center', camera_dict=toml_load(config_dir() / "airsim_cam_front.toml"))
             cam_left = AirsimCamera(camera_name='left', camera_dict=toml_load(config_dir() / "airsim_cam_left.toml"))
             cam_right = AirsimCamera(camera_name='right', camera_dict=toml_load(config_dir() / "airsim_cam_right.toml"))
             cam_down = AirsimCamera(camera_name='down', camera_dict=toml_load(config_dir() / "airsim_cam_down.toml"))
-
-            # place objects in the simulator
-            cam_front.asc.place_object("Sofa_02", 50.0, 20.0, -25.0, scale=0.5)
-            cam_front.asc.place_object("Sofa_02", 50.0, -20.0, -25.0, scale=0.5)
-            cam_front.asc.place_object("Sofa_02", 55.0, -0.0, -21.0, scale=0.5)
+            gim_1 = AirsimGimbal(camera_name='center', loglevel=10)
 
             # connect cameras to mavlink
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_left))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_front))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA3, camera=cam_right))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA4, camera=cam_down))
+            drone_mavlink.add_component(GimbalServer(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=mavlink.MAV_COMP_ID_GIMBAL, gimbal=gim_1, loglevel=10))
 
-            # wait for heartbeat signal from the drone
-            ret = await gcs_cam_manager.wait_heartbeat(target_system=222, target_component=22, timeout=1)
-            print(f"Heartbeat {ret = }")
-            # time.sleep(5)
+            # # wait for heartbeat signal from the drone
+            # ret = await gcs_cam_manager.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA, timeout=2)
+            # print(f"Camera Heartbeat {ret = }")
+            # ret = await gcs_gim.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=2)
+            # print(f"GIMBAL Heartbeat {ret = }")
+
             # Start the Airsim "basic Autopilot"
-            cmd = DroneCommands(takeoff_z=-20)
+            cmd = DroneCommands(takeoff_z=-35)
 
-            # Run the camera manager GUI (using asyncio.run)
-            gui = Gui(client=gcs_cam_manager, auto=cmd.start, reset=cmd.reset_position, pause=cmd.cancel_last_task)
+            asc = cam_front.asc   # asc = AirsimClient
+
+            # asc.set_camera_orientation(camera_name='down', roll=40, pitch=0, yaw=0)
+            # await gcs_gim.cmd_pitch_yaw(40, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+
+            # place objects in the simulator
+            cam_front.asc.confirmConnection()
+            print("Placing objects")
+
+            asc.place_object("Sofa_02", 0.0, -50.0, -35.0, scale=0.5)
+            asc.place_object("Sofa_02", 0.0, -70.0, -36.0, scale=0.5)
+            asc.place_object("Sofa_02", 20.0, -50.0, -35.0, scale=0.5)
+            asc.place_object("Sofa_02", -20.0, -50.0, -36.0, scale=0.5)
+
+            # Run the cameras manager GUI (using asyncio.run)
+            gui = Gui(camera_client=gcs_cam_manager, gimbal_client=gcs_gim,  auto=cmd.start, reset=cmd.reset_position, pause=cmd.cancel_last_task)
             t1 = asyncio.create_task(gui.find_cameras())
-            t2 = asyncio.create_task(gui.run_gui())
+            t2 = asyncio.create_task(gui.find_gimbals())
+            t3 = asyncio.create_task(gui.run_gui())
 
             # wait for the GUI to finish
-            # await asyncio.gather(t1, t2)
             try:
-                await asyncio.gather(t1, t2)
+                await asyncio.gather(t1, t2, t3)
             except asyncio.CancelledError:
                 print("CancelledError")
 
             # shutdown
             cmd.reset_position(), cmd.stop(), cmd.disarm(), cmd.close()
-            print("Closing cameras")
             cam_front.close(), cam_left.close(), cam_right.close(), cam_down.close()
-
 
 
 if __name__ == '__main__':

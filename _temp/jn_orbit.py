@@ -246,7 +246,7 @@ if __name__ == "__main__":
     rs = RunSim("AirSimNH")
     args = sys.argv
     args.pop(0)
-    arg_parser = argparse.ArgumentParser("Orbit.py makes drone fly in a circle with camera pointed at the given center vector")
+    arg_parser = argparse.ArgumentParser("Orbit.py makes drone fly in a circle with cameras pointed at the given center vector")
     arg_parser.add_argument("--radius", type=float, help="radius of the orbit", default=20)
     arg_parser.add_argument("--altitude", type=float, help="altitude of orbit (in positive meters)", default=20)
     arg_parser.add_argument("--speed", type=float, help="speed of orbit (in meters/second)", default=6)

@@ -85,7 +85,7 @@ class DroneCommands():
         else:
             self._client.hoverAsync().join()
 
-        time.sleep(1)
+        time.sleep(0.1)
 
         state = self._client.getMultirotorState()
         if state.landed_state == airsim.LandedState.Landed:
@@ -96,7 +96,7 @@ class DroneCommands():
         # _z of -5 is 5 meters above the original launch point.
         # _z = -50
         print("make sure we are hovering at {} meters...".format(-self._z))
-        self._client.moveToZAsync(self._z, 5).join()
+        self._client.moveToZAsync(self._z, 10).join()
 
     def do_NH_path(self):
         """Fly on a path in the Airsim simulator"""

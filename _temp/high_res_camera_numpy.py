@@ -5,7 +5,7 @@ import cv2
 import time
 
 '''
-Simple script with settings to create a high-resolution camera, and fetching its images, showing on opencv.
+Simple script with settings to create a high-resolution cameras, and fetching its images, showing on opencv.
 '''
 
 def puttext(img: np.ndarray,

@@ -270,7 +270,7 @@ class Component:
         return True
 
     def _t_listen(self, timeout: int = 1, ):  # seconds
-        """Listen for MAVLink commands and trigger the camera when needed."""
+        """Listen for MAVLink commands and trigger the cameras when needed."""
 
         self._t_cmd_listen_stop = False
         # self.log.info(f"Component Listening for messages sent on the message_queue ...")
@@ -367,9 +367,9 @@ class Component:
 
     async def _test_command(self, target_system: int,  # target system
                             target_component: int,  # target component
-                            camera_id: int):  # camera id (0 for all cams)
+                            camera_id: int):  # cameras id (0 for all cams)
         """
-        example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a camera
+        example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a cameras
         """
         # self.set_source_compenent()
         await self.send_command(target_system, target_component,

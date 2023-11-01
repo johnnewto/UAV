@@ -1,6 +1,7 @@
 import time
 
-from UAV.camera.airsim_cam import AirsimCamera
+from UAV.cameras.airsim_cam import AirsimCamera
+from UAV.gimbals.airsim_gimbal import AirsimGimbal
 from UAV.logging import LogLevels
 from UAV.utils import start_displays
 from UAV.utils.general import toml_load, config_dir
@@ -16,10 +17,9 @@ if __name__ == '__main__':
     p = start_displays(num_cams=2, port=5000)
 
     with GstContext():
-        with AirsimCamera(camera_name='front', camera_dict=camera_dict_0, loglevel=LogLevels.INFO) as air_cam_0:
+        with AirsimCamera(camera_name='center', camera_dict=camera_dict_0, loglevel=LogLevels.INFO) as air_cam_0:
             # if True:
             with AirsimCamera(camera_name='left', camera_dict=camera_dict_1, loglevel=LogLevels.INFO) as air_cam_1:
-
 
                 # air_cam_1.video_start_streaming()
                 for i in range(10):

@@ -260,7 +260,7 @@ class VehicleClient:
         """
         self.client.call('simSetWeatherParameter', param, val)
 
-#camera control
+#cameras control
 #simGetImage returns compressed png in array of bytes
 #image_type uses one of the ImageType members
     def simGetImage(self, camera_name, image_type, vehicle_name = '', external = False):
@@ -272,10 +272,10 @@ class VehicleClient:
         See https://microsoft.github.io/AirSim/image_apis/ for details
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             image_type (ImageType): Type of image required
-            vehicle_name (str, optional): Name of the vehicle with the camera
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Name of the vehicle with the cameras
+            external (bool, optional): Whether the cameras is an External Camera
 
         Returns:
             Binary string literal of compressed png image
@@ -289,7 +289,7 @@ class VehicleClient:
             return None
         return result
 
-#camera control
+#cameras control
 #simGetImage returns compressed png in array of bytes
 #image_type uses one of the ImageType members
     def simGetImages(self, requests, vehicle_name = '', external = False):
@@ -300,8 +300,8 @@ class VehicleClient:
 
         Args:
             requests (list[ImageRequest]): Images required
-            vehicle_name (str, optional): Name of vehicle associated with the camera
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Name of vehicle associated with the cameras
+            external (bool, optional): Whether the cameras is an External Camera
 
         Returns:
             list[ImageResponse]:
@@ -639,11 +639,11 @@ class VehicleClient:
         For example: simAddDetectionFilterMeshName("Car_*") will detect all instance named "Car_*"
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             image_type (ImageType): Type of image required
             mesh_name (str): mesh name in wild card format
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
 
         """
         self.client.call('simAddDetectionFilterMeshName', camera_name, image_type, mesh_name, vehicle_name, external)
@@ -653,11 +653,11 @@ class VehicleClient:
         Set detection radius for all cameras
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             image_type (ImageType): Type of image required
             radius_cm (int): Radius in [cm]
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
         """
         self.client.call('simSetDetectionFilterRadius', camera_name, image_type, radius_cm, vehicle_name, external)
 
@@ -666,10 +666,10 @@ class VehicleClient:
         Clear all mesh names from detection filter
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             image_type (ImageType): Type of image required
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
 
         """
         self.client.call('simClearDetectionMeshNames', camera_name, image_type, vehicle_name, external)
@@ -679,10 +679,10 @@ class VehicleClient:
         Get current detections
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             image_type (ImageType): Type of image required
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
 
         Returns:
             DetectionInfo array
@@ -709,12 +709,12 @@ class VehicleClient:
 
     def simGetCameraInfo(self, camera_name, vehicle_name = '', external=False):
         """
-        Get details about the camera
+        Get details about the cameras
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
 
         Returns:
             CameraInfo:
@@ -724,12 +724,12 @@ class VehicleClient:
 
     def simGetDistortionParams(self, camera_name, vehicle_name = '', external = False):
         """
-        Get camera distortion parameters
+        Get cameras distortion parameters
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
 
         Returns:
             List (float): List of distortion parameter values corresponding to K1, K2, K3, P1, P2 respectively.
@@ -739,14 +739,14 @@ class VehicleClient:
 
     def simSetDistortionParams(self, camera_name, distortion_params, vehicle_name = '', external = False):
         """
-        Set camera distortion parameters
+        Set cameras distortion parameters
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             distortion_params (dict): Dictionary of distortion param names and corresponding values
                                         {"K1": 0.0, "K2": 0.0, "K3": 0.0, "P1": 0.0, "P2": 0.0}
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
         """
 
         for param_name, value in distortion_params.items():
@@ -754,39 +754,39 @@ class VehicleClient:
 
     def simSetDistortionParam(self, camera_name, param_name, value, vehicle_name = '', external = False):
         """
-        Set single camera distortion parameter
+        Set single cameras distortion parameter
 
         Args:
-            camera_name (str): Name of the camera, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
+            camera_name (str): Name of the cameras, for backwards compatibility, ID numbers such as 0,1,etc. can also be used
             param_name (str): Name of distortion parameter
             value (float): Value of distortion parameter
-            vehicle_name (str, optional): Vehicle which the camera is associated with
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Vehicle which the cameras is associated with
+            external (bool, optional): Whether the cameras is an External Camera
         """
         self.client.call('simSetDistortionParam', str(camera_name), param_name, value, vehicle_name, external)
 
     def simSetCameraPose(self, camera_name, pose, vehicle_name = '', external = False):
         """
-        - Control the pose of a selected camera
+        - Control the pose of a selected cameras
 
         Args:
-            camera_name (str): Name of the camera to be controlled
-            pose (Pose): Pose representing the desired position and orientation of the camera
-            vehicle_name (str, optional): Name of vehicle which the camera corresponds to
-            external (bool, optional): Whether the camera is an External Camera
+            camera_name (str): Name of the cameras to be controlled
+            pose (Pose): Pose representing the desired position and orientation of the cameras
+            vehicle_name (str, optional): Name of vehicle which the cameras corresponds to
+            external (bool, optional): Whether the cameras is an External Camera
         """
 #TODO : below str() conversion is only needed for legacy reason and should be removed in future
         self.client.call('simSetCameraPose', str(camera_name), pose, vehicle_name, external)
 
     def simSetCameraFov(self, camera_name, fov_degrees, vehicle_name = '', external = False):
         """
-        - Control the field of view of a selected camera
+        - Control the field of view of a selected cameras
 
         Args:
-            camera_name (str): Name of the camera to be controlled
+            camera_name (str): Name of the cameras to be controlled
             fov_degrees (float): Value of field of view in degrees
-            vehicle_name (str, optional): Name of vehicle which the camera corresponds to
-            external (bool, optional): Whether the camera is an External Camera
+            vehicle_name (str, optional): Name of vehicle which the cameras corresponds to
+            external (bool, optional): Whether the cameras is an External Camera
         """
 #TODO : below str() conversion is only needed for legacy reason and should be removed in future
         self.client.call('simSetCameraFov', str(camera_name), fov_degrees, vehicle_name, external)

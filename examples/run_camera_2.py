@@ -3,7 +3,7 @@ import cv2
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, GimbalClient, GimbalServer, mavutil, mavlink
 from UAV.utils.general import boot_time_str, With, toml_load, config_dir
 
-from UAV.camera.gst_cam import GSTCamera
+from UAV.cameras.gst_cam import GSTCamera
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
 import gstreamer.utils as gst_utils
 
@@ -34,7 +34,7 @@ async def doit():
             with MAVCom(con2, source_system=222) as server:
                 gcs = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=10))
                 server.add_component(CameraServer(camera=cam_uav, source_component=mavlink.MAV_COMP_ID_CAMERA))
-                # server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=None, debug=False))
+                # server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, cameras=None, debug=False))
 
                 ret = await gcs.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA)
                 print(f"Heartbeat received {ret = }")

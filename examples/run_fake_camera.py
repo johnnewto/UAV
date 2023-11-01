@@ -1,7 +1,7 @@
 import time
 
 import gstreamer.utils as gst_utils
-from UAV.camera.gst_cam import GSTCamera
+from UAV.cameras.gst_cam import GSTCamera
 from UAV.utils import start_displays
 from UAV.utils.general import boot_time_str, toml_load, config_dir
 from gstreamer import GstContext, Gst

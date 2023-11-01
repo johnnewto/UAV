@@ -1,7 +1,7 @@
 import time
 import cv2
 from UAV import MAVCom
-from UAV.camera.gst_cam import GSTCamera
+from UAV.cameras.gst_cam import GSTCamera
 from UAV.mavlink.camera_server import CameraServer
 from UAV.mavlink.component import mavutil
 from UAV.utils import config_dir, boot_time_str

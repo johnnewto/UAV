@@ -5,7 +5,7 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
 
 import time, os, sys
 
-from ..camera.gst_cam import GSTCamera, BaseCamera
+from ..cameras.gst_cam import GSTCamera, BaseCamera
 from ..logging import logging, LogLevels
 # from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from .component import Component, mavutil, mavlink, MAVLink
@@ -47,7 +47,7 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED  # https://
 
 
 # def read_camera_info_from_toml(toml_file_path):
-#     """Read MAVLink camera info from a TOML file."""
+#     """Read MAVLink cameras info from a TOML file."""
 #     with open(toml_file_path, 'rb') as file:
 #         data = toml.load(file)
 #
@@ -59,7 +59,7 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED  # https://
 
 
 class CameraServer(Component):
-    """Create a mavlink Camera server Component, camera argument will normally be a  gstreamer pipeline"""
+    """Create a mavlink Camera server Component, cameras argument will normally be a  gstreamer pipeline"""
     mav_cmd_list = [mavlink.MAV_CMD_REQUEST_MESSAGE,
                     mavlink.MAV_CMD_STORAGE_FORMAT,
                     mavlink.MAV_CMD_SET_CAMERA_ZOOM,
@@ -83,7 +83,7 @@ class CameraServer(Component):
     def __init__(self,
                  source_component=mavlink.MAV_COMP_ID_CAMERA,  # used for component indication
                  mav_type=mavlink.MAV_TYPE_CAMERA,  # used for heartbeat MAV_TYPE indication
-                 camera=None,  # camera  (or FakeCamera for testing)
+                 camera=None,  # cameras  (or FakeCamera for testing)
                  loglevel: LogLevels | int = LogLevels.INFO,  # logging level
                  ):
 
@@ -98,16 +98,16 @@ class CameraServer(Component):
         super().on_mav_connection()
         assert self.mav is not None, "call set_mav first"
         if self.camera is None:
-            self.log.warning(f"Component has no camera object")
+            self.log.warning(f"Component has no cameras object")
             self.camera = BaseCamera()
         self.camera.mav = self.mav  # set the mavlink connection for mavlink messages
         self.camera.source_system = self.source_system
         self.camera.source_component = self.source_component
         # self.set_source_compenent()
-        # self.camera.mav.srcComponent = self.source_component
+        # self.cameras.mav.srcComponent = self.source_component
 
     def list_commands(self):
-        """List the commands supported by the camera server
+        """List the commands supported by the cameras server
         https://mavlink.io/en/messages/common.html
         https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
@@ -130,7 +130,7 @@ class CameraServer(Component):
     def on_message(self, msg: mavlink.MAVLink_command_long_message  # : mavlink  Message
                    ) -> bool:  # return True to indicate that the message has been handled
         """Callback for a command received from the client
-        This will respond to the mavlink camera and storage focused commands:
+        This will respond to the mavlink cameras and storage focused commands:
         """
         self.set_source_compenent()  # set the source component for the reply
 
@@ -222,8 +222,8 @@ class CameraServer(Component):
         except AttributeError as err:
             self.log.error(f"{err = }")
 
-        # if self.camera is None:
-        #     self.log.warning(f"Component has no camera object")
+        # if self.cameras is None:
+        #     self.log.warning(f"Component has no cameras object")
         #     return
         # self.mav.camera_capture_status_send(time_since_boot_ms(), # time_boot_ms
         #                                     0, # image status
@@ -235,7 +235,7 @@ class CameraServer(Component):
         #                                     )
 
     def _camera_information_send(self):
-        """ Information about a camera. Can be requested with a
+        """ Information about a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         # self.set_source_compenent()
@@ -245,7 +245,7 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
     def _camera_settings_send(self):
-        """ Settings of a camera. Can be requested with a
+        """ Settings of a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
         try:
@@ -253,8 +253,8 @@ class CameraServer(Component):
         except AttributeError as err:
             self.log.error(f"{err = }")
 
-        # if self.camera is None:
-        #     self.log.warning(f"Component has no camera object")
+        # if self.cameras is None:
+        #     self.log.warning(f"Component has no cameras object")
         #     return
         # nan = float("nan")
         # self.mav.camera_settings_send(time_since_boot_ms(), # time_boot_ms
@@ -283,7 +283,7 @@ class CameraServer(Component):
         self._storage_information_send()
 
     def _set_camera_zoom(self, msg):
-        """ Set the camera zoom """
+        """ Set the cameras zoom """
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
         try:
             self.camera.set_camera_zoom(msg.param2)
@@ -350,7 +350,7 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
     def _set_camera_mode(self, msg):
-        """ Set the camera mode"""
+        """ Set the cameras mode"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE
         try:
             self.camera.set_camera_mode(msg.param2)
@@ -358,9 +358,9 @@ class CameraServer(Component):
             self.log.error(f"{err = }")
 
     def close(self):
-        """Close the connection to the camera"""
+        """Close the connection to the cameras"""
         if self.camera is not None:
             self.camera.close()
         super().close()
-        self.log.debug(f"Closed connection to camera")
+        self.log.debug(f"Closed connection to cameras")
         return True

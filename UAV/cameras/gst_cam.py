@@ -219,7 +219,7 @@ class BaseCamera:
         return self._log
 
     def get_camera_info(self, camera_dict):
-        """get  MAVLink camera info from a TOML dict."""
+        """get  MAVLink cameras info from a TOML dict."""
 
         def make_length_32(s: str) -> str:
             if len(s) > 32:
@@ -248,7 +248,7 @@ class BaseCamera:
             # raise AttributeError
 
     def camera_information_send(self):
-        """ Information about a camera. Can be requested with a
+        """ Information about a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         try:
@@ -321,7 +321,7 @@ class CaptureThread():
 
 
 class CV2Camera(BaseCamera):
-    """Create a fake camera component for testing"""
+    """Create a fake cameras component for testing"""
 
     def __init__(self,
                  camera_dict=None,  # camera_info dict
@@ -392,7 +392,7 @@ class CV2Camera(BaseCamera):
         # cv2.waitKey(1)
 
     def camera_settings_send(self):
-        """ Information about a camera. Can be requested with a
+        """ Information about a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
         try:
@@ -406,7 +406,7 @@ class CV2Camera(BaseCamera):
             self.log.warning("No mav connection")
 
     def storage_information_send(self):
-        """ Information about a camera. Can be requested with a
+        """ Information about a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION
         try:
@@ -425,7 +425,7 @@ class CV2Camera(BaseCamera):
             self.log.warning("No mav connection")
 
     def camera_capture_status_send(self):
-        """ Information about a camera. Can be requested with a
+        """ Information about a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
         ccs = self.camera_capture_status
@@ -475,7 +475,7 @@ class CV2Camera(BaseCamera):
         self.on_start_image_capture()
 
     def on_capture_image(self, data):
-        """Call back function for Get next image from camera. Simulate an image capture using OpenCV"""
+        """Call back function for Get next image from cameras. Simulate an image capture using OpenCV"""
         self.image_filename = f"{date_time_str()}_{self.camera_capture_status.image_count:04d}.jpg"
         image = np.zeros((512, 512, 3), dtype=np.uint8)
         cv2.putText(image, "Fake Image", (50, 256), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
@@ -523,7 +523,7 @@ class CV2Camera(BaseCamera):
 
 
 class GSTCamera(CV2Camera):
-    """ Create a fake camera component for testing using GStreamer"""
+    """ Create a fake cameras component for testing using GStreamer"""
 
     def __init__(self,
                  camera_dict=None,  # camera_info dict
@@ -541,7 +541,7 @@ class GSTCamera(CV2Camera):
         self._setup_video_stream()
 
     def _open(self):
-        """create and start the gstreamer pipeleine for the camera"""
+        """create and start the gstreamer pipeleine for the cameras"""
         # check to see if attribute pipeline exists
 
         if self.pipeline is None:
@@ -595,7 +595,7 @@ class GSTCamera(CV2Camera):
         return img
 
     def on_capture_image(self, data):
-        """Call back function from the CaptureThread (images). Gets the next image from camera using GStreamer."""
+        """Call back function from the CaptureThread (images). Gets the next image from cameras using GStreamer."""
         self.image_filename = f"{date_time_str()}_{self.camera_capture_status.image_count:04d}.jpg"
         self.save_image_to_memoryfs(data, self.image_filename)
         self.last_image = data
@@ -693,7 +693,7 @@ class GSTCamera(CV2Camera):
         # self.pipeline.set_valve_state("video_valve", False)
 
     def close(self):
-        """Close  gstreamer pipelines opened by the camera"""
+        """Close  gstreamer pipelines opened by the cameras"""
         try:
             self.pipeline.shutdown(eos=True)  # send EOS event to all sinks
         except AttributeError as e:

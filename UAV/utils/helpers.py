@@ -3,23 +3,21 @@ __all__ = ['start_displays']
 import time
 from multiprocessing import Process
 from typing import Dict
-
 import cv2
-
-from gstreamer.gst_tools import GstBuffer
 
 try:
     from gstreamer import GstPipeline, GstVideoSource, GstContext, GstPipes
     import gstreamer.utils as gst_utils
+    from gstreamer.gst_tools import GstBuffer
 except:
     print("GStreamer is not installed")
 
 
 def start_displays(display_type: str = 'gst',  # display type
                    num_cams: int = 1,  # number of cameras
-                   names: list = None,  # camera names
+                   names: list = None,  # cameras names
                    port: int = 5000,  # port number
-                   _dict: Dict = None,  # camera dict overides display_type (see below for example)
+                   _dict: Dict = None,  # cameras dict overides display_type (see below for example)
                     width=800, height=600
                    ) -> Process:  # encoder type
     """ Display video from one or more gst streams from drone in a separate process"""

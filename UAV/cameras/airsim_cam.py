@@ -12,7 +12,7 @@ try:
 except:
     print("GStreamer is not installed")
     pass
-from ..camera.gst_cam import GSTCamera
+from ..cameras.gst_cam import GSTCamera
 from ..utils.sim_linux import RunSim
 from ..airsim.client import AirSimClient
 import threading
@@ -21,7 +21,7 @@ import threading
 
 
 class AirsimCamera(GSTCamera):
-    """ run the airsim enviroment Create a airsim camera component for testing using GStreamer"""
+    """ run the airsim enviroment Create a airsim cameras component for testing using GStreamer"""
 
     def __init__(self,
                  camera_name="high_res",
@@ -44,7 +44,7 @@ class AirsimCamera(GSTCamera):
         self.log.info(f"***** AirsimCamera: {camera_name = } ******")
 
     def check_airsm_camera_resolution(self, settings_file_path, camera_name, desired_width, desired_height):
-        """check the airsim camera resolution and update if necessary"""
+        """check the airsim cameras resolution and update if necessary"""
         import json
 
         # Read the existing settings.json file
@@ -55,8 +55,8 @@ class AirsimCamera(GSTCamera):
         camera_settings = settings['Vehicles']['Drone1']['Cameras'].get(camera_name)
 
         if camera_settings is None:
-            raise RuntimeError(f'Error finding camera "{camera_name}" in {settings_file_path}')
-        # Find the camera section you want to modify
+            raise RuntimeError(f'Error finding cameras "{camera_name}" in {settings_file_path}')
+        # Find the cameras section you want to modify
         try:
             # camera_settings = settings['Vehicles']['Drone1']['Cameras'].get(camera_name)
             if camera_settings:
@@ -81,7 +81,7 @@ class AirsimCamera(GSTCamera):
     def _open(self):
         """
           Override GSTCamera ._open()
-          create and start the gstreamer pipeleine for the camera
+          create and start the gstreamer pipeleine for the cameras
         """
         if hasattr(self, "_running"):
             self.log.error("AirsimCamera is already opened, Check to see if you have called _open() ")
@@ -100,7 +100,7 @@ class AirsimCamera(GSTCamera):
         return self
 
     def run_pipe(self, camera_name):
-        """run the camera pipeline in a thread"""
+        """run the cameras pipeline in a thread"""
 
         self._dont_wait.set()
         framecounter = 1
@@ -130,17 +130,17 @@ class AirsimCamera(GSTCamera):
         self.log.debug("Exiting AirsimCamera thread")
 
     def pause(self):
-        """Pause the airsim camera grab thread ."""
+        """Pause the airsim cameras grab thread ."""
         self._dont_wait.set()  # pause the thread
         super().pause()
 
     def play(self):
-        """Play the airsim camera grab thread."""
+        """Play the airsim cameras grab thread."""
         self._dont_wait.clear()
         super().play()
 
     def close(self):
-        """Close the camera component."""
+        """Close the cameras component."""
         if not hasattr(self, "_running"):
             self.log.error("AirsimCamera was not opened, Check to see if you have called _open() ")
         else:

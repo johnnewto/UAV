@@ -4,7 +4,7 @@ from typing import List, Callable
 
 import PySimpleGUI as sg
 import asyncio
-from UAV.mavlink import mavlink, mavutil
+from UAV.mavlink import mavlink, mavutil, GimbalManagerClient
 from UAV.mavlink import CameraClient
 
 
@@ -21,7 +21,7 @@ print(f'{Btn_State.RUNNING = }')
 
 
 async def proto_task(client: any,  # mav component
-                     comp: int = 22,  # server component ID (camera ID)
+                     comp: int = 22,  # server component ID (cameras ID)
                      start: bool = True,  # start or stop
                      timeout=5.0):  # timeout
     yield Btn_State.RUNNING
@@ -132,7 +132,7 @@ def create_window(layout=None):
 
 
 async def snapshot_task(client: CameraClient,  # mav component
-                        comp: int,  # server component ID (camera ID)
+                        comp: int,  # server component ID (cameras ID)
                         start: bool = True,  # start or stop
                         timeout=5.0):  # timeout
     """This is a coroutine function that will be called by the button when pressed."""
@@ -161,7 +161,7 @@ async def snapshot_task(client: CameraClient,  # mav component
 
 
 async def stream_task(client: CameraClient,  # mav component
-                      comp: int,  # server component ID (camera ID)
+                      comp: int,  # server component ID (cameras ID)
                       start: bool = True,  # start or stop
                       timeout=5.0):  # timeout
     """This is a coroutine function that will be called by the button when pressed."""
@@ -186,7 +186,7 @@ async def stream_task(client: CameraClient,  # mav component
 
 
 async def record_task(client: CameraClient,  # mav component
-                      comp: int,  # server component ID (camera ID)
+                      comp: int,  # server component ID (cameras ID)
                       start: bool = True,  # start or stop
                       timeout=5.0):  # timeout
     """This is a coroutine function that will be called by the button when pressed."""
@@ -198,28 +198,42 @@ async def record_task(client: CameraClient,  # mav component
 
 @dataclass
 class Gui:
-    client: CameraClient = None
+    camera_client: CameraClient = None
+    gimbal_client: GimbalManagerClient = None
     auto: Callable = None
     reset: Callable = None
     pause: Callable = None
     fc = None
     cameras = []
+    gimbals = []
 
     new_cam_queue = asyncio.Queue()
     exit_event = asyncio.Event()
 
     async def find_cameras(self):
         while not self.exit_event.is_set():
-            ret = await self.client.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, timeout=2)
+            ret = await self.camera_client.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, timeout=2)
             if ret:
                 if ret not in self.cameras:
                     self.cameras.append(ret)
                     await self.new_cam_queue.put(ret)
-                    print(f"Put Queue New camera {ret = }")
+                    print(f"Put Queue New cameras {ret = }")
         print("find_cameras exit")
 
+    async def find_gimbals(self):
+        while not self.exit_event.is_set():
+            ret = await self.gimbal_client.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=2)
+            if ret:
+                if ret not in self.gimbals:
+                    self.gimbals.append(ret)
+                    await asyncio.sleep(0.1)
+                    # await self.new_cam_queue.put(ret)
+                    print(f" Gimbal {ret = }")
+        print("find_gimbals exit")
+
+
     async def run_gui(self):
-        if self.client is None:
+        if self.camera_client is None:
             logging.warning("Gui has no client")
         if not callable(self.auto):
             logging.warning("Gui auto is not callable")
@@ -230,17 +244,22 @@ class Gui:
 
         btn_manager = ButtonManager()
         window = create_window([[sg.Button('Info'), sg.B('Auto'), sg.B('Reset'), sg.B('Pause'), sg.Button('Exit')]]).finalize()
+        window.bind('<Right>', '__GIMBAL_RIGHT__')
+        window.bind('<Left>', '__GIMBAL_LEFT__')
+        window.bind('<Up>', '__GIMBAL_UP__')
+        window.bind('<Down>', '__GIMBAL_DOWN__')
+
         btn_tasks = []
         while True:
             try:
-                # check for new camera, add to window
+                # check for new cameras, add to window
                 system, comp = self.new_cam_queue.get_nowait()
-                print(f"Get Queue New camera {system}/{comp}")
-                buttons = [FButton(self.client, comp, snapshot_task, 'Snapshot'),
-                           FButton(self.client, comp, stream_task, 'Stream'),
-                           FButton(self.client, comp, record_task, 'Record')]
+                print(f"Get Queue New cameras {system}/{comp}")
+                buttons = [FButton(self.camera_client, comp, snapshot_task, 'Snapshot'),
+                           FButton(self.camera_client, comp, stream_task, 'Stream'),
+                           FButton(self.camera_client, comp, record_task, 'Record')]
 
-                add_camera(self.client, window, btn_manager, comp, buttons=buttons)
+                add_camera(self.camera_client, window, btn_manager, comp, buttons=buttons)
             except asyncio.QueueEmpty:
                 pass
 
@@ -253,6 +272,21 @@ class Gui:
                 if task: btn_tasks.append(task)
                 # await task
                 print(f" {(event, values) = } {len(btn_tasks) = } ")
+
+            if event == '__GIMBAL_RIGHT__':
+                print("Gimbal Right")
+
+                await self.gimbal_client.cmd_pitch_yaw(0, 10, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+            elif event == '__GIMBAL_LEFT__':
+                print("Gimbal Left")
+                await self.gimbal_client.cmd_pitch_yaw(0, -10, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+            elif event == '__GIMBAL_UP__':
+                print("Gimbal Up")
+                await self.gimbal_client.cmd_pitch_yaw(10, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+            elif event == '__GIMBAL_DOWN__':
+                print("Gimbal Down")
+                await self.gimbal_client.cmd_pitch_yaw(-10, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+
 
             if event == None or event == "Exit":
                 for task in btn_tasks:

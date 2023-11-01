@@ -87,12 +87,12 @@ class LeakyQueue(queue.Queue):
 
 def toml_load(toml_file_path  # path to TOML file
               )->dict: # camera_info dict
-    """Read MAVLink camera info from a TOML file."""
+    """Read MAVLink cameras info from a TOML file."""
     camera_dict = toml.load(toml_file_path)
     return camera_dict
 
 # def read_camera_info_from_toml(toml_file_path):
-#     """Read MAVLink camera info from a TOML file."""
+#     """Read MAVLink cameras info from a TOML file."""
 #     with open(toml_file_path, 'rb') as file:
 #         data = toml.load(file)
 #

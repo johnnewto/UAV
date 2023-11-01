@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from UAV.camera.gst_cam import GSTCamera
+from UAV.cameras.gst_cam import GSTCamera
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink
 from UAV.utils import helpers
 from UAV.utils.general import boot_time_str, toml_load, config_dir
@@ -17,13 +17,13 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 async def main():
     with MAVCom(con1, source_system=111, ) as client:
         with MAVCom(con2, source_system=222, ) as server:
-            cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11))
+            cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=10))
             # add UAV cameras, This normally runs on drone
-            cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_0.toml"))
+            cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_0.toml"), loglevel=10)
             cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_1.toml"))
 
-            server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=22, camera=cam_1))
-            server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=23, camera=cam_2))
+            server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=22, camera=cam_1, loglevel=10))
+            server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=23, camera=cam_2, loglevel=10))
 
             ret = await cam.wait_heartbeat(target_system=222, target_component=22, timeout=1)
             print(f"Heartbeat {ret = }")

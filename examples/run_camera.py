@@ -2,7 +2,7 @@ import asyncio
 import time
 
 import gstreamer.utils as gst_utils
-from UAV.camera.gst_cam import GSTCamera
+from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavutil, mavlink
 from UAV.utils.general import boot_time_str, With, toml_load, config_dir
@@ -60,8 +60,8 @@ async def main(num_cams, udp_encoder):
                     # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_camera_0.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
                     UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=10))
-                    # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavlink.MAV_COMP_ID_CAMERA2, camera=cam_2, loglevel=LogLevels.CRITICAL))
-                    # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=24, camera=None, loglevel=LogLevels.WARNING))
+                    # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavlink.MAV_COMP_ID_CAMERA2, cameras=cam_2, loglevel=LogLevels.CRITICAL))
+                    # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=24, cameras=None, loglevel=LogLevels.WARNING))
 
                     # gimbal_cam_3 = UAV_server.add_component(GimbalServer(mav_type=mavutil.mavlink.MAV_TYPE_GIMBAL, source_component=24, debug=False))
                     # GCS client requests
@@ -124,7 +124,7 @@ async def main(num_cams, udp_encoder):
                                     event_new_cam.set()
                                     print(f"Found new camera {ret = }")
                                 else:
-                                    # if no new camera found in 3 seconds then break
+                                    # if no new cameras found in 3 seconds then break
                                     count += 1
 
                     async def atest1(comp):
@@ -171,7 +171,7 @@ async def main(num_cams, udp_encoder):
                     await asyncio.sleep(11)
                     # gcs.request_camera_settings(222, 22)
                     #
-                    # # capture 5 images from camera 22 and 23
+                    # # capture 5 images from cameras 22 and 23
                     # while True:
                     #     ret = await gcs.image_start_capture(222, 22, interval=1, count=5)
                     #     print(f"{ret = }")
@@ -216,7 +216,7 @@ async def main(num_cams, udp_encoder):
                     #
                     #
                     # time.sleep(5)
-                    # UAV_server.component[22].camera.list_files()
+                    # UAV_server.component[22].cameras.list_files()
                     # # # # gcs.image_start_capture(222, 23, interval=1, count=5)
                     # # #
                     # # #
@@ -226,8 +226,8 @@ async def main(num_cams, udp_encoder):
                     # gcs.video_stop_capture(222, 22)   # todo create new file on drone
                     # time.sleep(1)
                     # # #
-                    # # UAV_server.component[22].camera.list_files()
-                    # # # Start & stop drone video streaming camera 22
+                    # # UAV_server.component[22].cameras.list_files()
+                    # # # Start & stop drone video streaming cameras 22
                     # for i in range (2):
                     #     gcs.video_start_streaming(222, 22)
                     #     time.sleep(1)
@@ -238,7 +238,7 @@ async def main(num_cams, udp_encoder):
                     #     gcs.request_camera_capture_status(222, 22)
                     #
                     # time.sleep(2)
-                    # UAV_server.component[22].camera.list_files()
+                    # UAV_server.component[22].cameras.list_files()
                     # gcs.video_start_streaming(222, 22)
                     # gcs.video_start_streaming(222, 22)
                     # time.sleep(2)

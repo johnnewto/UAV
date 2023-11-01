@@ -25,7 +25,7 @@ from pymavlink import mavutil
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 # from .component import Component
 from .camera_server import CameraServer
-from .camera_client import CameraClient, Component
+from .camera_client import CameraClient
 from .vs_gimbal import GimbalClient
 
 # def get_linenumber():
@@ -181,7 +181,7 @@ class BaseComponent:
         return True
 
     def listen(self, timeout: int = 1, ):  # seconds
-        """Listen for MAVLink commands and trigger the camera when needed."""
+        """Listen for MAVLink commands and trigger the cameras when needed."""
 
         self._t_msg_listen_stop = False
         # self.log.info(f"Component Listening for messages sent on the message_queue ...")
@@ -370,7 +370,7 @@ class MAVCom:
         return True
 
     def listen(self):
-        """Listen for MAVLink commands and trigger the camera when needed."""
+        """Listen for MAVLink commands and trigger the cameras when needed."""
         assert hasattr(self, 'master'), "start_mavlink() must be called before threading.Thread(target=self.listen..."
 
         self._t_mav_listen_stop = False

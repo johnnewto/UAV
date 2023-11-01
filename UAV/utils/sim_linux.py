@@ -214,10 +214,10 @@ class RunSim:
 #     #     """List the cameras"""
 #     #     return self.client.simListCameras()
 #
-#     def get_image(self, camera_name: str = "0",  # camera name
+#     def get_image(self, camera_name: str = "0",  # cameras name
 #                   rgb2bgr: bool = False,  # convert to bgr
 #                   ) -> np.ndarray:  # image
-#         """Get an image from the simulator of camera `camera_name`"""
+#         """Get an image from the simulator of cameras `camera_name`"""
 #         responses = super().simGetImages([airsim.ImageRequest(camera_name, airsim.ImageType.Scene, False, False)])
 #         response = responses[0]
 #         img1d = np.frombuffer(response.image_data_uint8, dtype=np.uint8)
@@ -226,7 +226,7 @@ class RunSim:
 #             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 #         return img
 #
-#     def get_images(self, camera_names: list = ["0"],  # camera names
+#     def get_images(self, camera_names: list = ["0"],  # cameras names
 #                    rgb2bgr: bool = False,  # convert to rgb
 #                    ) -> list[np.ndarray]:  # images
 #         """Get images from the simulator of cameras `camera_names`"""
