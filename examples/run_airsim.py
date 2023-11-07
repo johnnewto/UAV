@@ -32,7 +32,7 @@ cmd = DroneCommands()
 
 framecounter = 1
 cam_num = 0
-cams = ['down', "front", "right", "left"]
+cams = ['down', "center", "right", "left"]
 
 if True:
     while (True):
@@ -71,20 +71,20 @@ if True:
             # log.update(f"Camera: {cams[cam_num]}")
             logger.info(f"Camera: {cams[cam_num]}")
 
-        if k == ord('a') or k == ord('A'):
+        if k == ord('t') or k == ord('T'):
             logger.info("......Auto")
             try:
                 cmd.start()
             except:
                 logger.warning("Can't start, already flying?")
 
-        if k == ord('t') or k == ord('T'):
-            logger.info("......Takeoff")
+        if k == ord('a') or k == ord('a'):
+            logger.info("......gimbal left")
             # cmd.arm()
-            try:
-                cmd.takeoff()
-            except:
-                logger.warning("Can't takeoff, already flying?")
+            # try:
+            #     cmd.takeoff()
+            # except:
+            #     logger.warning("Can't takeoff, already flying?")
 
         if k == ord('r') or k == ord('R'):
             logger.info("......Reset Position")

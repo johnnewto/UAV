@@ -4,15 +4,9 @@
 __all__ = ['logger']
 
 # %% ../../nbs/api/15_airsim.client.ipynb 5
-from fastcore.utils import *
-import random
-
-import numpy as np
-import cv2
-import UAV.airsim_python_client as airsim
 from UAV.airsim_python_client import MultirotorClient
 import UAV.params as params
-
+from UAV.utils import config_dir
 import logging
 from UAV.airsim.client import AirSimClient
 
@@ -21,18 +15,3 @@ logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename
                     datefmt='%H:%M:%S',
                     level=params.LOGGING_LEVEL)
 logger = logging.getLogger(params.LOGGING_NAME)
-
-# %% ../../nbs/api/15_airsim.client.ipynb 24
-@patch
-def get_state(self:AirSimClient) -> MultirotorClient:
-    """Get the state of the drone"""
-    return self.simGetGroundTruthKinematics()
-
-
-# %% ../../nbs/api/15_airsim.client.ipynb 26
-@patch
-def takeoff(self:AirSimClient,  # airsim client
-            timeout: float = 5.0,  # timeout
-            ) -> bool:  # success
-    """Takeoff the drone"""
-    return super().takeoffAsync(timeout_sec=timeout).join()

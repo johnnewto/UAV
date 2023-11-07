@@ -265,35 +265,35 @@ class Gui:
 
             event, values = window.read(timeout=1)
             if event == '__TIMEOUT__':
-                await asyncio.sleep(0.1)
-            else:
-                btn = btn_manager.find_button(event)
-                task = btn.run_task() if btn else None
-                if task: btn_tasks.append(task)
-                # await task
-                print(f" {(event, values) = } {len(btn_tasks) = } ")
+                await asyncio.sleep(0.01)
 
-            if event == '__GIMBAL_RIGHT__':
+
+            elif event == '__GIMBAL_RIGHT__':
                 print("Gimbal Right")
 
-                await self.gimbal_client.cmd_pitch_yaw(0, 10, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                # await self.gimbal_client.cmd_pitch_yaw(0, 10, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                self.gimbal_client.manual_pitch_yaw(0, 1, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+
             elif event == '__GIMBAL_LEFT__':
                 print("Gimbal Left")
-                await self.gimbal_client.cmd_pitch_yaw(0, -10, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                # await self.gimbal_client.cmd_pitch_yaw(0, -10, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                self.gimbal_client.manual_pitch_yaw(0, -1, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
             elif event == '__GIMBAL_UP__':
                 print("Gimbal Up")
-                await self.gimbal_client.cmd_pitch_yaw(10, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                # await self.gimbal_client.cmd_pitch_yaw(10, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                self.gimbal_client.manual_pitch_yaw(1, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
             elif event == '__GIMBAL_DOWN__':
                 print("Gimbal Down")
-                await self.gimbal_client.cmd_pitch_yaw(-10, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                # await self.gimbal_client.cmd_pitch_yaw(-10, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
+                self.gimbal_client.manual_pitch_yaw(-1, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
 
 
-            if event == None or event == "Exit":
+            elif event == None or event == "Exit":
                 for task in btn_tasks:
                     task.cancel()
                 self.exit_event.set()
                 break
-            if event == "Info":
+            elif event == "Info":
                 print(""" This script is designed to fly on the streets of the Neighborhood environment
                             and assumes the unreal position of the drone is [160, -1500, 120].  """)
 
@@ -318,7 +318,12 @@ class Gui:
                 except Exception as e:
                     print(f" Error in Pause: {e}")
 
-
+            else:
+                btn = btn_manager.find_button(event)
+                task = btn.run_task() if btn else None
+                if task: btn_tasks.append(task)
+                # await task
+                print(f" {(event, values) = } {len(btn_tasks) = } ")
         window.close()
         print("run_gui exit")
 

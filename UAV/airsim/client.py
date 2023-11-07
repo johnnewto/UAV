@@ -90,6 +90,9 @@ class AirSimClient(MultirotorClient, object):
             # self.cameras[camera_name] = Vector3r(0, 0, -0.4)
             position_val = self.cameras[camera_name]
 
+            logger.info(f"Camera {camera_name} setting {position_val = }")
+
+        position_val = Vector3r(0, 0, -0.4)  # Todo need to harwire this for now as above does not work accurately
         camera_pose = airsim.Pose(orientation_val=airsim.to_quaternion(pitch, roll, yaw), position_val=position_val)
         super(AirSimClient, self).simSetCameraPose(camera_name, camera_pose)
 

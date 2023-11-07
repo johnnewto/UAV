@@ -28,16 +28,12 @@ if __name__ == '__main__':
                 gimbal.set_pitch_yaw(pitch=0, yaw=180, pitchspeed=10, yawspeed=10)
                 for i in range(36):
                     pitch = pitch + 10
-                    # gimbal.set_pitch_yaw(pitch=pitch, yaw=190, pitchspeed=10, yawspeed=10)
-                    gimbal.rotate_cam(pitch=10, yaw=0)
+                    gimbal.set_pitch_yaw(pitch=pitch, yaw=190, pitchspeed=10, yawspeed=10)
+                    # gimbal.rotate_cam(pitch=10, yaw=0)
                     time.sleep(0.1)
 
             time.sleep(0.5)
             gimbal.set_pitch_yaw(pitch=0, yaw=0, pitchspeed=10, yawspeed=10)
-
-
-
-
 
     p.terminate()
     # for i in range(45):

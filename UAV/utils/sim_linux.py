@@ -86,6 +86,7 @@ class RunSim:
 
         self._shell = False
 
+
     def set_log(self, loglevel):
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
         self._log.setLevel(int(loglevel))

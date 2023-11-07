@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+DEBUG_HEARTBEAT = False  # set true is show heartbeat messages
+
 __all__ = ['mavlink_command_to_string', 'Component']
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
@@ -43,16 +45,21 @@ class Component:
     def __init__(self,
                  source_component: int,  # used for component indication
                  mav_type: int,  # used for heartbeat MAV_TYPE indication
+                 exclude_msgs: None | list = None,  # exclude these messages from the message callback, defaults to autopilot messages
                  loglevel: LogLevels | int = LogLevels.INFO,  # logging level
                  ):
+
+        if exclude_msgs is None:
+            exclude_msgs = [1]  # defaults to autopilot messages
+        self.exclude_msgs = exclude_msgs
 
         self._log = None
         self.mav_com = None
         self.source_system = None
         self.source_component = source_component
         self.mav_type = mav_type
-        self.set_log(loglevel)
 
+        self.set_log(loglevel)
         self._loop = asyncio.get_event_loop()
 
         self.ping_num = 0
@@ -73,7 +80,7 @@ class Component:
 
         self._heartbeat_que = LeakyQueue(maxsize=10)
         self._ack_que = LeakyQueue(maxsize=10)
-        self._message_que = LeakyQueue(maxsize=10)
+        self.message_que = LeakyQueue(maxsize=10)
         self._wait_message_que = LeakyQueue(maxsize=10)
 
         self._t_heartbeat = threading.Thread(target=self._thread_send_heartbeat, daemon=True)
@@ -156,7 +163,7 @@ class Component:
         self.log.debug(f"Starting heartbeat type: {self.mav_type} to all Systems and Components")
         while not self._t_heartbeat_stop:
             self.set_source_compenent()
-            # self.log.debug(f"Sent hrtbeat to All")
+            self.log.debug(f"Sent heartbeat {self.mav_type} {self.source_system = } {self.source_component = }")
             # "Sent Ping #2 to:   111, comp: 100"
             self.master.mav.heartbeat_send(
                 self.mav_type,  # type
@@ -177,20 +184,19 @@ class Component:
         """Wait for a heartbeat from target_system and target_component."""
         # Todo is this correct ? Wait for a heartbeat, so we know the target system IDs (also it seems to need it to start receiving commands)
 
-        self.log.debug(
-            f"Waiting for heartbeat from {remote_mav_type} from {target_system = }:  {target_component = }")
+        if DEBUG_HEARTBEAT:
+            self.log.debug(f"Waiting for heartbeat from {remote_mav_type} from {target_system = }:  {target_component = }")
 
         _time = 0
         _TIME_STEP = 0.1
         while _time < timeout:
             _time += _TIME_STEP
             try:
-                # msg = self._heartbeat_que.get(timeout=timeout)
                 msg = self._heartbeat_que.get_nowait()
-                self.log.debug(format_rcvd_msg(msg, extra='self._heartbeat_que.get() '))
+                if DEBUG_HEARTBEAT: self.log.debug(format_rcvd_msg(msg, extra='self._heartbeat_que.get() '))
                 # self.log.debug(f"Rcvd Heartbeat from src_sys: {msg.get_srcSystem()}, src_comp: {msg.get_srcComponent()} {msg} ")
                 # check if the heartbeat is from the correct system and component
-                if msg.get_srcSystem() ==  target_system and msg.get_srcComponent() == target_component:
+                if msg.get_srcSystem() == target_system and msg.get_srcComponent() == target_component:
                     # if not msg.get_srcSystem() and not msg.get_srcComponent():  # todo check what is this doing
                     if remote_mav_type is None or msg.type == remote_mav_type:
                         return msg.get_srcSystem(), msg.get_srcComponent()
@@ -277,7 +283,7 @@ class Component:
         while not self._t_cmd_listen_stop:
 
             try:
-                msg = self._message_que.get(timeout=timeout)
+                msg = self.message_que.get(timeout=timeout)
                 if msg.get_type() != 'HEARTBEAT':  # todo change to msg.get_msgId() == MAVLink.MAVLINK_MSG_ID_HEARTBEAT
                     # print (f"{MAVLink.MAVLINK_MSG_ID_HEARTBEAT = }")
                     self.log.debug(format_rcvd_msg(msg))
@@ -366,8 +372,8 @@ class Component:
             return False
 
     async def _test_command(self, target_system: int,  # target system
-                            target_component: int,  # target component
-                            camera_id: int):  # cameras id (0 for all cams)
+                           target_component: int,  # target component
+                           camera_id: int):  # cameras id (0 for all cams)
         """
         example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a cameras
         """
@@ -382,6 +388,16 @@ class Component:
                                  0,  # param6 (shot ID)
                                  0,  # param7 (command ID)
                                  ])
+
+    async def test_command(self, target_system: int,  # target system
+                           target_component: int,  # target component
+                           camera_id: int):  # cameras id (0 for all cams)
+        msg = self.master.mav.gimbal_manager_set_manual_control_send(target_system, target_component,0, 0, 0, 0, 0, 0,)   # todo this is not working in ardupilot routing
+
+        msg = self.master.mav.gimbal_device_set_attitude_send(target_system, target_component, 0, [0, 0, 0, 0], 0, 0, 0)
+        self.log.debug(f"!!!!! Sending Test Message: {target_system}/{target_component}")
+
+        await asyncio.sleep(0.1)
 
     def close(self):
         # self._t_heartbeat.join() # don't wait as its a daemon thread

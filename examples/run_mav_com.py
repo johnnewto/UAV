@@ -26,8 +26,10 @@ class Cli(Component):
         super().__init__(source_component=source_component, mav_type=mav_type)
         self._set_message_callback(on_message)
 
+con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
+con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
 
-async def run_test_client_server(con1="udpin:localhost:14445", con2="udpout:localhost:14445"):
+async def main():
     with MAVCom(con1, source_system=111) as client:
         with MAVCom(con2, source_system=222) as server:
 
@@ -43,18 +45,18 @@ async def run_test_client_server(con1="udpin:localhost:14445", con2="udpout:loca
 
             Num_Iters = 3
             for i in range(Num_Iters):
-                await client.component[11]._test_command(222, 22, 1)
+                await client.component[11].test_command(222, 22, 1)
 
-                await client.component[11]._test_command(222, 23, 1)
+                await client.component[11].test_command(222, 23, 1)
 
-            await client.component[11]._test_command(222, 24, 1)
+            await client.component[11].test_command(222, 24, 1)
 
     return client, server, Num_Iters
 
 
 if __name__ == '__main__':
     client, server, Num_Iters = asyncio.run(
-        run_test_client_server(con1="udpin:localhost:14445", con2="udpout:localhost:14445"))
+        main())
     # client, server, Num_Iters = run_test_client_server(con1="udpin:localhost:14445", con2="udpout:localhost:14445")
     # client, server, Num_Iters = run_test_client_server(con1="/dev/ttyACM0", con2="/dev/ttyUSB0")
 

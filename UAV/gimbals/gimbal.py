@@ -1,4 +1,5 @@
 __all__ = ['Gimbal']
+
 import time, os, sys
 from typing import List
 
@@ -16,16 +17,16 @@ class Gimbal:
     """ adjust the orientation of the airsim gimbal"""
 
     def __init__(self,
-                 camera_name="",
-                 settings_dict=None,  # settings dict
+                 # camera_name="",
+                 # settings_dict=None,  # settings dict
                  loglevel=LogLevels.INFO):  # log flag
 
-        self.camera_name = camera_name
+        # self.camera_name = camera_name
+        # self.settings_dict = settings_dict
         self._log = None
         self._loglevel = loglevel
         self._log = logging.getLogger("uav.{}".format(self.__class__.__name__))
         self._log.setLevel(int(loglevel))
-        self.settings_dict = settings_dict
 
         # self.log.info(f"***** Gimbal: {camera_name = } ******")
         # self.camera_info = self.get_camera_info(self.camera_dict)  # camera_info dict
@@ -34,7 +35,6 @@ class Gimbal:
         self.mav: MAVLink = None  # camera_server.on_mav_connection() callback sets this  (line 84)
         self.source_system = None  # camera_server.on_mav_connection() callback sets this  (line 84)
         self.source_component = None  # camera_server.on_mav_connection() callback sets this  (line 84)
-
 
     def __str__(self) -> str:
         return self.__class__.__name__
@@ -55,14 +55,17 @@ class Gimbal:
             self.log.debug("No mav connection")
             # raise AttributeError
 
+    def manual_pitch_yaw(self, pitch, yaw):
+        """manual position the camera by increments"""
+        self.log.warning(f" (Not implmented) manual position camera by {pitch = } {yaw = }")
+
     def set_pitch_yaw(self, pitch, yaw, pitchspeed, yawspeed):
         """Set the attitude of the gimbal"""
-        self.log.info(f" Pitch {pitch = } {yaw = } {pitchspeed = } {yawspeed = }")
+        self.log.info(f"  (Not implmented)  Pitch {pitch = } {yaw = } {pitchspeed = } {yawspeed = }")
 
     def close(self):
         """Close the gimbal component."""
         self.log.info("Closing the gimbal")
-
 
     def __enter__(self):
         """ Context manager entry point for with statement."""

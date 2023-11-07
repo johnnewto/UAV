@@ -6,10 +6,9 @@ from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink
 from UAV.utils import helpers
 from UAV.utils.general import boot_time_str, toml_load, config_dir
 
-con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-
-
-# con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"q
+# con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
+con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
+# con1, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
 # con1 = "udpout:192.168.122.84:14445"
 # con1 = "udpout:localhost:14445"
 

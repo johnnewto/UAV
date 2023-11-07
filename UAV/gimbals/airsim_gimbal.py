@@ -35,12 +35,14 @@ class AirsimGimbal(Gimbal):
                  loglevel=LogLevels.INFO):  # log flag
 
         # _dict = settings_dict['gstreamer_video_src']
+        self.camera_name = camera_name
+        self.settings_dict = settings_dict
         self._dont_wait = threading.Event()  # used to pause or resume the thread
 
         config_file = config_dir() / "airsim_settings_high_res.json"
 
         self._dont_wait = threading.Event()  # used to pause or resume the thread
-        super().__init__(camera_name=camera_name, settings_dict=settings_dict, loglevel=loglevel)
+        super().__init__(loglevel=loglevel)
         self.log.info(f"***** AirsimGimbal: {camera_name = } ******")
         try:
             self.asc = AirSimClient()
@@ -50,18 +52,15 @@ class AirsimGimbal(Gimbal):
             self.log.error("Airsim not running")
             assert False
 
-
-
-    def rotate_cam(self, pitch, yaw):
-        """Rotate the camera"""
-        self.log.info(f"Rotating camera by {pitch = } {yaw = }")
+    def manual_pitch_yaw(self, pitch, yaw):
+        """ manual position the camera by increments """
+        self.log.info(f"manual position camera by {pitch = } {yaw = }")
         self.camera_angle[0] += pitch
         self.camera_angle[2] += yaw
         # Convert angles to radians
         pitch = np.deg2rad(self.camera_angle[0])
         yaw = np.deg2rad(self.camera_angle[2])
         self.asc.set_camera_orientation(camera_name=self.camera_name, roll=0, pitch=pitch, yaw=yaw)
-
 
     def set_pitch_yaw(self, pitch, yaw, pitchspeed, yawspeed):
         """Set the attitude of the gimbal"""

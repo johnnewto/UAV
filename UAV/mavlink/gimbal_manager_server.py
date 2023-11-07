@@ -78,8 +78,23 @@ class GimbalServer(Component):
         # print(f" {msg.get_type() = }")
         # return False
         if msg.get_type() == "GIMBAL_DEVICE_SET_ATTITUDE" or msg.get_type() == "GIMBAL_MANAGER_SET_ATTITUDE":
+            """ not sure on use???  without confirmation"""
             self._set_attitude(msg)
             return False
+        elif msg.get_type() == "GIMBAL_MANAGER_SET_PITCHYAW":
+            """ high rate message without confirmation"""
+            self.log.debug(f"***** PitchYaw {msg}")
+            self._cmd_gimbal_pitch_yaw(msg)
+            return False
+
+        elif msg.get_type() == "GIMBAL_MANAGER_SET_MANUAL_CONTROL":
+            """ high rate message without confirmation manual relative control"""
+            self._manual_gimbal_pitch_yaw(msg)
+            self.log.debug(f"***** Manual Control {msg}")
+            return False
+        # elif msg.get_type() == "MAVLINK_MSG_ID_GIMBAL_DEVICE_SET_ATTITUDE":
+
+
         elif msg.get_type() == "COMMAND_LONG":
             # print(f"Command  {msg.command = } ")
             if msg.command == MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW:
@@ -100,13 +115,43 @@ class GimbalServer(Component):
 
     def _cmd_gimbal_pitch_yaw(self, msg):
         """Set the attitude of the gimbal"""
+        # self.log.warning (f"Not Implemented _cmd_gimbal_pitch_yaw")
+        # return False
         # https://mavlink.io/en/messages/common.html#MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW
         pitch, yaw = msg.param1, msg.param2
         pitchspeed, yawspeed = msg.param3, msg.param4
         self.log.info(f"Pitch {pitch = } {yaw = } {pitchspeed = } {yawspeed = }")
-        self.gimbal.rotate_cam(pitch, yaw)
+        # self.gimbal.set_pitch_yaw(pitch, yaw)
+        self.gimbal.set_pitch_yaw(pitch, yaw, pitchspeed, yawspeed)
+        return True
+
+
+    def _manual_gimbal_pitch_yaw(self, msg):
+        """ High level message to control a gimbal manually The angles or angular rates are unitless (-1..1).
+        the actual rates will depend on internal gimbal manager settings/configuration"""
+        # https://mavlink.io/en/messages/common.html#GIMBAL_MANAGER_SET_MANUAL_CONTROL
+        self.log.info(f"Pitch {msg.pitch = } {msg.yaw = } {msg.pitch_rate = } {msg.yaw_rate = }")
+        self.gimbal.manual_pitch_yaw(msg.pitch, msg.yaw)
+        # self._cmd_gimbal_pitch_yaw(msg)
         # self.gimbal.set_pitch_yaw(pitch, yaw, pitchspeed, yawspeed)
         return True
+
+
+    def _set_attitude(self, msg):
+        """Set the attitude of the gimbal"""
+        # https://mavlink.io/en/messages/common.html#GIMBAL_DEVICE_SET_ATTITUDE
+        pitch, yaw = msg.q[0], msg.q[1]
+        self.log.info  (f"_set_attitude {pitch = } {yaw = }")
+        self.gimbal.manual_pitch_yaw(pitch, yaw)
+        # retur
+        # #
+        # # pitch, yaw = msg.q[2], msg.q[3]
+        # # pitchspeed, yawspeed = msg.angular_velocity_y, msg.angular_velocity_z
+        # # pan = int(yawspeed * 100)
+        # # tilt = int(pitchspeed * 100)
+        # # data = pan_tilt(pan, tilt)
+        # # print(f"pan tilt {pan = } {tilt = } {data = }")
+        # # # self.sock.sendall(data)
 
     def _set_zoom(self, msg):
         """ Set the viewsheen cameras zoom """
@@ -121,17 +166,6 @@ class GimbalServer(Component):
         data = snapshot(1, 0)
         # self.sock.sendall(data)
 
-    def _set_attitude(self, msg):
-        """Set the attitude of the gimbal"""
-        # https://mavlink.io/en/messages/common.html#GIMBAL_DEVICE_SET_ATTITUDE
-
-        pitch, yaw = msg.q[2], msg.q[3]
-        pitchspeed, yawspeed = msg.angular_velocity_y, msg.angular_velocity_z
-        pan = int(yawspeed * 100)
-        tilt = int(pitchspeed * 100)
-        data = pan_tilt(pan, tilt)
-        print(f"pan tilt {pan = } {tilt = } {data = }")
-        # self.sock.sendall(data)
 
     def close(self):
         """Close the connection to the gimbal"""

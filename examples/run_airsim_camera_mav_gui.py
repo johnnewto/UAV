@@ -12,10 +12,10 @@ from UAV.utils.general import toml_load, config_dir
 
 # gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-
-
+# con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
+# con1, con2 = "/dev/ttyACM0", "/dev/ttyACM2"
 async def main():
-    with MAVCom(con1, source_system=111, loglevel=20) as gcs_mavlink:  # ground control station mavlink
+    with (MAVCom(con1, source_system=111, loglevel=20) as gcs_mavlink):  # ground control station mavlink
         with MAVCom(con2, source_system=222, loglevel=20) as drone_mavlink:  # drone mavlink
 
             # connect to the cameras manager
@@ -34,13 +34,13 @@ async def main():
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_front))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA3, camera=cam_right))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA4, camera=cam_down))
-            drone_mavlink.add_component(GimbalServer(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=mavlink.MAV_COMP_ID_GIMBAL, gimbal=gim_1, loglevel=10))
+            drone_mavlink.add_component(GimbalServer(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=mavlink.MAV_COMP_ID_GIMBAL, gimbal=gim_1, loglevel=20))
 
             # # wait for heartbeat signal from the drone
             # ret = await gcs_cam_manager.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA, timeout=2)
             # print(f"Camera Heartbeat {ret = }")
-            # ret = await gcs_gim.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=2)
-            # print(f"GIMBAL Heartbeat {ret = }")
+            ret = await gcs_gim.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=2)
+            print(f"GIMBAL Heartbeat {ret = }")
 
             # Start the Airsim "basic Autopilot"
             cmd = DroneCommands(takeoff_z=-35)
@@ -51,13 +51,14 @@ async def main():
             # await gcs_gim.cmd_pitch_yaw(40, 0, 0, 0, 0, 0, 222, mavlink.MAV_COMP_ID_GIMBAL)
 
             # place objects in the simulator
-            cam_front.asc.confirmConnection()
-            print("Placing objects")
 
-            asc.place_object("Sofa_02", 0.0, -50.0, -35.0, scale=0.5)
-            asc.place_object("Sofa_02", 0.0, -70.0, -36.0, scale=0.5)
-            asc.place_object("Sofa_02", 20.0, -50.0, -35.0, scale=0.5)
-            asc.place_object("Sofa_02", -20.0, -50.0, -36.0, scale=0.5)
+            # cam_front.asc.confirmConnection()
+            # print("Placing objects")
+            #
+            # asc.place_object("Sofa_02", 0.0, -50.0, -35.0, scale=0.5)
+            # asc.place_object("Sofa_02", 0.0, -70.0, -36.0, scale=0.5)
+            # asc.place_object("Sofa_02", 20.0, -50.0, -35.0, scale=0.5)
+            # asc.place_object("Sofa_02", -20.0, -50.0, -36.0, scale=0.5)
 
             # Run the cameras manager GUI (using asyncio.run)
             gui = Gui(camera_client=gcs_cam_manager, gimbal_client=gcs_gim,  auto=cmd.start, reset=cmd.reset_position, pause=cmd.cancel_last_task)
@@ -73,10 +74,12 @@ async def main():
 
             # shutdown
             cmd.reset_position(), cmd.stop(), cmd.disarm(), cmd.close()
-            cam_front.close(), cam_left.close(), cam_right.close(), cam_down.close()
+            cam_front.close()
+            # cam_left.close(), cam_right.close(), cam_down.close()
 
 
 if __name__ == '__main__':
     p = helpers.start_displays(display_type='cv2', num_cams=4, names=['front', 'left', 'right', 'down'], port=5000)
+    # p = helpers.start_displays(display_type='cv2', num_cams=4, names=['front'], port=5000)
     asyncio.run(main())
     p.terminate()

@@ -3,9 +3,13 @@ from __future__ import annotations
 __all__ = ['NAN', 'GimbalManagerClient']
 
 import asyncio
+# from pymavlink.dialects.v20.ardupilotmega
+from pymavlink.dialects.v20.ardupilotmega import MAVLink_message
+# , gimbal_manager_set_pitchyaw_send, gimbal_manager_set_manual_control_encode)
 
 from .camera_client import check_target
 from .client_component import ClientComponent, mavlink
+from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink
 
 """
 https://mavlink.io/en/services/gimbal_v2.html
@@ -65,7 +69,7 @@ class GimbalManagerClient(ClientComponent):
                       device_id=0,  # Component ID of gimbal device to address (or 1-6 for non-MAVLink gimbal),
                       # 0 for all gimbal device components. Send command multiple times for more than one gimbal (but not all gimbals).
                       target_system=None, target_component=None, ):
-        """ [Command] Set gimbal manager pitch/yaw setpoints
+        """ [Command] Set gimbal manager pitch/yaw setpoints  for low-rate adjustments that require confirmation.
             MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW = 1000  # https://mavlink.io/en/messages/common.html#MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW
         """
         flags = 0
@@ -78,6 +82,40 @@ class GimbalManagerClient(ClientComponent):
                                 params
                                 )
         return ret
+
+    def manual_pitch_yaw(self,
+                         pitch,  # Pitch angle (positive to pitch up, relative to vehicle for FOLLOW mode, relative to world horizon for LOCK mode).
+                         yaw,  # Yaw angle (positive to yaw to the right, relative to vehicle for FOLLOW mode, absolute to North for LOCK mode).
+                         pitch_rate,  # Pitch rate (positive to pitch up).
+                         yaw_rate,  # Yaw rate (positive to yaw to the right).
+                         flags,  # Gimbal manager flags to use.
+                         device_id=0,  # Component ID of gimbal device to address (or 1-6 for non-MAVLink gimbal),
+                         # 0 for all gimbal device components. Send command multiple times for more than one gimbal (but not all gimbals).
+                         target_system=None, target_component=None, ):
+        """  High level message to control a gimbal manually.
+            GIMBAL_MANAGER_SET_MANUAL_CONTROL = 288  # https://mavlink.io/en/messages/common.html#GIMBAL_MANAGER_SET_MANUAL_CONTROL
+        """
+        flags = 0
+
+        target_system, target_component = check_target(self, target_system, target_component)
+        # params = [pitch, yaw, pitch_rate, yaw_rate, flags, 0, device_id]
+
+        # MAVLink_gimbal_manager_set_pitchyaw_message
+        #
+        # send message GIMBAL_MANAGER_SET_PITCHYAW
+        self.log.debug(f"Sending: {target_system}/{target_component} : {mavlink_command_to_string(GIMBAL_MANAGER_SET_MANUAL_CONTROL)}:{GIMBAL_MANAGER_SET_MANUAL_CONTROL} ")
+        if False:
+            self.master.mav.gimbal_manager_set_manual_control_send(
+                target_system, target_component,
+                flags,
+                device_id,
+                pitch, yaw, pitch_rate, yaw_rate,
+            )
+        else:
+            self.master.mav.gimbal_device_set_attitude_send(
+                target_system, target_component, 0, [pitch, yaw, 0, 0], 0, 0, 0)
+
+        return
 
     def _test_send_command(self, target_system: int,  # target system
                            target_component: int,  # target component

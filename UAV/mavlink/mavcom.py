@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 __all__ = ['MAV_SYSTEM_GCS_CLIENT', 'MAV_TYPE_GCS', 'MAV_SYSTEM_VEHICLE', 'MAV_TYPE_CAMERA',
-           'MAV_COMP_ID_CAMERA', 'MAV_COMP_ID_USER1', 'BaseComponent', 'MAVCom', 'test_MAVCom', 'mavlink']
+           'MAV_COMP_ID_CAMERA', 'MAV_COMP_ID_USER1', 'BaseComponent', 'MAVCom', 'test_MAVCom']
 
 import time, os, sys
 import typing
@@ -24,7 +24,7 @@ from pymavlink import mavutil
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
 # from .component import Component
-from .camera_server import CameraServer
+from .camera_server import CameraServer, Component
 from .camera_client import CameraClient
 from .vs_gimbal import GimbalClient
 
@@ -317,7 +317,7 @@ class MAVCom:
         return self._log
 
     def check_message_route(self, msg,  # message
-                            hide_log=False,  # hife log output for messages
+                            hide_log=False,  # hide log output for messages
                             ) -> typ.Union[int, None]:
         """
                check message and routing. return the component ID to be routed to , 0 = all, None = none.
@@ -393,10 +393,12 @@ class MAVCom:
             if comp_ID == 0:
                 # send to all components
                 for key, comp in self.component.items():
-                    comp._message_que.put(msg, block=False)
+                    # if msg.get_srcSystem() not in comp.exclude_msgs:
+                        comp.message_que.put(msg, block=False)
+
             else:  # send to specific component
                 try:
-                    self.component[comp_ID]._message_que.put(msg, block=False)
+                    self.component[comp_ID].message_que.put(msg, block=False)
                 except Exception as e:
                     self.log.error(f" Component {comp_ID} does not exist? ; Exception: {e}")
                     continue

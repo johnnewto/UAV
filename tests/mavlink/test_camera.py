@@ -87,11 +87,11 @@ async def test_client_server(con1="udpin:localhost:14445", con2="udpout:localhos
 
             Num_Iters = 3
             for i in range(Num_Iters):
-                await client.component[11]._test_command(222, 22, 1)
+                await client.component[11].test_command(222, 22, 1)
 
-                await client.component[11]._test_command(222, 23, 1)
+                await client.component[11].test_command(222, 23, 1)
 
-            await client.component[11]._test_command(222, 24, 1)
+            await client.component[11].test_command(222, 24, 1)
 
     print(f"{server.source_system = };  {server.message_cnts = }")
     print(f"{client.source_system = };  {client.message_cnts = }")

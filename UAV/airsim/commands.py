@@ -36,6 +36,7 @@ class DroneCommands():
         self._t = None
         self._evt_no_pause = threading.Event()
         self._evt_no_pause.set()
+        time.sleep(0.1)  # let AirSimClient
 
     def start(self):
         """Start the drone on a path in the Airsim simulator.
