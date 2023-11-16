@@ -1,0 +1,63 @@
+[camera_info]
+vendor_name = "John Doe                   "
+model_name = "Fake Camera                  "
+firmware_version = 1
+focal_length = 8.0
+sensor_size_h = 6.0
+sensor_size_v = 4.0
+resolution_h = 1920
+resolution_v = 1080
+lens_id = 0
+flags = 0
+cam_definition_version = 1
+cam_definition_uri = "http://example.com/camera_definition.xml"
+
+[camera_position]
+x = 0.0
+y = 0.0
+z = 0.0
+roll = 0.0
+pitch = 0.0
+yaw = 0.0
+
+[gstreamer_video_src]
+fps = 30   # Frames per second
+# width = 4032
+# height = 3040
+width = 1920
+height = 1080
+loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
+
+pipeline = [
+    "nvarguscamerasrc sensor_id=0 ! video/x-raw(memory:NVMM),width={width}, height={height}, framerate={fps}/1, format=NV12 ",
+
+    'tee name=t',
+
+#    "t.",
+#    'queue', 'videoscale ', 'capsfilter caps=video/x-raw,width=400,height=300',
+#    'videoconvert ! autovideosink',
+
+    "t.",
+    'interpipesink name=cam_0 ',
+]
+
+
+# streaming pipelines
+
+[gstreamer_h264_udpsink]
+host = "10.42.0.1"
+#host = "127.0.0.1"
+port = 5000
+bitrate=4000000
+pipeline = [
+    'interpipesrc listen-to=cam_0 is-live=true allow-renegotiation=true format=time',
+    'valve name=myvalve drop=False ',
+    'queue',
+    'nvvidconv flip-method=2',
+    # 'nvv4l2h264enc insert-sps-pps=true bitrate={bitrate}',
+    'nvv4l2h264enc num-B-Frames=2 vbv-size=420000 control-rate=1 bitrate={bitrate} profile=2 preset-level=2 insert-sps-pps=true maxperf-enable=1 insert-vui=true insert-aud=true idrinterval=15',
+    'rtph264pay ! udpsink host={host} port={port} sync=true',
+    ]
+
+
+
