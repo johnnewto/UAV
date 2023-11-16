@@ -546,7 +546,7 @@ class GSTCamera(CV2Camera):
 
         if self.pipeline is None:
             _dict = self.camera_dict['gstreamer_video_src']
-            width, height, fps, loglevel = _dict['width'], _dict['height'], _dict['fps'], _dict['loglevel']
+            # width, height, fps, loglevel = _dict['width'], _dict['height'], _dict['fps'], _dict['loglevel']
             pipeline = gst_utils.format_pipeline(**_dict)
 
             self.pipeline = GstPipeline(pipeline, loglevel=self._loglevel)
