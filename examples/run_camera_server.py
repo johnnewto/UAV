@@ -14,12 +14,12 @@ con2 = "udpout:10.42.0.1:14445"
 # con2 = "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
-
+ENCODER = '265enc'
 
 if __name__ == '__main__':
     print (f"boot_time_str = {boot_time_str = }")
-    cam_0 = GSTCamera(camera_dict=toml_load(config_dir() / "jetson_camera_0.toml"), loglevel=LogLevels.INFO)    
-    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "jetson_camera_1.toml"), loglevel=LogLevels.INFO)
+    cam_0 = GSTCamera(camera_dict=toml_load(config_dir() / f"jetson_{ENCODER}_cam_0.toml"), loglevel=LogLevels.INFO)    
+    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / f"jetson_{ENCODER}_cam_1.toml"), loglevel=LogLevels.INFO)
 
     # with MAVCom(con2, source_system=222) as server:
     with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server:  # This normally runs on drone
