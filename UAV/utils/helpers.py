@@ -79,12 +79,16 @@ def start_displays(display_type: str = 'gst',  # display type
         with GstPipes(pipes, loglevel=10):
             # time.sleep(1)
             buffer = [GstBuffer for _ in range(_num_cams)]
+            count = 0
             while any(pipe.is_active for pipe in pipes):
+                count += 1
                 for i, pipe in enumerate(pipes):
                     # buffer = pipe.pop()
                     buffer[i] = pipe.get_nowait()
                     if buffer[i]:
-                        # print(f'{buffer.data.shape = }')
+                        if count % 100 == 0:
+                            print(f'buffer[{i}].data.shape = {buffer[i].data.shape}')
+
                         cv2.imshow(names[i], buffer[i].data)
 
                 cv2.waitKey(10)

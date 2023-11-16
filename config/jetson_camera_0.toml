@@ -1,0 +1,87 @@
+[camera_info]
+vendor_name = "John Doe                   "
+model_name = "Fake Camera                  "
+firmware_version = 1
+focal_length = 8.0
+sensor_size_h = 6.0
+sensor_size_v = 4.0
+resolution_h = 1920
+resolution_v = 1080
+lens_id = 0
+flags = 0
+cam_definition_version = 1
+cam_definition_uri = "http://example.com/camera_definition.xml"
+
+[camera_position]
+x = 0.0
+y = 0.0
+z = 0.0
+roll = 0.0
+pitch = 0.0
+yaw = 0.0
+
+[gstreamer_video_src]
+fps = 30   # Frames per second
+width = 800
+height = 600
+loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
+
+pipeline = [
+    "nvarguscamerasrc ! video/x-raw(memory:NVMM),width={width}, height={height}, framerate={fps}/1, format=NV12 ",
+
+    'tee name=t',
+
+#    "t.",
+#    'queue', 'videoscale ', 'capsfilter caps=video/x-raw,width=400,height=300',
+#    'videoconvert ! autovideosink',
+
+    "t.",
+    'interpipesink name=cam_0 ',
+]
+
+
+[gstreamer_jpg_filesink]
+fps = 10   # Frames per second
+width = 800
+height = 600
+quality = 85
+pipeline = [
+    'intervideosrc channel=channel_1 ',
+    'videoconvert ! videoscale ! video/x-raw,width={width},height={height},framerate={fps}/1',
+    'queue',
+    'jpegenc quality={quality}',  # Quality of encoding, default is 85
+    'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
+    ]
+
+# todo add video save pipeline
+
+# streaming pipelines
+
+[gstreamer_h264_udpsink]
+host = "192.168.144.1"
+#host = "127.0.0.1"
+port = 5000
+bitrate=16000000
+pipeline = [
+    'interpipesrc listen-to=cam_0 is-live=true allow-renegotiation=true format=time',
+    'valve name=myvalve drop=False ',
+    'queue',
+    'nvvidconv flip-method=2 ! nvv4l2h264enc insert-sps-pps=true bitrate={bitrate}',
+    'rtph264pay ! udpsink host={host} port={port} sync=true',
+    ]
+
+
+[gstreamer_raw_udpsink]
+fps = 10   # Frames per second
+width = 800
+height = 600
+port = 5000
+pipeline = [
+   'interpipesrc listen-to=cam_0 is-live=true allow-renegotiation=true format=time',
+    'queue',
+    #    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
+    'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
+    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+    ]
+
+
