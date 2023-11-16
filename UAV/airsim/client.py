@@ -11,7 +11,7 @@ from ..airsim_python_client import MultirotorClient, Vector3r
 import UAV.params as params
 
 import logging
-from pyquaternion import Quaternion
+
 
 logging.basicConfig(format='%(asctime)-8s,%(msecs)-3d %(levelname)5s [%(filename)10s:%(lineno)3d] %(message)s',
                     datefmt='%H:%M:%S',
