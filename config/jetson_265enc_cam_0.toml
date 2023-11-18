@@ -50,7 +50,7 @@ pipeline = [
     'valve name=myvalve drop=False ',
     'nvvidconv ! video/x-raw(memory:NVMM), width=2000, height=1500, format=NV12',
     'queue',
-    'nvv4l2h265enc bitrate={bitrate}',
+    'nvv4l2h265enc name=encoder bitrate={bitrate}',
     'rtph265pay config-interval=1 ! udpsink host={host} port={port} sync=false async=false',
     ]
 

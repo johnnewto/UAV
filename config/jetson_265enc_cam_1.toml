@@ -44,13 +44,13 @@ pipeline = [
 host = "10.42.0.1"
 #host = "127.0.0.1"
 port = 5001
-bitrate=8500000
+bitrate=2000000
 pipeline = [
     'interpipesrc listen-to=cam_1 is-live=true allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
     'nvvidconv ! video/x-raw(memory:NVMM), width=2000, height=1500, format=NV12',
     'queue',
-    'nvv4l2h265enc bitrate={bitrate}',
+    'nvv4l2h265enc name=encoder bitrate={bitrate}',
     'rtph265pay config-interval=1 ! udpsink host={host} port={port} sync=false async=false',
     ]
 
