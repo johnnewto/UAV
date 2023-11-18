@@ -39,7 +39,7 @@ async def main():
 
 if __name__ == '__main__':
     print(f"{boot_time_str =}")
-    p = helpers.start_displays(display_type='cv2', num_cams=2, port=5000)
+    p = helpers.start_displays(display_type='cv2', decoder='h265', num_cams=2, port=5000)
     # p = helpers.dotest()
     asyncio.run(main())
     p.terminate()

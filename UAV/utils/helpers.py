@@ -14,6 +14,7 @@ except:
 
 
 def start_displays(display_type: str = 'gst',  # display type
+                   decoder: str = 'h264',  # encoder type
                    num_cams: int = 1,  # number of cameras
                    names: list = None,  # cameras names
                    port: int = 5000,  # port number
@@ -24,25 +25,36 @@ def start_displays(display_type: str = 'gst',  # display type
     if names is None:
         names = [f'Cam {i}' for i in range(num_cams)]
 
+    if decoder == 'h264':
+        avdec = 'avdec_h264'
+        depay = 'rtph264depay'
+        encoding_name = 'H264'
+    elif decoder == 'h265':
+        avdec = 'avdec_h265'
+        depay = 'rtph265depay'
+        encoding_name = 'H265'
+    else:
+        raise ValueError(f'Unknown decoder type {decoder}')
+
     if _dict is None:
         if display_type == 'gst':
             _dict = {
-                'port': 5000,
+                'port': 5000, 'avdec': avdec, 'depay': depay, 'encoding_name': encoding_name,
                 'pipeline': [
-                    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
+                    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string){encoding_name}, payload=(int)96',
                     'queue',
-                    'rtph264depay ! avdec_h264',
+                    '{depay} ! {avdec}',
                     'videoconvert',
                     'fpsdisplaysink',
                 ],
             }
         else:
             _dict = {
-                'port': 5000,
+                'port': 5000, 'avdec': avdec, 'depay': depay, 'encoding_name': encoding_name,
                 'pipeline': [
-                    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96',
+                    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string){encoding_name}, payload=(int)96',
                     'queue',
-                    'rtph264depay ! avdec_h264',
+                    '{depay} ! {avdec}',
                     'videoconvert',
                     'capsfilter caps=video/x-raw,format=BGR ',
                     'appsink name=mysink emit-signals=true  sync=false ',
