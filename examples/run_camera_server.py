@@ -27,7 +27,19 @@ if __name__ == '__main__':
         UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=10))
         UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=10))
 
+        encoder = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
+        print(f"{encoder = }")
+        last_time = time.time()
+        bitrate = 2000000
         while cam_1.pipeline:
+            if time.time() - last_time > 10:
+                last_time = time.time()
+                encoder0 = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
+                encoder1 = cam_1._pipeline_stream_udp.pipeline.get_by_name("encoder")
+                bitrate = 4000000 if bitrate != 4000000 else 100000
+                encoder0.set_property("bitrate", bitrate)
+                encoder1.set_property("bitrate", bitrate*2)
+                print(f"{bitrate = }")
             if cam_1.last_image is not None:
                 pass
                 # cv2.imshow('gst_src', cam_1.last_image)
