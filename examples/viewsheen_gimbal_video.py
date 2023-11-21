@@ -28,7 +28,7 @@ from gstreamer import GstVideoSource
 
 DEFAULT_PIPELINE = gst_utils.to_gst_string([
             'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
-            'rtph264depay ! h264parse ! avdec_h264',
+            'rtph265depay ! h265parse ! avdec_h265',
             'decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert',
             'appsink name=mysink emit-signals=true sync=false async=false max-buffers=2 drop=true',
             # # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
@@ -100,10 +100,12 @@ async def main(sock=None):
 
             print('\nSuccess!\nStarting streaming - press "q" to quit.')
             # ret, (width, height) = gst_utils.get_buffer_size_from_gst_caps(Gst.Caps)
-
+            count = 0
             gimbal_speed = 40
             while True:
-                buffer = pipeline.pop()
+                buffer = pipeline.pop(timeout=0.01)
+                count += 1
+                # print(f" {count = }")
                 if buffer:
                     cv2.imshow('Receive', buffer.data)
 

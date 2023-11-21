@@ -26,22 +26,30 @@ def start_displays(display_type: str = 'gst',  # display type
         names = [f'Cam {i}' for i in range(num_cams)]
 
     if decoder == 'h264':
+        cmd = 'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96'
         avdec = 'avdec_h264'
         depay = 'rtph264depay'
-        encoding_name = 'H264'
+
     elif decoder == 'h265':
+        cmd = 'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H265, payload=(int)96'
         avdec = 'avdec_h265'
         depay = 'rtph265depay'
-        encoding_name = 'H265'
+
+    elif decoder == 'rtsp':
+        cmd = 'rtspsrc location=rtsp://admin:admin@192.168.144.108:554/cam/realmonitor?channel=1&subtype=0 latency=100 '
+        avdec = 'avdec_h265'
+        depay = 'rtph265depay'
+        #gst-launch-1.0 rtspsrc location="rtsp://admin:admin@192.168.144.108:554/cam/realmonitor?channel=1&subtype=0" latency=1000queue ! rtph265depay ! h265parse ! avdec_h265 ! autovideosink
+
     else:
         raise ValueError(f'Unknown decoder type {decoder}')
 
     if _dict is None:
         if display_type == 'gst':
             _dict = {
-                'port': 5000, 'avdec': avdec, 'depay': depay, 'encoding_name': encoding_name,
+                'port': 5000, 'avdec': avdec, 'depay': depay,
                 'pipeline': [
-                    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string){encoding_name}, payload=(int)96',
+                    cmd,
                     'queue',
                     '{depay} ! {avdec}',
                     'videoconvert',
@@ -50,9 +58,9 @@ def start_displays(display_type: str = 'gst',  # display type
             }
         else:
             _dict = {
-                'port': 5000, 'avdec': avdec, 'depay': depay, 'encoding_name': encoding_name,
+                'port': 5000, 'avdec': avdec, 'depay': depay,
                 'pipeline': [
-                    'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string){encoding_name}, payload=(int)96',
+                    cmd,
                     'queue',
                     '{depay} ! {avdec}',
                     'videoconvert',
@@ -68,6 +76,7 @@ def start_displays(display_type: str = 'gst',  # display type
         print(_dict)
         command_display = gst_utils.format_pipeline(**_dict)
         command_display = command_display.replace('port=5000', 'port={}')
+        print(command_display)
         pipes = [GstPipeline(command_display.format(_port + i)) for i in range(_num_cams)]
 
         # if True:
@@ -83,6 +92,8 @@ def start_displays(display_type: str = 'gst',  # display type
         print(_dict)
         command_display = gst_utils.format_pipeline(**_dict)
         command_display = command_display.replace('port=5000', 'port={}')
+        print(command_display)
+
         pipes = [GstVideoSource(command_display.format(_port + i)) for i in range(_num_cams)]
         for i in range(_num_cams):
             cv2.namedWindow(names[i], cv2.WINDOW_GUI_NORMAL)
