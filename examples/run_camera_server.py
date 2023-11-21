@@ -10,7 +10,8 @@ from UAV.utils import config_dir, boot_time_str, toml_load
 # cli = GimbalClient(mav_connection=None, source_component=11, mav_type=MAV_TYPE_GCS, debug=False)
 # gim1 = GimbalServer(mav_connection=None, source_component=22, mav_type=MAV_TYPE_CAMERA, debug=False)
 
-con2 = "udpout:10.42.0.1:14445"
+# con2 = "udpout:10.42.0.1:14445"
+con2 = "udpout:192.168.1.175:14445"
 # con2 = "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
@@ -30,16 +31,20 @@ if __name__ == '__main__':
         encoder = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
         print(f"{encoder = }")
         last_time = time.time()
-        bitrate = 2000000
+        bitrate = 1000000
+
+        cam_0.video_start_streaming()
+        cam_1.video_start_streaming()
+
         while cam_1.pipeline:
-            if time.time() - last_time > 10:
-                last_time = time.time()
-                encoder0 = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
-                encoder1 = cam_1._pipeline_stream_udp.pipeline.get_by_name("encoder")
-                bitrate = 4000000 if bitrate != 4000000 else 100000
-                encoder0.set_property("bitrate", bitrate)
-                encoder1.set_property("bitrate", bitrate*2)
-                print(f"{bitrate = }")
+            # if time.time() - last_time > 10:
+            #     last_time = time.time()
+            #     encoder0 = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
+            #     encoder1 = cam_1._pipeline_stream_udp.pipeline.get_by_name("encoder")
+            #     bitrate = 4000000 if bitrate != 4000000 else 100000
+            #     encoder0.set_property("bitrate", bitrate)
+            #     encoder1.set_property("bitrate", bitrate*2)
+            #     print(f"{bitrate = }")
             if cam_1.last_image is not None:
                 pass
                 # cv2.imshow('gst_src', cam_1.last_image)
