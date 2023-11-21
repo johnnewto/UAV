@@ -27,7 +27,8 @@ if __name__ == '__main__':
         pitch = 0
         for i in range(5):
             # gimbal.set_pitch_yaw(pitch=i*2, yaw=i*2, pitchspeed=10, yawspeed=10)
-            gimbal.set_pitch(i*1)
+            # gimbal.set_pitch(i*2)
+            gimbal.set_yaw(-i*10)
             time.sleep(0.51)
         # for i in range(36):
         #     pitch = pitch + 10

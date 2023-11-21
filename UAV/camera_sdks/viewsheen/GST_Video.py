@@ -10,10 +10,8 @@ import cv2
 import gi
 import numpy as np
 
-
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
-
 
 import datetime
 
@@ -56,6 +54,9 @@ class FPS:
 # # Initialize the detector parameters using default values
 # parameters = cv2.aruco.DetectorParameters_create()
 
+ENCODER = 'H264'
+ENCODER = 'H265'
+
 
 class GST_Video():
     """BlueRov video capture class constructor
@@ -71,7 +72,7 @@ class GST_Video():
         latest_frame (np.ndarray): Latest retrieved video frame
     """
 
-    def __init__(self, address='127.0.0.1', port=1234, code_patch_size=100):
+    def __init__(self, address='127.0.0.1', port=1234, encoder='H265'):
         """Summary
         Args:
             port (int, optional): UDP port
@@ -81,7 +82,6 @@ class GST_Video():
 
         self.address = address
         self.port = port
-        self.code_patch_size = code_patch_size
 
         self.latest_frame = self._new_frame = None
 
@@ -90,12 +90,13 @@ class GST_Video():
         # self.video_source = f'udpsrc address={address} port={port}'
         self.video_source = f'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue'
         # self.video_codec = '! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264'
-        self.video_codec = '! rtph264depay ! h264parse ! avdec_h264'
+        self.video_codec = '! rtph264depay ! h264parse ! avdec_h264' if encoder == 'H264' else '! rtph265depay ! h265parse ! avdec_h265'
+
         # Python don't have nibble, convert YUV nibbles (4-4-4) to OpenCV standard BGR bytes (8-8-8)
         self.video_decode = '! decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert'
         # Create a sink to get data
         self.video_sink_conf = '! appsink emit-signals=true sync=false max-buffers=2 drop=true'
-
+        print(f'{self.video_source} {self.video_codec} {self.video_decode} {self.video_sink_conf}')
         self.video_pipe = None
         self.video_sink = None
         self.pause = False

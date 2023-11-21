@@ -1,10 +1,12 @@
 import asyncio
 import time
 
+import gstreamer.utils as utils
+from UAV.manager import Gui
 from UAV.mavlink import CameraClient, MAVCom, mavlink
 from UAV.utils import helpers
 from UAV.utils.general import boot_time_str
-from UAV.manager import Gui
+from gstreamer import Gst
 
 # con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
@@ -12,7 +14,8 @@ con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
 # con1 = "udpout:192.168.122.84:14445"
 con1 = "udpin:localhost:14445"
 con1 = "udpin:10.42.0.1:14445"
-
+con1 = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
+# utils.set_gst_debug_level(Gst.DebugLevel)
 async def main():
     with MAVCom(con1, source_system=111, ) as client:
         # with MAVCom(con2, source_system=222, ) as server:

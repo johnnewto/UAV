@@ -16,7 +16,7 @@ SRC_PIPELINE = utils.to_gst_string([
 
             'videoconvert',
             # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-            'x264enc tune=zerolatency',
+            'x264enc name=myenc tune=zerolatency bitrate=2000',
             'rtph264pay ! udpsink host=127.0.0.1 port=5000',
             't.',
             'queue leaky=2 ! videoconvert ! videorate drop-only=true ! video/x-raw,framerate=5/1,format=(string)BGR',
@@ -38,7 +38,7 @@ print(SINK_PIPELINE)
 #         while not pipeline.is_done:
 #             time.sleep(.1)
 
-num_buffers = 40
+num_buffers = 200
 with GstPipeline(SINK_PIPELINE) as rcv_pipeline:  # this will show the video on fpsdisplaysink
     with GstVideoSource(SRC_PIPELINE, leaky=True) as pipeline:
 
@@ -52,6 +52,9 @@ with GstPipeline(SINK_PIPELINE) as rcv_pipeline:  # this will show the video on 
                 print(f'Count = : {count}')
                 dropstate = not dropstate
                 pipeline.set_valve_state("myvalve", dropstate)
+                # pipeline.pipeline.
+                encoder = pipeline.get_by_name("myenc")
+                encoder.set_property("bitrate", 4000)
                 # if dropstate:
                 #     pipeline._pipeline.set_state(Gst.State.PLAYING)
                 # else:
