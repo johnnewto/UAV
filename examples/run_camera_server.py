@@ -5,6 +5,7 @@ import cv2
 from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
 from UAV.mavlink import CameraServer, MAVCom, mavlink
+from UAV.mavlink.vs_gimbal import GimbalServer
 from UAV.utils import config_dir, boot_time_str, toml_load
 
 # cli = GimbalClient(mav_connection=None, source_component=11, mav_type=MAV_TYPE_GCS, debug=False)
@@ -27,7 +28,7 @@ if __name__ == '__main__':
         # UAV_server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_gst_1))
         UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=10))
         UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=10))
-
+        UAV_server.add_component(GimbalServer(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=mavlink.MAV_COMP_ID_GIMBAL, loglevel=10))
         encoder = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
         print(f"{encoder = }")
         last_time = time.time()
