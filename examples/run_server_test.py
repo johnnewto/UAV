@@ -7,13 +7,16 @@ from UAV.logging import LogLevels
 from UAV.mavlink import CameraServer, MAVCom, mavlink
 from UAV.mavlink.gimbal_server_viewsheen import GimbalServerViewsheen
 from UAV.utils import config_dir, boot_time_str, toml_load
+import platform
+
+print(platform.processor())
 
 # cli = GimbalClient(mav_connection=None, source_component=11, mav_type=MAV_TYPE_GCS, debug=False)
 # gim1 = GimbalServer(mav_connection=None, source_component=22, mav_type=MAV_TYPE_CAMERA, debug=False)
 
 # con2 = "udpout:10.42.0.1:14445"
 # con2 = "udpout:192.168.1.175:14445"
-con2 = "udpout:localhost:14445"
+# con2 = "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
 # ENCODER = '265enc'
@@ -21,9 +24,12 @@ ENCODER = ''
 
 if __name__ == '__main__':
     print (f"boot_time_str = {boot_time_str = }")
-    cam_0 = GSTCamera(camera_dict=toml_load(config_dir() / f"test_camera_0.toml"), loglevel=LogLevels.INFO)
-    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / f"test_camera_1.toml"), loglevel=LogLevels.INFO)
-    cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / f"test_viewsheen.toml"), loglevel=LogLevels.INFO)
+    mach = 'jetson' if platform.processor() == 'aarch64' else 'test'
+    con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
+    print(mach)
+    cam_0 = GSTCamera(camera_dict=toml_load(config_dir() / f"{mach}_cam_0.toml"), loglevel=LogLevels.INFO)
+    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / f"{mach}_cam_1.toml"), loglevel=LogLevels.INFO)
+    cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / f"{mach}_viewsheen.toml"), loglevel=LogLevels.INFO)
     # with MAVCom(con2, source_system=222) as server:
     with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server:  # This normally runs on drone
         # UAV_server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_gst_1))
