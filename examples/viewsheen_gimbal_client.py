@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-viewsheen_sdk gimbal control
-
+viewsheen gimbal control
 """
 import asyncio
-import socket
 import time
 
 import cv2
@@ -13,14 +11,14 @@ import numpy as np
 # from UAV.camera_sdks.viewsheen import GST_Video
 import gstreamer.utils as gst_utils
 from UAV import MAVCom
-from UAV.camera_sdks.viewsheen.gimbal_cntrl import VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
+from UAV.camera_sdks.viewsheen.gimbal_cntrl import KeyReleaseThread
 from UAV.mavlink import mavlink
-from UAV.mavlink.vs_gimbal import GimbalClient
+from UAV.mavlink.gimbal_client import GimbalClient
 from gstreamer import GstVideoSource
 
 GIMBAL_PIPELINE = gst_utils.to_gst_string([
-    # 'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
-    'udpsrc port=5010 ! application/x-rtp,encoding-name=H265',
+    'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
+    # 'udpsrc port=5010 ! application/x-rtp,encoding-name=H265',
     'rtph265depay ! h265parse ! avdec_h265',
     'decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert',
     'appsink name=mysink emit-signals=true sync=false async=false max-buffers=2 drop=true',
@@ -50,8 +48,8 @@ async def run_gimbal(width=800, height=600):
     cv2.namedWindow('Gimbal', cv2.WINDOW_GUI_NORMAL)
     cv2.resizeWindow('Gimbal', width, height)
 
-    con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-    con1 = "udpin:192.168.1.175:14445"  # this is the wlan IP of this pc
+    con1 = "udpin:localhost:14445"
+    # con1 = "udpin:192.168.1.175:14445"  # this is the wlan IP of this pc
     # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
     with MAVCom(con1, source_system=111) as client:
         gimbal: GimbalClient = client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=10))
@@ -140,14 +138,9 @@ async def run_gimbal(width=800, height=600):
                 print("Snapshot in pressed")
                 gimbal.start_capture()
 
-        pipeline.shutdown()
+        # pipeline.shutdown()
 
 
 if __name__ == '__main__':
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # # Connect to viewsheen_sdk gimbal
-    # sock.connect((VS_IP_ADDRESS, VS_PORT))
-
     asyncio.run(run_gimbal())
-    # sock.close()
     cv2.destroyAllWindows()

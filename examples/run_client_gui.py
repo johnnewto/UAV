@@ -6,21 +6,27 @@ from UAV.mavlink import CameraClient, MAVCom, mavlink
 from UAV.mavlink.gimbal_client import GimbalClient
 from UAV.utils import helpers
 from UAV.utils.general import boot_time_str
-
-# con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
+# utils.set_gst_debug_level(Gst.DebugLevel)
+# con1 = "udpin:localhost:14445"
+# con1 = "/dev/ttyACM0" "/dev/ttyUSB1"
 # con1, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
 # con1 = "udpout:192.168.122.84:14445"
-con1 = "udpin:localhost:14445"
 # con1 = "udpin:10.42.0.1:14445"
-# con1 = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
-# utils.set_gst_debug_level(Gst.DebugLevel)
+
+CONNECT_REMOTE = False
+if CONNECT_REMOTE:
+    con1 = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
+    # con1 = "udpin:localhost:14445"
+    DECODER = 'h265'
+else:
+    con1 = "udpin:localhost:14445"
+    DECODER = 'h264'
 
 
 async def main():
     with MAVCom(con1, source_system=111, ) as client:
         # with MAVCom(con2, source_system=222, ) as server:
-        cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=20))
+        cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=10))
         gimbal: GimbalClient = client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=12, loglevel=10))
         ret = await cam.wait_heartbeat(target_system=222, target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=3)
         print(f"Heartbeat {ret = }")
@@ -43,9 +49,9 @@ async def main():
 
 if __name__ == '__main__':
     print(f"{boot_time_str =}")
-    decoder = 'h264'
-    print(f"Starting dispalays for {decoder = }")
-    p = helpers.start_displays(display_type='cv2', decoder=decoder, num_cams=2, port=5000)
+
+    print(f"Starting dispalays for {DECODER = }")
+    p = helpers.start_displays(display_type='cv2', decoder=DECODER, num_cams=2, port=5000)
     # p = helpers.dotest()
     asyncio.run(main())
     p.terminate()
