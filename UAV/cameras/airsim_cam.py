@@ -113,7 +113,7 @@ class AirsimCamera(GSTCamera):
             # print(f"{framecounter = }")
             try:
                 img = self.asc.get_image(camera_name, rgb2bgr=True)
-                # self.log.info(f"pushing {camera_name} : {img.shape = } on {self.camera_dict['gstreamer_h264_udpsink']}")
+                # self.log.info(f"pushing {camera_name} : {img.shape = } on {self.camera_dict['gstreamer_udpsink']}")
 
                 self.pipeline.push(buffer=img)
                 # self.log.info(f"pushed {self.pipeline.pipeline.get_name()}")

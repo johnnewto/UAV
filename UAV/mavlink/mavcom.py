@@ -6,7 +6,6 @@ __all__ = ['MAV_SYSTEM_GCS_CLIENT', 'MAV_TYPE_GCS', 'MAV_SYSTEM_VEHICLE', 'MAV_T
 import time, os, sys
 import typing
 
-
 from ..logging import logging, LogLevels
 from ..utils.general import LeakyQueue, format_rcvd_msg, time_since_boot_ms, time_UTC_usec, date_time_str
 
@@ -26,7 +25,8 @@ from pymavlink import mavutil
 # from .component import Component
 from .camera_server import CameraServer, Component
 from .camera_client import CameraClient
-from .vs_gimbal import GimbalClient
+from .gimbal_client import GimbalClient
+# from .vs_gimbal import GimbalClient
 
 # def get_linenumber():
 #     cf = currentframe()
@@ -394,7 +394,7 @@ class MAVCom:
                 # send to all components
                 for key, comp in self.component.items():
                     # if msg.get_srcSystem() not in comp.exclude_msgs:
-                        comp.message_que.put(msg, block=False)
+                    comp.message_que.put(msg, block=False)
 
             else:  # send to specific component
                 try:
@@ -410,7 +410,8 @@ class MAVCom:
 
         if comp.source_component in self.component:
             self.log.error(f"Component {comp.source_component = } already exists")
-            return None
+            assert False, f"Component {comp.source_component = } already exists"
+            # return None
 
         comp.set_mav_connection(self)
         self.component[comp.source_component] = comp

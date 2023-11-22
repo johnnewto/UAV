@@ -64,7 +64,7 @@ pipeline = [
 
 # streaming pipelines
 
-[gstreamer_h264_udpsink]
+[gstreamer_udpsink]
 port = 5000
 pipeline = [
 

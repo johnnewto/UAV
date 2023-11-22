@@ -44,7 +44,7 @@ pipeline = [
 
 # streaming pipelines
 
-[gstreamer_h264_udpsink]
+[gstreamer_udpsink]
 host = "10.42.0.1"
 #host = "127.0.0.1"
 port = 5000

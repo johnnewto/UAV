@@ -1,6 +1,6 @@
 from __future__ import annotations
 """
-Viewsheen Gimbal Component
+Viewsheen Gimbal server Component
 https://mavlink.io/en/services/gimbal_v2.html
 The gimbal protocol allows MAVLink control over the attitude/orientation of cameras (or other sensors) mounted on the drone. The orientation can be: controlled by the pilot in real time 
 (e.g. using a joystick from a ground station), set as part of a mission, or moved based on cameras tracking.
@@ -9,7 +9,7 @@ The protocol supports a number of hardware setups, and enables gimbals with vary
 """
 
 __all__ = ['NAN', 'GIMBAL_DEVICE_SET_ATTITUDE', 'GIMBAL_MANAGER_SET_MANUAL_CONTROL', 'MAV_CMD_SET_CAMERA_ZOOM',
-           'MAV_CMD_IMAGE_START_CAPTURE', 'MAV_CMD_IMAGE_STOP_CAPTURE', 'GimbalClient', 'GimbalServer']
+           'MAV_CMD_IMAGE_START_CAPTURE', 'MAV_CMD_IMAGE_STOP_CAPTURE', 'GimbalServerViewsheen']
 
 import socket
 
@@ -30,91 +30,7 @@ GIMBAL_MANAGER_SET_MANUAL_CONTROL = 288  # https://mavlink.io/en/messages/common
 MAV_CMD_SET_CAMERA_ZOOM = 531  # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
 MAV_CMD_IMAGE_START_CAPTURE = 2000  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
 MAV_CMD_IMAGE_STOP_CAPTURE = 2001  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
-class GimbalClient(Component):
-    """Create a Viewsheen mavlink gimbal client component for send commands to a gimbal on a companion computer or GCS """
-
-    def __init__(self,
-                 source_component: int,  # used for component indication
-                 mav_type: int,  # used for heartbeat MAV_TYPE indication
-                 loglevel: LogLevels | int = LogLevels.INFO):  # logging level
-        
-        super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
-        # self.gimbal_target_component = None
-        # self.camera_target_component = None
-        
-    # def send_message(self, msg):
-    #     """Send a message to the gimbal"""
-    #     self.master.mav.send(msg)
-    #     self.log.debug(f"Sent {msg}")
-    #
-    # # def set_target(self, target_system, gimbal_comp = None,  camera_comp = None):
-    # #     """Set the target system and component for the gimbal / cameras"""
-    # #     self.target_system = target_system
-    # #     self.gimbal_target_component = gimbal_comp
-    # #     self.camera_target_component = camera_comp
-    #
-
-    async def set_attitude(self, pitch, yaw, pitchspeed, yawspeed):
-        """Set the attitude of the gimbal"""
-        # https://mavlink.io/en/messages/common.html#GIMBAL_DEVICE_SET_ATTITUDE
-        # https://mavlink.io/en/messages/common.html#GIMBAL_DEVICE_FLAGS
-        flags = 0
-
-        q = [1, 0, pitch, yaw]
-        angular_velocity_x, angular_velocity_y, angular_velocity_z = 0, pitchspeed, yawspeed
-
-        self.mav.gimbal_device_set_attitude_send(
-            self.target_system, self.target_component,
-            flags,
-            q,
-            angular_velocity_x, angular_velocity_y, angular_velocity_z,
-        )
-        command_id = None
-        return True
-        # ret = await self.wait_ack(self.target_system, self.target_component, command_id=command_id, timeout=1)
-        # if ret:
-        #     # if self.wait_ack(target_system, target_component, command_id=command_id, timeout=timeout):
-        #     self.log.debug(
-        #         f"Rcvd ACK: {self.target_system}/{self.target_component} {mavlink_command_to_string(command_id)}:{command_id}")
-        #     self.num_acks_rcvd += 1
-        #     return True
-        # else:
-        #     self.log.warning(
-        #         f"**No ACK: {self.target_system}/{self.target_component} {mavlink_command_to_string(command_id)}:{command_id}")
-        #     self.num_acks_drop += 1
-        #     return False
-    
-    def set_zoom(self, value):
-        """ Set the cameras zoom"""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
-        return self.send_command(self.target_system, self.target_component,
-        MAV_CMD_SET_CAMERA_ZOOM,
-        [0,
-         value, 0,0,0,0,0])
-    
-    def start_capture(self):
-        """Start image capture sequence."""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
-        return self.send_command(self.target_system, self.target_component,
-        MAV_CMD_IMAGE_START_CAPTURE,
-        [0,
-         0, # interval
-         1, # number of  images to capture
-         0, # Sequence number starting from 1. This is only valid for single-capture (param3 == 1), otherwise set to 0.  Increment the capture ID for each capture command to prevent double captures when a command is re-transmitted.
-         NAN, # Reserved
-         NAN, # Reserved
-         NAN]) # Reserved
-    
-    def stop_capture(self):
-        """Stop image capture sequence"""
-        # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
-        return self.send_command(self.target_system, self.target_component,
-        MAV_CMD_IMAGE_STOP_CAPTURE,
-        [0, NAN, NAN, NAN, NAN, NAN, NAN])
-
-
-
-class GimbalServer(Component):
+class GimbalServerViewsheen(Component):
     """Create a Viewsheen mavlink Camera Server Component for receiving commands from a gimbal on a companion computer or GCS"""
 
     def __init__(self,
@@ -139,9 +55,9 @@ class GimbalServer(Component):
         try:
             self.sock.connect((VS_IP_ADDRESS, VS_PORT))
         except socket.timeout:
-            self.log.error(f"Timeout connecting to gimbal")
+            self.log.error(f"Timeout connecting to gimbal socket")
             return False
-        self.log.debug(f"Connected to gimbal")
+        self.log.info(f"Connected to gimbal socket")
         return True
     
     def on_message(self, msg):

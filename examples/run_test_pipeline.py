@@ -17,7 +17,7 @@ camera_dict = toml_load(config_dir() / "test_camera_0.toml")
 command_h264_display = gst_utils.format_pipeline(**camera_dict['gstreamer_h264_udp_displaysink'])
 command_raw_display = gst_utils.format_pipeline(**camera_dict['gstreamer_raw_udp_displaysink'])
 command_src = gst_utils.format_pipeline(**camera_dict['gstreamer_video_src'])
-command_udp = gst_utils.format_pipeline(**camera_dict['gstreamer_h264_udpsink'])
+command_udp = gst_utils.format_pipeline(**camera_dict['gstreamer_udpsink'])
 command_jpg = gst_utils.format_pipeline(**camera_dict['gstreamer_jpg_filesink'])
 gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 

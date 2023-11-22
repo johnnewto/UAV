@@ -1,11 +1,21 @@
+from __future__ import annotations
+
+import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from typing import List, Callable
 
 import PySimpleGUI as sg
-import asyncio
-from UAV.mavlink import mavlink, mavutil, GimbalManagerClient
+import cv2
+
+import gstreamer.utils as gst_utils
+from UAV.camera_sdks.viewsheen.gimbal_cntrl import KeyReleaseThread
 from UAV.mavlink import CameraClient
+from UAV.mavlink import mavlink
+from UAV.mavlink import mavutil
+from UAV.mavlink.gimbal_client import GimbalClient
+from gstreamer import GstVideoSource
 
 
 class Btn_State:
@@ -198,8 +208,8 @@ async def record_task(client: CameraClient,  # mav component
 
 @dataclass
 class Gui:
-    camera_client: CameraClient = None
-    gimbal_client: GimbalManagerClient = None
+    camera_client: CameraClient | None = None
+    gimbal_client: GimbalClient | None = None
     auto: Callable = None
     reset: Callable = None
     pause: Callable = None
@@ -217,24 +227,33 @@ class Gui:
                 if ret not in self.cameras:
                     self.cameras.append(ret)
                     await self.new_cam_queue.put(ret)
-                    print(f"Put Queue New cameras {ret = }")
+                    print(f" Found Camera {ret[0]}/{ret[1]}")
         print("find_cameras exit")
 
     async def find_gimbals(self):
+        """ Find all gimbals, add to gimbals list    """
         while not self.exit_event.is_set():
-            ret = await self.gimbal_client.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=2)
+            ret = await self.gimbal_client.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=0.5)
             if ret:
                 if ret not in self.gimbals:
                     self.gimbals.append(ret)
                     await asyncio.sleep(0.1)
                     # await self.new_cam_queue.put(ret)
-                    print(f" Gimbal {ret = }")
+                    print(f" Found Gimbal {ret[0]}/{ret[1]}")
         print("find_gimbals exit")
 
+    async def find_gimbal(self):
+        """ Find a gimbal, return on first found    """
+        while not self.exit_event.is_set():
+            ret = await self.gimbal_client.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=0.5)
+            if ret:
+                print(f" Found Gimbal {ret[0]}/{ret[1]}")
+                return ret
+        print("find_gimbal exit")
 
     async def run_gui(self):
         if self.camera_client is None:
-            logging.warning("Gui has no client")
+            logging.error("Gui has no client")
         if not callable(self.auto):
             logging.warning("Gui auto is not callable")
         if not callable(self.reset):
@@ -254,7 +273,7 @@ class Gui:
             try:
                 # check for new cameras, add to window
                 system, comp = self.new_cam_queue.get_nowait()
-                print(f"Get Queue New cameras {system}/{comp}")
+                # print(f"Get Queue New cameras {system}/{comp}")
                 buttons = [FButton(self.camera_client, comp, snapshot_task, 'Snapshot'),
                            FButton(self.camera_client, comp, stream_task, 'Stream'),
                            FButton(self.camera_client, comp, record_task, 'Record')]
@@ -327,6 +346,115 @@ class Gui:
         window.close()
         print("run_gui exit")
 
+    async def gimbal_view(self, width=800, height=600):
+        if self.gimbal_client is None:
+            logging.error("Gui has no client")
+
+        GIMBAL_PIPELINE = gst_utils.to_gst_string([
+            # 'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
+            'udpsrc port=5010 ! application/x-rtp,encoding-name=H265',
+            'rtph265depay ! h265parse ! avdec_h265',
+            'decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert',
+            'appsink name=mysink emit-signals=true sync=false async=false max-buffers=2 drop=true',
+        ])
+
+        (system, target) = await self.find_gimbal()
+
+        gimbal = self.gimbal_client
+        time.sleep(0.1)
+        gimbal.set_target(system, target)
+
+        cv2.namedWindow('Gimbal', cv2.WINDOW_GUI_NORMAL)
+        cv2.resizeWindow('Gimbal', width, height)
+
+        NAN = float("nan")
+
+        print('Initialising stream...')
+
+        gimbal_pipeline = GstVideoSource(GIMBAL_PIPELINE, leaky=True)
+        gimbal_pipeline.startup()
+
+        # while not self.exit_event.is_set():
+        #     buffer = pipeline.pop()
+        #     if buffer:
+        #         break
+        #     waited += 1
+        #     print('\r  Frame not available (x{})'.format(waited), end='')
+        #     cv2.waitKey(30)
+        #     await asyncio.sleep(0.01)
+        #
+        # print('\nSuccess!\nStarting streaming - press "q" to quit.')
+        # # ret, (width, height) = gst_utils.get_buffer_size_from_gst_caps(Gst.Caps)
+        count = 0
+        # gimbal_speed = 40
+        while not self.exit_event.is_set():
+            buffer = gimbal_pipeline.pop(timeout=0.01)
+            count += 1
+            # print(f" {count = }")
+            await asyncio.sleep(0.001)
+            # continue
+
+            if buffer:
+                cv2.imshow('Gimbal', buffer.data)
+
+            k = cv2.waitKey(1)
+            if k == ord('q') or k == ord('Q') or k == 27:
+                break
+
+            if k == ord('d'):  # Right arrow key
+                print("Right arrow key pressed")
+                await gimbal.set_attitude(NAN, NAN, 0.0, 0.2)
+                # pan_tilt(gimbal_speed)
+                KeyReleaseThread().start()
+
+            if k == ord('a'):  # Left arrow key
+                print("Left arrow key pressed")
+                await gimbal.set_attitude(NAN, NAN, 0.0, -0.2)
+                KeyReleaseThread().start()
+
+            if k == ord('w'):
+                print("Up arrow key pressed")
+                await gimbal.set_attitude(NAN, NAN, 0.2, 0.0)
+                KeyReleaseThread().start()
+
+            if k == ord('s'):
+                print("Down arrow key pressed")
+                await gimbal.set_attitude(NAN, NAN, -0.2, 0.0)
+                KeyReleaseThread().start()
+
+            if k == ord('1'):
+                print("Zoom in pressed")
+                await gimbal.set_zoom(1)
+
+            if k == ord('2'):
+                print("Zoom out pressed")
+                await gimbal.set_zoom(2)
+
+            if k == ord('3'):
+                print("Zoom stop pressed")
+                await gimbal.set_zoom(3)
+
+            if k == ord('4'):
+                print("Zoom  = 1")
+                await gimbal.set_zoom(4)
+
+            if k == ord('5'):
+                print("Zoom x2 in")
+                await gimbal.set_zoom(5)
+
+            if k == ord('6'):
+                print("Zoom x2 out")
+                await gimbal.set_zoom(6)
+
+            if k == ord('c'):
+                print("Snapshot in pressed")
+                gimbal.start_capture()
+
+        print("Gimbal View exit")
+        # this cause errors perhaps because not running gst context
+        #     gimbal_pipeline.pause()
+        #     gimbal_pipeline.shutdown()
+
 
 if __name__ == '__main__':
 
@@ -368,8 +496,10 @@ if __name__ == '__main__':
     async def main2():
         def auto():
             print("Yay auto done")
+
         def reset():
             print("Yay reset done")
+
         def pause():
             print("Yay pause done")
 

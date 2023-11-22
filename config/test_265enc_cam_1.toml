@@ -67,27 +67,16 @@ pipeline = [
 [gstreamer_udpsink]
 
 port = 5001
+bitrate=2000
 pipeline = [
     'interpipesrc listen-to=cam_1 is-live=true allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
     'queue',
 #    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
     'videoconvert',
-     'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
-#    'x264enc tune=zerolatency',
-    'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
+    'x265enc bitrate={bitrate}',
+    'rtph265pay config-interval=1 ! udpsink host=127.0.0.1 port={port} sync=true',
     ]
 
 
-[gstreamer_raw_udpsink]
-fps = 10   # Frames per second
-width = 800
-height = 600
-port = 5001
-pipeline = [
-   'interpipesrc listen-to=cam_1 is-live=true allow-renegotiation=true format=time',
-    'queue',
-    'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
-    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
-    ]
 

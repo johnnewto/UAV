@@ -179,7 +179,7 @@ class Component:
     async def wait_heartbeat(self, remote_mav_type=None,  # type of remote system
                              target_system=None,  # target system
                              target_component=None,  # target component
-                             timeout: int = 1, ):  # seconds
+                             timeout: float = 1.0, ):  # seconds
 
         """Wait for a heartbeat from target_system and target_component."""
         # Todo is this correct ? Wait for a heartbeat, so we know the target system IDs (also it seems to need it to start receiving commands)

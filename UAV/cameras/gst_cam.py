@@ -109,7 +109,7 @@ def todo_remove_create_toml_file(filename):  # todo remove
             'appsink name=mysink emit-signals=True max-buffers=1 drop=True',
         ],
     }
-    gstreamer_h264_udpsink = {
+    gstreamer_udpsink = {
         'width': 640,
         'height': 480,
         'fps': 10,
@@ -645,12 +645,12 @@ class GSTCamera(CV2Camera):
     def _setup_video_stream(self, streamId=0):  # Stream ID (0 for all streams
         """Creates a GStreamer pipeline for streaming video,."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-        self._stream_dict = self.camera_dict['gstreamer_h264_udpsink'] if '264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
+        self._stream_dict = self.camera_dict['gstreamer_udpsink'] if '264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
         self._stream_dict['port'] += int(streamId * 10)  # todo fix this port allocation
         # width, height, fps, port  = _dict['width'], _dict['height'], _dict['fps'], _dict['port']
         pipeline = gst_utils.format_pipeline(**self._stream_dict)
         self._pipeline_stream_udp: GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
-        self._pipeline_stream_udp.pipeline.set_name('gstreamer_h264_udpsink')
+        self._pipeline_stream_udp.pipeline.set_name('gstreamer_udpsink')
         self.log.info(f'Video streaming pipeline "{self._pipeline_stream_udp.pipeline.get_name()}" created on port {self._stream_dict["port"]}')
         time.sleep(0.1)
         self.video_stop_streaming()
