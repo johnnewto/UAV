@@ -41,10 +41,12 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_udpsink]
-# host = "10.42.0.1"
-host = "192.168.1.175"
-#host = "127.0.0.1"
-port = 5001
+## host = "10.42.0.1"
+#host = "192.168.1.175"
+##host = "127.0.0.1"
+#port = 5001
+host = '*camera_UDP_IP*'     # overwrite with server_config.toml
+port = '*cam_1_UDP_port*'    # overwrite with server_config.toml
 bitrate=2000000
 pipeline = [
     'interpipesrc listen-to=cam_1 is-live=true allow-renegotiation=true format=time',

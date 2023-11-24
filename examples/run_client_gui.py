@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import time
 
@@ -5,7 +6,8 @@ from UAV.manager import Gui
 from UAV.mavlink import CameraClient, MAVCom, mavlink
 from UAV.mavlink.gimbal_client import GimbalClient
 from UAV.utils import helpers
-from UAV.utils.general import boot_time_str
+from UAV.utils.general import boot_time_str, toml_load, config_dir
+
 # utils.set_gst_debug_level(Gst.DebugLevel)
 # con1 = "udpin:localhost:14445"
 # con1 = "/dev/ttyACM0" "/dev/ttyUSB1"
@@ -13,22 +15,15 @@ from UAV.utils.general import boot_time_str
 # con1 = "udpout:192.168.122.84:14445"
 # con1 = "udpin:10.42.0.1:14445"
 
-CONNECT_REMOTE = False
-if CONNECT_REMOTE:
-    con1 = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
-    # con1 = "udpin:localhost:14445"
-    DECODER = 'h265'
-else:
-    con1 = "udpin:localhost:14445"
-    DECODER = 'h264'
 
 
-async def main():
-    with MAVCom(con1, source_system=111, ) as client:
+
+async def main(config_dict):
+    with MAVCom(config_dict['mav_connection'], source_system=config_dict['source_system'], ) as client:
         # with MAVCom(con2, source_system=222, ) as server:
-        cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=10))
-        gimbal: GimbalClient = client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=12, loglevel=10))
-        ret = await cam.wait_heartbeat(target_system=222, target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=3)
+        cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['camera_component'], loglevel=10))
+        gimbal: GimbalClient = client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['gimbal_component'], loglevel=10))
+        ret = await cam.wait_heartbeat(target_system=config_dict['target_system'], target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=3)
         print(f"Heartbeat {ret = }")
         time.sleep(0.1)
 
@@ -39,8 +34,7 @@ async def main():
         t4 = asyncio.create_task(gui.gimbal_view())
 
         try:
-            # await asyncio.gather(t1, t2, t3)
-            # await asyncio.gather(t1, t3, )
+
             await asyncio.gather(t1, t3, t4)
         except asyncio.CancelledError:
             print("CancelledError")
@@ -48,10 +42,23 @@ async def main():
 
 
 if __name__ == '__main__':
+    # get command line args
+    parser = argparse.ArgumentParser(description='UAV camera GUI')
+    parser.add_argument('-cl', '--connect_local', action='store_true', help='Connect to local camera server')
+    args = parser.parse_args()
+
+    config_dict = toml_load(config_dir() / f"client_config.toml")
+
+    if args.connect_local:
+        print("overwrite config_dict['mav_connection'] with local connection")
+        config_dict['mav_connection'] = "udpin:localhost:14445"
+        config_dict['camera_udp_decoder'] = 'h264'
+
+    print(config_dict)
+
     print(f"{boot_time_str =}")
 
-    print(f"Starting dispalays for {DECODER = }")
-    p = helpers.start_displays(display_type='cv2', decoder=DECODER, num_cams=2, port=5000)
+    p = helpers.start_displays(config_dict, display_type='cv2')
     # p = helpers.dotest()
-    asyncio.run(main())
+    asyncio.run(main(config_dict))
     p.terminate()

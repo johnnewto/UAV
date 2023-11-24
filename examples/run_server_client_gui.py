@@ -1,4 +1,5 @@
 import asyncio
+
 from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
 from UAV.manager import Gui
@@ -6,7 +7,6 @@ from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink, GimbalServe
 from UAV.mavlink.gimbal_client import GimbalClient
 from UAV.utils import helpers
 from UAV.utils.general import boot_time_str, toml_load, config_dir
-from gstreamer import GstContext
 
 
 def auto():
@@ -15,7 +15,10 @@ def auto():
 
 # gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 
-async def main():
+
+
+
+async def main(config_dict):
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
     # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
     # con1, con2 = "/dev/ttyACM0", "/dev/ttyACM2"
@@ -31,10 +34,12 @@ async def main():
                 gcs: CameraClient = GCS_client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.INFO))
                 gimbal: GimbalClient = GCS_client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=12, loglevel=LogLevels.INFO))
 
+                config_dict = toml_load(config_dir() / f"test_server_config.toml")
+                print(config_dict)
                 # add UAV cameras, This normally runs on drone
-                cam_0 = GSTCamera(camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.DEBUG)
-                cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "test_cam_1.toml"), loglevel=LogLevels.DEBUG)
-                cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / f"test_viewsheen.toml"), loglevel=LogLevels.INFO)
+                cam_0 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.DEBUG)
+                cam_1 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / "test_cam_1.toml"), loglevel=LogLevels.DEBUG)
+                cam_2 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"test_viewsheen.toml"), loglevel=LogLevels.INFO)
 
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=LogLevels.INFO))
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=LogLevels.INFO))
@@ -60,6 +65,10 @@ async def main():
 
 
 if __name__ == '__main__':
-    p = helpers.start_displays(display_type='cv2', num_cams=2, port=5000)
-    asyncio.run(main())
+
+    config_dict = toml_load(config_dir() / f"client_config.toml")
+    print(config_dict)
+
+    p = helpers.start_displays(config_dict, display_type='cv2')
+    asyncio.run(main(config_dict))
     p.terminate()

@@ -522,19 +522,26 @@ class CV2Camera(BaseCamera):
         return False  # re-raise any exceptions
 
 
+
 class GSTCamera(CV2Camera):
     """ Create a fake cameras component for testing using GStreamer"""
 
     def __init__(self,
+                 config_dict,  # config dict
                  camera_dict=None,  # camera_info dict
                  udp_encoder='h264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
         super().__init__(camera_dict, loglevel)
 
+        # camera_dict = replace_star_text(camera_dict, config_dict)
+        self.set_config_values(camera_dict, config_dict)
+        # print(camera_dict)
+
+        self.config_dict = config_dict
         self.camera_dict = camera_dict
         self.udp_encoder = udp_encoder
-        self._loglevel = loglevel
 
+        self._loglevel = loglevel
         self.last_image = None
         self.pipeline = None
         self._open()
@@ -557,6 +564,24 @@ class GSTCamera(CV2Camera):
         else:
             self.log.warning("Pipeline already exists")
             return self
+
+    def set_config_values(self, camera_dict, config_dict):
+        """Replace '*....*' parameters in camera_dict with values from config_dict."""
+        for key in camera_dict.keys():
+            val = camera_dict[key]
+            if isinstance(val, str) and val.startswith('*') and val.endswith('*'):
+                # replace *...* with value from config_dict
+                try:
+                    old_val = val
+                    camera_dict[key] = config_dict[val[1:-1]]
+                    self.log.info(f"Setting {old_val[1:-1]} = {camera_dict[key]}")
+                except KeyError:
+                    self.log.error(f"KeyError: {val} not found in config_dict")
+                    raise KeyError
+
+        for key in camera_dict:
+            if isinstance(camera_dict[key], dict):
+                self.set_config_values(camera_dict[key], config_dict)
 
     def get_name(self):
         """Get the name of the gstreamer pipeline"""
@@ -645,7 +670,7 @@ class GSTCamera(CV2Camera):
     def _setup_video_stream(self, streamId=0):  # Stream ID (0 for all streams
         """Creates a GStreamer pipeline for streaming video,."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-        self._stream_dict = self.camera_dict['gstreamer_udpsink'] if '264' in self.udp_encoder else self.camera_dict['gstreamer_raw_udpsink']
+        self._stream_dict = self.camera_dict['gstreamer_udpsink']
         self._stream_dict['port'] += int(streamId * 10)  # todo fix this port allocation
         # width, height, fps, port  = _dict['width'], _dict['height'], _dict['fps'], _dict['port']
         pipeline = gst_utils.format_pipeline(**self._stream_dict)

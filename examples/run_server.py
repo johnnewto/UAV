@@ -27,9 +27,13 @@ if __name__ == '__main__':
     mach = 'jetson' if platform.processor() == 'aarch64' else 'test'
     con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
     print(mach)
-    cam_0 = GSTCamera(camera_dict=toml_load(config_dir() / f"{mach}_cam_0.toml"), loglevel=LogLevels.INFO)
-    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / f"{mach}_cam_1.toml"), loglevel=LogLevels.INFO)
-    cam_2 = GSTCamera(camera_dict=toml_load(config_dir() / f"{mach}_viewsheen.toml"), loglevel=LogLevels.INFO)
+
+    config_dict = toml_load(config_dir() / f"{mach}_server_config.toml")
+    print(config_dict)
+
+    cam_0 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_cam_0.toml"), loglevel=LogLevels.INFO)
+    cam_1 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_cam_1.toml"), loglevel=LogLevels.INFO)
+    cam_2 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_viewsheen.toml"), loglevel=LogLevels.INFO)
     # with MAVCom(con2, source_system=222) as server:
     with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server:  # This normally runs on drone
         # UAV_server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_gst_1))

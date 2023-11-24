@@ -65,8 +65,8 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_udpsink]
-
-port = 5001
+host = '*camera_UDP_IP*'     # overwrite with server_config.toml
+port = '*cam_1_UDP_port*'    # overwrite with server_config.toml
 pipeline = [
     'interpipesrc listen-to=cam_1 is-live=true allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
@@ -75,7 +75,7 @@ pipeline = [
     'videoconvert',
      'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
 #    'x264enc tune=zerolatency',
-    'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
+    'rtph264pay ! udpsink host={host} port={port} sync=true',
     ]
 
 

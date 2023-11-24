@@ -13,71 +13,62 @@ except:
     print("GStreamer is not installed")
 
 
-def start_displays(display_type: str = 'gst',  # display type
-                   decoder: str = 'h264',  # encoder type
-                   num_cams: int = 1,  # number of cameras
-                   names: list = None,  # cameras names
-                   port: int = 5000,  # port number
-                   _dict: Dict = None,  # cameras dict overides display_type (see below for example)
-                    width=800, height=600
+def start_displays(config_dict, display_type: str = 'cv2',  # display type
+                width=800, height=600
                    ) -> Process:  # encoder type
     """ Display video from one or more gst streams from drone in a separate process"""
-    if names is None:
-        names = [f'Cam {i}' for i in range(num_cams)]
 
-    if decoder == 'h264':
+    if config_dict['camera_udp_decoder'] == 'h264':
         cmd = 'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96'
         avdec = 'avdec_h264'
         depay = 'rtph264depay'
 
-    elif decoder == 'h265':
+    elif config_dict['camera_udp_decoder'] == 'h265':
         cmd = 'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H265, payload=(int)96'
         avdec = 'avdec_h265'
         depay = 'rtph265depay'
 
-    elif decoder == 'rtsp':
+    elif config_dict['camera_udp_decoder'] == 'rtsp':
         cmd = 'rtspsrc location=rtsp://admin:admin@192.168.144.108:554/cam/realmonitor?channel=1&subtype=0 latency=100 '
         avdec = 'avdec_h265'
         depay = 'rtph265depay'
         #gst-launch-1.0 rtspsrc location="rtsp://admin:admin@192.168.144.108:554/cam/realmonitor?channel=1&subtype=0" latency=1000queue ! rtph265depay ! h265parse ! avdec_h265 ! autovideosink
 
     else:
-        raise ValueError(f'Unknown decoder type {decoder}')
+        raise ValueError(f"Unknown decoder type {config_dict['udp_decoder'] }")
 
-    if _dict is None:
-        if display_type == 'gst':
-            _dict = {
-                'port': 5000, 'avdec': avdec, 'depay': depay,
-                'pipeline': [
-                    cmd,
-                    'queue',
-                    '{depay} ! {avdec}',
-                    'videoconvert',
-                    'fpsdisplaysink',
-                ],
-            }
-        else:
-            _dict = {
-                'port': 5000, 'avdec': avdec, 'depay': depay,
-                'pipeline': [
-                    cmd,
-                    'queue',
-                    '{depay} ! {avdec}',
-                    'videoconvert',
-                    'capsfilter caps=video/x-raw,format=BGR ',
-                    'appsink name=mysink emit-signals=true  sync=false ',
-                    #
-                    # 'appsink name=mysink emit-signals=True max-buffers=1 drop=True sync=false',
-                ],
-            }
+    if display_type == 'gst':
+        _dict = {
+            'port': '{}', 'avdec': avdec, 'depay': depay,
+            'pipeline': [
+                cmd,
+                'queue',
+                '{depay} ! {avdec}',
+                'videoconvert',
+                'fpsdisplaysink',
+            ],
+        }
+    else:
+        _dict = {
+            'port': '{}', 'avdec': avdec, 'depay': depay,
+            'pipeline': [
+                cmd,
+                'queue',
+                '{depay} ! {avdec}',
+                'videoconvert',
+                'capsfilter caps=video/x-raw,format=BGR ',
+                'appsink name=mysink emit-signals=true  sync=false ',
+                #
+                # 'appsink name=mysink emit-signals=True max-buffers=1 drop=True sync=false',
+            ],
+        }
 
-    def gst_display(_num_cams: int, _port: int):
+    # def gst_display(_num_cams: int, _port: int):
+    def gst_display(_names: list, ports: list):
         """ Display video from one or more gst streams"""
-        print(_dict)
         command_display = gst_utils.format_pipeline(**_dict)
-        command_display = command_display.replace('port=5000', 'port={}')
-        print(command_display)
-        pipes = [GstPipeline(command_display.format(_port + i)) for i in range(_num_cams)]
+        print('gst_display', command_display)
+        pipes = [GstPipeline(command_display.format(_port)) for _port in ports]
 
         # if True:
         # with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
@@ -87,17 +78,18 @@ def start_displays(display_type: str = 'gst',  # display type
             time.sleep(.5)
         gp.shutdown()
 
-    def cv2_display(_num_cams: int, _port: int, width=width, height=height):
+    def cv2_display(_names: list, _ports: list, width=width, height=height):
         """ Display video from one or more gst streams"""
-        print(_dict)
         command_display = gst_utils.format_pipeline(**_dict)
-        command_display = command_display.replace('port=5000', 'port={}')
-        print(command_display)
+        print('cv2_display', command_display)
 
-        pipes = [GstVideoSource(command_display.format(_port + i)) for i in range(_num_cams)]
-        for i in range(_num_cams):
-            cv2.namedWindow(names[i], cv2.WINDOW_GUI_NORMAL)
-            cv2.resizeWindow(names[i], width, height)
+        _num_cams = len(_names)
+
+        pipes = [GstVideoSource(command_display.format(port)) for port in _ports]
+
+        for name in _names:
+            cv2.namedWindow(name, cv2.WINDOW_GUI_NORMAL)
+            cv2.resizeWindow(name, width, height)
 
         with GstPipes(pipes, loglevel=10):
             # time.sleep(1)
@@ -112,7 +104,7 @@ def start_displays(display_type: str = 'gst',  # display type
                         if count % 100 == 0:
                             print(f'buffer[{i}].data.shape = {buffer[i].data.shape}')
 
-                        cv2.imshow(names[i], buffer[i].data)
+                        cv2.imshow(_names[i], buffer[i].data)
 
                 cv2.waitKey(10)
                 if not any(buffer):
@@ -121,25 +113,14 @@ def start_displays(display_type: str = 'gst',  # display type
         cv2.destroyAllWindows()
 
     target = gst_display if display_type == 'gst' else cv2_display
-    _p = Process(target=target, args=(num_cams, port))
+    ports = config_dict['camera_ip_ports']
+    names = config_dict['camera_names']
+    _p = Process(target=target, args=(names, ports))
     _p.start()
     time.sleep(0.1)  # wait for display to start
     return _p
 
 
-test_camera_dict = {
-    'port': 5000,
-    'width': 640,
-    'height': 480,
-    'fps': 30,  # Frames per second
-    'pipeline': [
-        'videotestsrc pattern=ball is-live=true',
-        'capsfilter caps=video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
-        'videoconvert',
-        'x264enc tune=zerolatency',
-        'rtph264pay ! udpsink host=127.0.0.1 port={port}',
-    ],
-}
 
 if __name__ == '__main__':
     width, height, fps, num_buffers = 1920, 1080, 30, 200

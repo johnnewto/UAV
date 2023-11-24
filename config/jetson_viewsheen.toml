@@ -25,9 +25,7 @@ fps = 30   # Frames per second
 width = 800
 height = 600
 loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
-#IP = 127.0.0.1
-# IP=10.42.0.1
-IP='192.168.1.175'  #  pc
+
 viewsheenIP = '192.168.144.108:554'
 pipeline = [
     'rtspsrc location="rtsp://admin:admin@{viewsheenIP}" latency=100',
@@ -54,8 +52,8 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_udpsink]
-IP = '192.168.1.175' #  pc
-port = 5010
+host = '*camera_UDP_IP*'     # overwrite with server_config.toml
+port = '*cam_10_UDP_port*'    # overwrite with server_config.toml
 pipeline = [
     'interpipesrc listen-to=cam_vs1  is-live=true  allow-renegotiation=true format=time',
 

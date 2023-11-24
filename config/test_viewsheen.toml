@@ -54,8 +54,8 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_udpsink]
-IP = '127.0.0.1'
-port = 5010
+host = '*camera_UDP_IP*'     # overwrite with server_config.toml
+port = '*cam_10_UDP_port*'    # overwrite with server_config.toml
 pipeline = [
     'interpipesrc listen-to=cam_vs1  is-live=true  allow-renegotiation=true format=time',
 
@@ -63,7 +63,7 @@ pipeline = [
     'queue',
     'rtph265depay',
     'rtph265pay config-interval=1',
-    'udpsink host={IP} port={port} sync=true',
+    'udpsink host={host} port={port} sync=true',
     ]
 
 
