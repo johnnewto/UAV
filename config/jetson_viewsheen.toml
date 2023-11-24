@@ -61,7 +61,7 @@ pipeline = [
     'queue',
     'rtph265depay',
     'rtph265pay config-interval=1',
-    'udpsink host={IP} port={port} sync=true',
+    'udpsink host={host} port={port} sync=true',
     ]
 
 
