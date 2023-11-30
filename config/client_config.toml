@@ -1,5 +1,5 @@
-#mav_connection = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
-mav_connection = "udpin:localhost:14445"
+mav_connection = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
+#mav_connection = "udpin:localhost:14445"
 # mav_connection = "/dev/ttyACM0" "/dev/ttyUSB1"
 # mav_connection, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
 # mav_connection = "udpout:192.168.122.84:14445"
@@ -10,7 +10,8 @@ target_system = 222
 
 camera_names = ['front', 'down']
 camera_ip_ports = [5000, 5001]
-camera_udp_decoder = 'h264'
+#camera_udp_decoder = 'h264'
+camera_udp_decoder = 'h265'
 camera_component = 11
 
 gimbal_names = ['gimbal']
