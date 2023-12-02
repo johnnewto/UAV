@@ -1,4 +1,7 @@
-mav_connection = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
+#mav_connection = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
+mav_connection = "/dev/ttyUSB1"  # holybro telemetry radio
+
+
 #mav_connection = "udpin:localhost:14445"
 # mav_connection = "/dev/ttyACM0" "/dev/ttyUSB1"
 # mav_connection, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"

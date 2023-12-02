@@ -1,13 +1,14 @@
 __all__ = ['CameraCaptureStatus', 'BaseCamera', 'CaptureThread', 'CV2Camera',
            'GSTCamera']
 
-import time, os, sys
+import os
+import sys
+import time
 from typing import List
 
 from ..logging import logging, LogLevels
-# from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-from ..mavlink.component import Component, mavutil, mavlink, MAVLink
+from ..mavlink.component import MAVLink
+from ..utils.general import time_since_boot_ms, time_UTC_usec, date_time_str
 
 try:
     from gstreamer import GstPipeline, GstVideoSource, GstVideoSave, GstJpegEnc, GstStreamUDP, Gst
@@ -522,7 +523,6 @@ class CV2Camera(BaseCamera):
         return False  # re-raise any exceptions
 
 
-
 class GSTCamera(CV2Camera):
     """ Create a fake cameras component for testing using GStreamer"""
 
@@ -540,6 +540,7 @@ class GSTCamera(CV2Camera):
         self.config_dict = config_dict
         self.camera_dict = camera_dict
         self.udp_encoder = udp_encoder
+        self.cam_name = self.camera_dict['cam_name']
 
         self._loglevel = loglevel
         self.last_image = None
@@ -553,6 +554,7 @@ class GSTCamera(CV2Camera):
 
         if self.pipeline is None:
             _dict = self.camera_dict['gstreamer_video_src']
+            _dict['cam_name'] = self.cam_name
             # width, height, fps, loglevel = _dict['width'], _dict['height'], _dict['fps'], _dict['loglevel']
             pipeline = gst_utils.format_pipeline(**_dict)
 
@@ -627,6 +629,44 @@ class GSTCamera(CV2Camera):
         self.camera_capture_status.image_count += 1
         self.camera_image_captured_send()
 
+    # def old_image_start_capture(self, interval,  # Image capture interval
+    #                         count,  # Number of images to capture (0 for unlimited)
+    #                         ):
+    #     """Start image capture sequence."""
+    #     # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
+    #     # self.interval = interval
+    #     self.camera_capture_status.image_status = 1
+    #     self.camera_capture_status.image_interval = interval
+    #     self.max_count = count
+    #     _dict = self.camera_dict['gstreamer_jpg_filesink']
+    #     # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
+    #     _dict['fps'] = int(1 / interval) if interval > 0 else _dict['fps']
+    #     pipeline = gst_utils.format_pipeline(**_dict)
+    #
+    #     # fps = int(1 / interval) if interval > 0 else fps
+    #     # pipeline = gst_utils.to_gst_string(_dict['pipeline'])
+    #     # print(f'{width=}, {height=}, {fps=}')
+    #     # pipeline = gst_utils.fstringify(pipeline, width=width, height=height, fps=fps, quality=quality)
+    #
+    #     # MAX_FPS = 10
+    #     # interval = 1/fps if interval < 1/fps else interval
+    #     # fps = int(1/interval)
+    #
+    #     self._gst_image_save: GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
+    #                                                   on_jpeg_capture=self.on_capture_image,
+    #                                                   loglevel=self._loglevel).startup()
+    #
+    #
+    #
+
+    def _last_image_index(self, usb_drive_path: str, _filter='jpg'):
+        drive_contents = os.listdir(usb_drive_path)
+        cam0_files = [file for file in drive_contents if file.endswith(_filter)]
+        # # find the highest index based on number after '_' in the filename
+        # highest_index = cam0_files[-1].split('_')[1] if cam0_files else 0
+        highest_index = cam0_files[-1].split('.')[0] if cam0_files else 0
+        return int(highest_index)
+
     def image_start_capture(self, interval,  # Image capture interval
                             count,  # Number of images to capture (0 for unlimited)
                             ):
@@ -635,30 +675,38 @@ class GSTCamera(CV2Camera):
         # self.interval = interval
         self.camera_capture_status.image_status = 1
         self.camera_capture_status.image_interval = interval
-        self.max_count = count
+        # self.max_count = count
         _dict = self.camera_dict['gstreamer_jpg_filesink']
         # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
         _dict['fps'] = int(1 / interval) if interval > 0 else _dict['fps']
-        pipeline = gst_utils.format_pipeline(**_dict)
+        # _path = _dict['path']
+        _drive = '/media/'+os.getlogin()+'/jpgs'
+        if not os.path.exists(_drive):
+            self.log.error(f"Drive {_drive} does not exist")
+            return False
+        _path = _drive + '/' + self.cam_name
+        if not os.path.exists(_path):
+            os.mkdir(_path)
 
-        # fps = int(1 / interval) if interval > 0 else fps
-        # pipeline = gst_utils.to_gst_string(_dict['pipeline'])
-        # print(f'{width=}, {height=}, {fps=}')
-        # pipeline = gst_utils.fstringify(pipeline, width=width, height=height, fps=fps, quality=quality)
-
-        # MAX_FPS = 10
-        # interval = 1/fps if interval < 1/fps else interval
-        # fps = int(1/interval)
-
-        self._gst_image_save: GstJpegEnc = GstJpegEnc(pipeline, max_count=count,
-                                                      on_jpeg_capture=self.on_capture_image,
-                                                      loglevel=self._loglevel).startup()
+        if os.path.exists(_path):
+            _index = self._last_image_index(_path)
+            _dict['drive'] = _drive
+            _dict['index'] = int(_index) + 1
+            _dict['cam_name'] = self.cam_name
+            pipeline = gst_utils.format_pipeline(**_dict)
+            self._gst_image_save = GstPipeline(pipeline, loglevel=self._loglevel).startup()
+            self._gst_image_save.pipeline.set_name('gstreamer_jpg_filesink')
+            self.log.info(f'Image capture pipeline "{self._gst_image_save.pipeline.get_name()}" created')
+        else:
+            self.log.error(f"Path {_path} does not exist")
+            return False  # Todo what to return if any
 
     def image_stop_capture(self):
         """Stop image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
         self.camera_capture_status.image_status = 0
         try:
+            self.log.info(f'Image capture pipeline "{self._gst_image_save.pipeline.get_name()}" closing')
             self._gst_image_save.shutdown()
         except Exception as e:
             self.log.error(e)
@@ -673,6 +721,7 @@ class GSTCamera(CV2Camera):
         self._stream_dict = self.camera_dict['gstreamer_udpsink']
         self._stream_dict['port'] += int(streamId * 10)  # todo fix this port allocation
         # width, height, fps, port  = _dict['width'], _dict['height'], _dict['fps'], _dict['port']
+        self._stream_dict['cam_name'] = self.cam_name
         pipeline = gst_utils.format_pipeline(**self._stream_dict)
         self._pipeline_stream_udp: GstStreamUDP = GstStreamUDP(pipeline, on_callback=self.on_video_callback, loglevel=self._loglevel).startup()
         self._pipeline_stream_udp.pipeline.set_name('gstreamer_udpsink')
@@ -726,8 +775,7 @@ class GSTCamera(CV2Camera):
             self.log.error(f"Check that you called {self.__class__.__name__}.open(): {e}")
         super().close()
         # trying to fix interpipe gstinterpipe.c:236:gst_inter_pipe_leave_node_priv: Node video_src not found. Could not leave node.
-        time.sleep(0.1) # todo fix this Node video_src not found
+        time.sleep(0.1)  # todo fix this Node video_src not found
         if self._pipeline_stream_udp is not None:
             self._pipeline_stream_udp.shutdown()
             self.log.info(f'!!!!!! Closed "{self._pipeline_stream_udp.pipeline.get_name()}" ')
-

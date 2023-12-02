@@ -147,7 +147,7 @@ async def snapshot_task(client: CameraClient,  # mav component
                         timeout=5.0):  # timeout
     """This is a coroutine function that will be called by the button when pressed."""
     print(f'executing the task {snapshot_task.__name__} {comp=} ')
-    ret = await client.image_start_capture(222, comp, 0.2, 5) if start else await client.image_stop_capture(222, comp)
+    ret = await client.image_start_capture(222, comp, 1, 5) if start else await client.image_stop_capture(222, comp)
 
     if ret and start:
         yield Btn_State.RUNNING
@@ -156,18 +156,18 @@ async def snapshot_task(client: CameraClient,  # mav component
         return
     else:
         yield Btn_State.FAILED
-        return
-
-    while True:
-        # cb = client.register_message_callback(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
-        # client.set_message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp )
-        ret = await client.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
-        print(f"Image Request {comp = } {ret = }")
-        if not ret:
-            print(f"BREAK Image Request {comp = } {ret = }")
-            break
-
-    yield Btn_State.READY
+    #     return
+    #
+    # while True:
+    #     # cb = client.register_message_callback(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+    #     # client.set_message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp )
+    #     ret = await client.message_callback_cond(mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED, 222, comp, 2)
+    #     print(f"Image Request {comp = } {ret = }")
+    #     if not ret:
+    #         print(f"BREAK Image Request {comp = } {ret = }")
+    #         break
+    #
+    # yield Btn_State.READY
 
 
 async def stream_task(client: CameraClient,  # mav component

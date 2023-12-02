@@ -46,9 +46,10 @@ if __name__ == '__main__':
         last_time = time.time()
         bitrate = 1000000
 
-        cam_0.video_start_streaming()
-        cam_1.video_start_streaming()
-        cam_2.video_start_streaming()
+        cam_0.image_start_capture(1,100)
+        # cam_0.video_start_streaming()
+        # cam_1.video_start_streaming()
+        # cam_2.video_start_streaming()
 
         while cam_1.pipeline:
             # if time.time() - last_time > 10:

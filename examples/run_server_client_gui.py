@@ -1,4 +1,5 @@
 import asyncio
+import platform
 
 from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
@@ -68,7 +69,8 @@ if __name__ == '__main__':
 
     config_dict = toml_load(config_dir() / f"client_config.toml")
     print(config_dict)
-
+    if platform.processor() != 'aarch64':
+        config_dict['camera_udp_decoder'] = 'h264'  # on pc override as h264
     p = helpers.start_displays(config_dict, display_type='cv2')
     asyncio.run(main(config_dict))
     p.terminate()
