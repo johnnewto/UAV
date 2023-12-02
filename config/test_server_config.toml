@@ -6,7 +6,7 @@ cam_1_UDP_port  = 5001
 # viewsheen gimbal
 cam_10_UDP_port  = 5010
 
-
+image_save_path = '/media/{user}/jpgs'   # usb drive with volume label 'jpgs'
 
 
 

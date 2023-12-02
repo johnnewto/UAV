@@ -680,10 +680,10 @@ class GSTCamera(CV2Camera):
         # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
         _dict['fps'] = int(1 / interval) if interval > 0 else _dict['fps']
         # _path = _dict['path']
-        _drive = '/media/'+os.getlogin()+'/jpgs'
+        _drive = gst_utils.fstringify(self.config_dict['image_save_path'], user=os.getlogin())
         if not os.path.exists(_drive):
             self.log.error(f"Drive {_drive} does not exist")
-            return False
+            raise Exception(f"Drive {_drive} does not exist")
         _path = _drive + '/' + self.cam_name
         if not os.path.exists(_path):
             os.mkdir(_path)
@@ -699,7 +699,7 @@ class GSTCamera(CV2Camera):
             self.log.info(f'Image capture pipeline "{self._gst_image_save.pipeline.get_name()}" created')
         else:
             self.log.error(f"Path {_path} does not exist")
-            return False  # Todo what to return if any
+            raise Exception(f"Path {_path} does not exist")
 
     def image_stop_capture(self):
         """Stop image capture sequence."""

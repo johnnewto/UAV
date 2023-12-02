@@ -1,13 +1,12 @@
 # camera ip addresses
 camera_UDP_IP   = '192.168.1.175'
-
 cam_0_UDP_port  = 5000
 cam_1_UDP_port  = 5001
 
 # viewsheen gimbal
 cam_10_UDP_port  = 5010
 
-
+image_save_path = '/media/{user}/jpgs'   # usb drive with volume label 'jpgs'
 
 
 

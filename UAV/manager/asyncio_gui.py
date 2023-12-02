@@ -198,12 +198,13 @@ async def stream_task(client: CameraClient,  # mav component
 async def record_task(client: CameraClient,  # mav component
                       comp: int,  # server component ID (cameras ID)
                       start: bool = True,  # start or stop
-                      timeout=5.0):  # timeout
+                      timeout=1.0):  # timeout
     """This is a coroutine function that will be called by the button when pressed."""
+    timeout = 0.1
     print(f'executing the task {record_task.__name__} asyncio.sleep({timeout=}) ')
     # print (f'{button.state = }, button_color = {button.button_color}, {button.key = }')
     await asyncio.sleep(timeout)
-    return Btn_State.DONE, "f{record_func.__name__} Done"
+    yield Btn_State.FAILED
 
 
 @dataclass
@@ -250,6 +251,7 @@ class Gui:
                 print(f" Found Gimbal {ret[0]}/{ret[1]}")
                 return ret
         print("find_gimbal exit")
+        return [None, None]
 
     async def run_gui(self):
         if self.camera_client is None:

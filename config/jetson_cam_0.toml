@@ -1,3 +1,5 @@
+cam_name = 'cam_0'
+
 [camera_info]
 vendor_name = "John Doe                   "
 model_name = "Fake Camera                  "
@@ -23,6 +25,7 @@ yaw = 0.0
 [gstreamer_video_src]
 fps = 2
 loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
+
 
 pipeline = [
     "nvarguscamerasrc sensor_id=0 ! video/x-raw(memory:NVMM),width=4032, height=3040, framerate=30/1, format=NV12 ",
@@ -58,5 +61,22 @@ pipeline = [
     'rtph265pay config-interval=1 ! udpsink host={host} port={port} sync=false async=false',
     ]
 
+
+[gstreamer_jpg_filesink]
+fps = 1   # Frames per second
+width = 800
+height = 600
+quality = 95
+filenames = '%03d.jpg'
+index = 0
+
+pipeline = [
+    'intervideosrc channel={cam_name} ',
+    'videorate max-rate={fps} drop-only=true',
+    'queue max-size-buffers=3 leaky=downstream',
+    'nvvidconv ! video/x-raw(memory:NVMM), format=I420',
+    'nvjpegenc quality={quality} idct-method=1',
+    'multifilesink location={drive}/{cam_name}/{filenames} index={index}',
+    ]
 
 
