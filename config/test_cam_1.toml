@@ -62,7 +62,7 @@ pipeline = [
     'videoconvert',
     'queue',
     'jpegenc quality={quality}',  # Quality of encoding, default is 85
-    'multifilesink location={drive}/{cam_name}/{filenames} max-files=10 index={index}',
+    'multifilesink location={save_path}/{cam_name}/{filenames} max-files=10 index={index}',
     ]
 
 # todo add video save pipeline
