@@ -37,46 +37,26 @@ pipeline = [
     'queue', 'videoscale ', 'capsfilter caps=video/x-raw,format=RGB,width=400,height=300',
     'videoconvert ! autovideosink',
 
-    "t.",
-    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
-
-    "t.",
-    'queue leaky=2 ! intervideosink channel={cam_name}  sync=false',
+#    "t.",
+#    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
+#
+#    "t.",
+#    'queue leaky=2 ! intervideosink channel={cam_name}  sync=false',
 
     "t.",
     'interpipesink name={cam_name} ',
 ]
 
-
-[gstreamer_jpg_filesink]
-fps = 10   # Frames per second
-width = 800
-height = 600
-quality = 85
-filenames = '%03d.jpg'
-index = 0
-
-pipeline = [
-    'intervideosrc channel={cam_name} ',
-    'videorate max-rate={fps} drop-only=true',
-    'videoconvert',
-    'queue',
-    'jpegenc quality={quality}',  # Quality of encoding, default is 85
-    'multifilesink location={save_path}/{cam_name}/{filenames} max-files=10 index={index}',
-    ]
-
-# todo add video save pipeline
-
-# streaming pipelines
-
 [gstreamer_udpsink]
+fps=2
 host = '*camera_UDP_IP*'     # overwrite with server_config.toml
 port = '*cam_1_UDP_port*'    # overwrite with server_config.toml
 pipeline = [
+
     'interpipesrc listen-to={cam_name} is-live=true allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
     'queue',
-#    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
+    'videorate drop-only=true skip-to-first=true ! video/x-raw,framerate={fps}/1',
     'videoconvert',
      'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
 #    'x264enc tune=zerolatency',
@@ -84,15 +64,20 @@ pipeline = [
     ]
 
 
-[gstreamer_raw_udpsink]
-fps = 10   # Frames per second
-width = 800
-height = 600
-port = 5001
+[gstreamer_jpg_filesink]
+fps = 10   # Frames per second * 10
+quality = 85
+filenames = '%03d.jpg'
+index = 0
+
 pipeline = [
-   'interpipesrc listen-to=cam_1 is-live=true allow-renegotiation=true format=time',
+    'interpipesrc listen-to={cam_name} is-live=false allow-renegotiation=true format=time',
     'queue',
-    'videoconvert ! videoscale ! video/x-raw,format=RGB,depth=8,width={width},height={height}',
-    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+    'videorate drop-only=true skip-to-first=true ! video/x-raw,framerate={fps}/10',
+    'videoconvert ! video/x-raw, format=I420',
+    'jpegenc quality={quality}',  # Quality of encoding, default is 85
+    'multifilesink location={save_path}/{cam_name}/{filenames} max-files=10 index={index}',
     ]
+
+
 

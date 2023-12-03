@@ -40,7 +40,7 @@ async def main(config_dict):
                 # add UAV cameras, This normally runs on drone
                 cam_0 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.DEBUG)
                 cam_1 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / "test_cam_1.toml"), loglevel=LogLevels.DEBUG)
-                cam_2 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"test_viewsheen.toml"), loglevel=LogLevels.INFO)
+                cam_2 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"viewsheen.toml"), loglevel=LogLevels.INFO)
 
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=LogLevels.INFO))
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=LogLevels.INFO))

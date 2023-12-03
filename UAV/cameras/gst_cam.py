@@ -534,8 +534,7 @@ class GSTCamera(CV2Camera):
         super().__init__(camera_dict, loglevel)
 
         # camera_dict = replace_star_text(camera_dict, config_dict)
-        self.set_config_values(camera_dict, config_dict)
-        # print(camera_dict)
+        self.set_config_values(camera_dict, config_dict)  # overwrite '*....*' parameters in camera_dict with values from config_dict
 
         self.config_dict = config_dict
         self.camera_dict = camera_dict
@@ -680,7 +679,7 @@ class GSTCamera(CV2Camera):
         # self.max_count = count
         _dict = self.camera_dict['gstreamer_jpg_filesink']
         # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
-        _dict['fps'] = int(1 / interval) if interval > 0 else _dict['fps']
+        _dict['fps'] = int(10 / interval) if interval > 0 else _dict['fps']  # fps is divided by 10
         try:
             user = os.getlogin()
         except:
