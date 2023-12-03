@@ -100,9 +100,9 @@ class BaseComponent:
         # self.num_acks_drop = 0
         self.message_cnts: {} = {}  # received message counts, indexed by system and message type
         # 
-        self._heartbeat_que = LeakyQueue(maxsize=10)
-        self._ack_que = LeakyQueue(maxsize=10)
-        self._message_que = LeakyQueue(maxsize=10)
+        self._heartbeat_que = LeakyQueue(maxsize=100)
+        self._ack_que = LeakyQueue(maxsize=100)
+        self._message_que = LeakyQueue(maxsize=100)
 
         self._t_heartbeat = threading.Thread(target=self.send_heartbeat, daemon=True)
         self._t_heartbeat.start()
@@ -293,9 +293,10 @@ class MAVCom:
                                                     baud=self.baudrate,  # baud rate of the serial port
                                                     source_system=int(self.source_system),  # source system
                                                     )
+            self.log.info(f"MAVLink connection established: {self.connection_string}")
         except Exception as e:
             self.log.error(e)
-            return
+            raise e
 
         # self.log.info(f"see https://mavlink.io/en/messages/common.html#MAV_COMPONENT")
         time.sleep(0.1)  # Todo delay for connection to establish
