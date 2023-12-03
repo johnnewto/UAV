@@ -661,10 +661,12 @@ class GSTCamera(CV2Camera):
 
     def _last_image_index(self, usb_drive_path: str, _filter='jpg'):
         drive_contents = os.listdir(usb_drive_path)
-        cam0_files = [file for file in drive_contents if file.endswith(_filter)]
+        jpg_files = [file for file in drive_contents if file.endswith(_filter)]
+        jpg_files.sort()
         # # find the highest index based on number after '_' in the filename
         # highest_index = cam0_files[-1].split('_')[1] if cam0_files else 0
-        highest_index = cam0_files[-1].split('.')[0] if cam0_files else 0
+        highest_index = jpg_files[-1].split('.')[0] if jpg_files else 0
+        print(f"{usb_drive_path = } {highest_index = }")
         return int(highest_index)
 
     def image_start_capture(self, interval,  # Image capture interval
@@ -679,24 +681,33 @@ class GSTCamera(CV2Camera):
         _dict = self.camera_dict['gstreamer_jpg_filesink']
         # width, height, fps, quality  = _dict['width'], _dict['height'], _dict['fps'], _dict['quality']
         _dict['fps'] = int(1 / interval) if interval > 0 else _dict['fps']
-        # _path = _dict['path']
-        _drive = gst_utils.fstringify(self.config_dict['image_save_path'], user=os.getlogin())
-        if not os.path.exists(_drive):
-            self.log.error(f"Drive {_drive} does not exist")
-            raise Exception(f"Drive {_drive} does not exist")
-        _path = _drive + '/' + self.cam_name
+        try:
+            user = os.getlogin()
+        except:
+            user = 'root'
+
+        _save_path = gst_utils.fstringify(self.config_dict['image_save_path'], user=user)
+        self.log.info(f"image{_save_path = }")
+
+        if not os.path.exists(_save_path):
+            self.log.error(f"{_save_path} does not exist")
+            raise Exception(f"{_save_path} does not exist")
+        _path = _save_path + '/' + self.cam_name
         if not os.path.exists(_path):
             os.mkdir(_path)
 
         if os.path.exists(_path):
             _index = self._last_image_index(_path)
-            _dict['drive'] = _drive
+            _dict['save_path'] = _save_path
             _dict['index'] = int(_index) + 1
             _dict['cam_name'] = self.cam_name
             pipeline = gst_utils.format_pipeline(**_dict)
             self._gst_image_save = GstPipeline(pipeline, loglevel=self._loglevel).startup()
             self._gst_image_save.pipeline.set_name('gstreamer_jpg_filesink')
             self.log.info(f'Image capture pipeline "{self._gst_image_save.pipeline.get_name()}" created')
+            time.sleep(0.1)  # wait for pipeline to start, then see if it is active (i.e not shuttdown)
+            if not self._gst_image_save.is_active:
+                raise Exception(f"Error in {self._gst_image_save.pipeline.get_name()}")
         else:
             self.log.error(f"Path {_path} does not exist")
             raise Exception(f"Path {_path} does not exist")

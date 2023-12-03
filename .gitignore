@@ -3,6 +3,7 @@ _copy proc/
 _proc/
 _experiments/
 _old/
+_temp/
 
 *.bak
 .gitattributes
@@ -154,3 +155,4 @@ checklink/cookies.txt
 .quarto
 token
 
+_temp/cam_0/001.jpg

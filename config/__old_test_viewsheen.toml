@@ -1,3 +1,4 @@
+cam_name = 'cam_vs0'
 [camera_info]
 vendor_name = "Viewsheen                   "
 model_name = "Viewsheen Camera                  "

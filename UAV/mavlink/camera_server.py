@@ -57,20 +57,20 @@ CAMERA_IMAGE_CAPTURED = mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED  # https://
 #     # Extract camera_info
 #     return data['camera_info']
 
-def try_log(func):  # decorator
-    """Decorator to log exceptions in functions, returns True if no exception"""
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-            return True
-        except Exception as err:
-            try:
-                args[0].log.error(f"{err = }")   # args[0] is self for the class
-            except:
-                logging.error(f"{err = }")
-            return False
+# def try_log(func):  # decorator
+#     """Decorator to log exceptions in functions, returns True if no exception"""
+#     def wrapper(*args, **kwargs):
+#         try:
+#             func(*args, **kwargs)
+#             return True
+#         except Exception as err:
+#             try:
+#                 args[0].log.error(f"{err = }")   # args[0] is self for the class
+#             except:
+#                 logging.error(f"{err = }")
+#             return False
 
-    return wrapper
+#     return wrapper
 
 
 class CameraServer(Component):
@@ -219,29 +219,40 @@ class CameraServer(Component):
                 f"Unknown command {msg.get_type()} received from {msg.get_srcSystem()}/{msg.get_srcComponent()}")
             return False  # return False to indicate that the message has not been handled
 
-    @try_log
     def _camera_capture_status_send(self):
         """ Information about the status of a capture. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command.
             https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS """
-        self.camera.camera_capture_status_send()
+        try:
+            self.camera.camera_capture_status_send()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def _camera_information_send(self):
         """ Information about a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command
             https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION
         """
-        self.camera.camera_information_send()
+        try:
+            self.camera.camera_information_send()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def _camera_settings_send(self):
         """ Settings of a cameras. Can be requested with a
             MAV_CMD_REQUEST_MESSAGE command.
             https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS
         """
-        self.camera.camera_settings_send()
-
+        try:
+            self.camera.camera_settings_send()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
         # if self.cameras is None:
         #     self.log.warning(f"Component has no cameras object")
         #     return
@@ -252,17 +263,17 @@ class CameraServer(Component):
         #                               NAN, # Current focus level as a percentage of the full range (0.0 to 100.0, NaN if not known)
         #                               )
 
-    @try_log
     def _storage_information_send(self):
         """ Information about a storage medium. This message is sent in response to
             MAV_CMD_REQUEST_MESSAGE.
             https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION """
         try:
             self.camera.storage_information_send()
-        except AttributeError as err:
+            return True
+        except Exception as err:
             self.log.error(f"{err = }")
-
-    @try_log
+            return False
+        
     def _storage_format(self, msg):
         """ A message containing the result of the format attempt (asynchronous).
             https://mavlink.io/en/messages/common.html#MAV_CMD_STORAGE_FORMAT """
@@ -271,77 +282,115 @@ class CameraServer(Component):
         storage_id = msg.param1
         format = msg.param2
         reset_image_log = msg.param3
-        self._storage_information_send()
+        try:
+            self._storage_information_send()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def _set_camera_zoom(self, msg):
         """ Set the cameras zoom
             https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM  """
         try:
             self.camera.set_camera_zoom(msg.param2)
-        except AttributeError as err:
-
+            return True
+        except Exception as err:
             self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def __image_start_capture(self, msg):
         """ Start image capture sequence.
             https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
         """
         interval = msg.param2
         count = msg.param3
-        self.camera.image_start_capture(interval, count)
+        try:
+            self.camera.image_start_capture(interval, count)
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def _image_start_capture(self, msg):
         """ Start image capture sequence.
             https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
         """
         interval = msg.param2
         count = msg.param3
-        self.camera.image_start_capture(interval, count)
+        try:
+            self.camera.image_start_capture(interval, count)
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def _image_stop_capture(self, msg):
         """ Stop image capture sequence
             https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE """
-        self.camera.image_stop_capture()
+        try:
+            self.camera.image_stop_capture()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
 
-    @try_log
     def _video_start_capture(self, msg):
         """ Start video capture
             https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE
         """
         stream_id = msg.param1
         frequency = msg.param2  # Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)
-        self.camera.video_start_capture(stream_id, frequency)
-
+        try:
+            self.camera.video_start_capture(stream_id, frequency)
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
+        
     def _video_stop_capture(self, msg):
         """ top video capture
             https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE """
-        self.camera.video_stop_capture()
-
-    @try_log
+        try:
+            self.camera.video_stop_capture()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
+        
     def _video_start_streaming(self, msg):
         """ Start video streaming
             https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING """
         streamId = msg.param1
-        self.camera.video_start_streaming(streamId)
-        self.log.info(f"Started video streaming: {streamId = }")
-
-    @try_log
+        try:
+            self.camera.video_start_streaming(streamId)
+            self.log.info(f"Started video streaming: {streamId = }")
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
+        
     def _video_stop_streaming(self, msg):
         """ Stop video streaming
             https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING """
         # print("todo get parameters from message")
-        self.camera.video_stop_streaming()
-
-    @try_log
+        try:
+            self.camera.video_stop_streaming()
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
+        
     def _set_camera_mode(self, msg):
         """ Set the cameras mode
             https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE """
-        self.camera.set_camera_mode(msg.param2)
-
+        try:
+            self.camera.set_camera_mode(msg.param2)
+            return True
+        except Exception as err:
+            self.log.error(f"{err = }")
+            return False
+        
     def close(self):
         """Close the connection to the cameras"""
         if self.camera is not None:

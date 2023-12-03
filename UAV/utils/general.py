@@ -69,13 +69,17 @@ class LeakyQueue(queue.Queue):
         self,
         maxsize: int = 100,
         on_drop: typ.Optional[typ.Callable[["LeakyQueue", "object"], None]] = None,
+        log=None
     ):
         super().__init__(maxsize=maxsize)
         self._dropped = 0
         self._on_drop = on_drop or (lambda queue, item: None)
+        self.log = log
 
     def put(self, item, block=True, timeout=None):
         if self.full():
+            if self.log:
+                self.log.warning(f"LeakyQueue: dropping item {item}")
             dropped_item = self.get_nowait()
             self._dropped += 1
             self._on_drop(self, dropped_item)

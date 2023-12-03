@@ -100,9 +100,9 @@ class BaseComponent:
         # self.num_acks_drop = 0
         self.message_cnts: {} = {}  # received message counts, indexed by system and message type
         # 
-        self._heartbeat_que = LeakyQueue(maxsize=100)
-        self._ack_que = LeakyQueue(maxsize=100)
-        self._message_que = LeakyQueue(maxsize=100)
+        self._heartbeat_que = LeakyQueue(maxsize=100, log=self.log)
+        self._ack_que = LeakyQueue(maxsize=100, log=self.log)
+        self._message_que = LeakyQueue(maxsize=100, log=self.log)
 
         self._t_heartbeat = threading.Thread(target=self.send_heartbeat, daemon=True)
         self._t_heartbeat.start()
@@ -293,10 +293,10 @@ class MAVCom:
                                                     baud=self.baudrate,  # baud rate of the serial port
                                                     source_system=int(self.source_system),  # source system
                                                     )
-            self.log.info(f"MAVLink connection established: {self.connection_string}")
         except Exception as e:
             self.log.error(e)
             raise e
+            return
 
         # self.log.info(f"see https://mavlink.io/en/messages/common.html#MAV_COMPONENT")
         time.sleep(0.1)  # Todo delay for connection to establish
@@ -403,13 +403,14 @@ class MAVCom:
 
             else:  # send to specific component
                 try:
+                    # self.log.info(format_rcvd_msg(msg, f"Pass to Component {comp_ID}"))
                     self.component[comp_ID].message_que.put(msg, block=False)
                 except Exception as e:
                     self.log.error(f" Component {comp_ID} does not exist? ; Exception: {e}")
                     continue
 
-    def add_component(self, comp: "typing.Union[Component, CameraClient, CameraServer"  # commponent to add
-                      ) -> typing.Union[Component, CameraClient, CameraServer, GimbalClient, None]:  # return the component
+    def add_component(self, comp: Component | CameraClient | CameraServer  # commponent to add
+                      ) -> Component | CameraClient | CameraServer | GimbalClient | None:  # return the component
         # append a component to the component dictionary with the key being the source_component
         # Check to see if {comp.source_component = } already exists
 
