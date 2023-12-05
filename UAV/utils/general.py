@@ -36,7 +36,7 @@ def format_rcvd_msg(msg, extra=''):
     """ Format a message for logging."""
     s = f"{str(msg)} ... {extra}"
     try:
-        s = f"Rcvd {msg.get_srcSystem():3d}/{msg.get_srcComponent():3d} {s}"
+        s = f"Rcvd {msg.get_srcSystem()}/{msg.get_srcComponent()} {s}"
     except:
         try:
             s = f"Rcvd {'???'}/{msg.get_srcComponent():3d} {s}"

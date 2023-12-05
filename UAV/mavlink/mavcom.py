@@ -306,6 +306,7 @@ class MAVCom:
         self._t_mav_listen = threading.Thread(target=self.listen, daemon=True)
         self._t_mav_listen.start()
         assert self.master.mavlink20(), "Mavlink 2 protocol is not happening ?, check os.environ['MAVLINK20'] = '1'"
+        pass
 
     def start_listen(self):
         """Listen for MAVLink commands """
@@ -392,6 +393,7 @@ class MAVCom:
                 time.sleep(1)
                 continue
             comp_ID = self.check_message_route(msg)
+            # print(msg)
 
             if comp_ID is None:
                 continue  # don't process message

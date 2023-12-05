@@ -60,7 +60,7 @@ pipeline = [
     ]
 
 [gstreamer_jpg_filesink]
-fps = '10   # Frames per second * 10
+fps = 10   # Frames per second * 10
 quality = 95
 filenames = '%03d.jpg'
 index = 0

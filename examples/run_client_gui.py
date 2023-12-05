@@ -26,7 +26,7 @@ async def main(config_dict):
 
     with client:
         # with MAVCom(con2, source_system=222, ) as server:
-        cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['camera_component'], loglevel=20))
+        cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['camera_component'], loglevel=20)) # MAV_TYPE_GCS
         gimbal: GimbalClient = client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['gimbal_component'], loglevel=20))
         ret = await cam.wait_heartbeat(target_system=config_dict['target_system'], target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=3)
         print(f"Heartbeat {ret = }")
