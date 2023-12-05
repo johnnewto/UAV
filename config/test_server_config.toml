@@ -1,12 +1,19 @@
+source_system = 222
+
 # camera ip addresses
 camera_UDP_IP   = '127.0.0.1'
 cam_0_UDP_port  = 5000
 cam_1_UDP_port  = 5001
+cam_10_UDP_port  = 5010 # viewsheen gimbal
 
-# viewsheen gimbal
-cam_10_UDP_port  = 5010
-
+usb_mount_command = 'udisksctl mount -b /dev/sda'   # desktop does this automatically
 image_save_path = '/media/{user}/jpgs'   # usb drive with volume label 'jpgs'
 
+[mavlink]
+source_system = 222
+#connection = "udpout:localhost:14445"
+connection = "/dev/ttyUSB1"
 
 
+    # con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
+    # con2 = "/dev/ttyUSB0" if mach == 'jetson' else "/dev/ttyUSB1"

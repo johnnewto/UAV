@@ -5,8 +5,9 @@ import time
 from UAV.manager import Gui
 from UAV.mavlink import CameraClient, MAVCom, mavlink
 from UAV.mavlink.gimbal_client import GimbalClient
+from UAV.utils import config_dir, toml_load
 from UAV.utils import helpers
-from UAV.utils.general import boot_time_str, toml_load, config_dir
+from UAV.utils.general import boot_time_str
 
 
 # utils.set_gst_debug_level(Gst.DebugLevel)
@@ -19,7 +20,7 @@ from UAV.utils.general import boot_time_str, toml_load, config_dir
 
 async def main(config_dict):
     try:
-        client = MAVCom(config_dict['mav_connection'], source_system=config_dict['source_system'], loglevel=10)
+        client = MAVCom(config_dict['mavlink']['connection'], source_system=config_dict['mavlink']['source_system'], loglevel=10)
     except Exception as e:
         print(f"*** MAVCom failed to start: {e} **** ")
         return
@@ -28,7 +29,7 @@ async def main(config_dict):
         # with MAVCom(con2, source_system=222, ) as server:
         cam: CameraClient = client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['camera_component'], loglevel=20)) # MAV_TYPE_GCS
         gimbal: GimbalClient = client.add_component(GimbalClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=config_dict['gimbal_component'], loglevel=20))
-        ret = await cam.wait_heartbeat(target_system=config_dict['target_system'], target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=3)
+        ret = await cam.wait_heartbeat(target_system=config_dict['mavlink']['target_system'], target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=3)
         print(f"Heartbeat {ret = }")
         time.sleep(0.1)
 

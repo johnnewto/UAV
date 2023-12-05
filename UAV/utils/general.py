@@ -1,8 +1,9 @@
 
 __all__ = [ 'boot_time', 'boot_time_str', 'get_linenumber', 'format_rcvd_msg', 'time_since_boot_ms',
-           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'find_root_dir', 'config_dir',
+           'time_UTC_usec', 'date_time_str', 'LeakyQueue', 'euler_to_quaternion', 'find_root_dir', 'config_dir', 'get_platform',
             'toml_load', 'With']
 
+import logging
 from pathlib import Path
 
 
@@ -20,11 +21,35 @@ def find_root_dir():
     project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
     return project_dir
 
-def config_dir():
-    import subprocess
-    # Run a Git command to get the root directory
-    project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
-    return Path(project_dir) / 'config'
+# def config_dir():
+#     import subprocess
+#     # Run a Git command to get the root directory
+#     project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
+#     return Path(project_dir) / 'config'
+
+def config_dir(target_dir_name='config'):
+    current_dir = Path(__file__).parent
+    while True:
+        # Check if the target directory exists in the current directory
+        target_dir = current_dir / target_dir_name
+        if target_dir.exists() and target_dir.is_dir():
+            print(f"Found config directory at: {target_dir}")
+            break
+
+        # Move up to the parent directory
+        parent_dir = current_dir.parent
+        if parent_dir == current_dir:
+            # We have reached the root directory, and the target directory was not found.
+            logging.error("Target directory not found.")
+            return None
+
+        current_dir = parent_dir
+    return target_dir
+
+def get_platform():
+    """Return jetson if the processor is a 'aarch64' else 'test'."""
+    import platform
+    return 'jetson' if platform.processor() == 'aarch64' else 'test'
 
 def get_linenumber():
     cf = currentframe()

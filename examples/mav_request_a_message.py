@@ -4,16 +4,17 @@ Here we request  MAVLINK_MSG_ID_RC_CHANNELS
 """
 
 import asyncio
-import os
+import random
 import time
+
+import pymavlink.dialects.v20.all as dialect
+
+from UAV.mavlink import MAVCom, mavlink
+from UAV.mavlink.client_component import ClientComponent
+from UAV.utils import config_dir, get_platform, toml_load
+
 # assert os.environ['MAVLINK20'] == '1', "Set the environment variable before from pymavlink import mavutil  library is imported"
 # from pymavlink import mavutil
-
-from UAV.mavlink import MAVCom
-from UAV.mavlink import CameraClient, MAVCom, mavlink, mavutil
-from UAV.mavlink.client_component import ClientComponent
-import random
-import pymavlink.dialects.v20.all as dialect
 
 # utils.set_gst_debug_level(Gst.DebugLevel)
 # con1 = "udpin:localhost:14445"
@@ -22,27 +23,31 @@ import pymavlink.dialects.v20.all as dialect
 # con1 = "udpout:192.168.122.84:14445"
 # con1 = "udpin:10.42.0.1:14445"
 
-mav_connection = "/dev/ttyUSB1"
+mach = get_platform()
+conf_path = config_dir()
+config_dict = toml_load(conf_path / f"{mach}_server_config.toml")
+mav_connection = config_dict['mavlink']['connection']
+
+print(f"{mach = }, {conf_path = } {mav_connection = }")
+print(config_dict)
+
+# mav_connection = "/dev/ttyUSB1"
 source_system = 255
 target_system = 222
 
+def on_message(msg: mavlink.MAVLink_message):
+    # print(msg)
+    if msg.get_type() in ['STATUSTEXT']:
+        print(f"***** RC {msg}")
 
 async def main():
-    with MAVCom(mav_connection, source_system=source_system, loglevel=20) as client:
+    with MAVCom(mav_connection, source_system=config_dict['mavlink']['source_system'], loglevel=20) as client:
+        client.on_message = on_message
+
+
         comp = client.add_component(ClientComponent(mav_type=mavlink.MAV_TYPE_GCS, source_component=1, loglevel=20))  # MAV_TYPE_GCS
         ret = await comp.wait_heartbeat(target_system=1, target_component=1, timeout=5)
         print(f"Heartbeat {ret = }")
-
-        # ret = await comp.request_message(msg_id=mavlink.MAVLINK_MSG_ID_RC_CHANNELS, target_system=1, target_component=1)
-        # print(f"request_message {ret}")
-        # if ret == mavlink.MAVLINK_MSG_ID_RC_CHANNELS:
-        #     print(f"request_messages {ret}")
-        #     if ret.chancount == 0:
-        #         print("RC might not be connected")
-        # # this will stream all messages to the channel
-        # # client.master.mav.request_data_stream_send(1, 1,
-        # #                                            mavutil.mavlink.MAV_DATA_STREAM_ALL,
-        # #                                            1, 1)
 
         while True:
             msg = await comp.request_message(msg_id=mavlink.MAVLINK_MSG_ID_RC_CHANNELS, target_system=1, target_component=1)

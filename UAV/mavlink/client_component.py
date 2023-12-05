@@ -107,7 +107,7 @@ class ClientComponent(Component):
 
     def on_message(self, msg: mavlink.MAVLink_message):
         """Callback for a command received from a component server """
-        self.log.debug(f"Rcvd {msg.get_srcSystem()}/{msg.get_srcComponent()} {msg} ")
+        # self.log.debug(f"Rcvd {msg.get_srcSystem()}/{msg.get_srcComponent()} {msg} ")
         for cond in self._message_callback_conds:
             if msg.get_msgId() == cond['msg_id'] and msg.get_srcSystem() == cond[
                 'target_system'] and msg.get_srcComponent() == cond['target_component']:

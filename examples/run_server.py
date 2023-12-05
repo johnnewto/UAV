@@ -7,12 +7,13 @@ from UAV.cameras.gst_cam import GSTCamera, logging
 from UAV.logging import LogLevels
 from UAV.mavlink import CameraServer, MAVCom, mavlink
 from UAV.mavlink.gimbal_server_viewsheen import GimbalServerViewsheen
-from UAV.utils import config_dir, boot_time_str, toml_load
-import platform
+from UAV.utils import config_dir, get_platform, boot_time_str, toml_load
+# import platform
 import subprocess
-from pathlib import Path
 
-print(platform.processor())
+# from pathlib import Path
+
+# print(platform.processor())
 
 # cli = GimbalClient(mav_connection=None, source_component=11, mav_type=MAV_TYPE_GCS, debug=False)
 # gim1 = GimbalServer(mav_connection=None, source_component=22, mav_type=MAV_TYPE_CAMERA, debug=False)
@@ -23,37 +24,36 @@ print(platform.processor())
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
 # ENCODER = '265enc'
-ENCODER = ''
+# ENCODER = ''
 
-def config_dir():
-    return Path(__file__).parent.parent / "config"
-
+# def config_dir():
+#     return Path(__file__).parent.parent / "config"
+#
+# con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
+# con2 = "/dev/ttyUSB0" if mach == 'jetson' else "/dev/ttyUSB1"
 
 if __name__ == '__main__':
-
-    # subprocess.run(["ls", "-l"]) 
-
     logging.info(f"boot_time_str = {boot_time_str = }")
-    p = subprocess.run(["ls", "-l"])
-    p = subprocess.run(['udisksctl', 'mount', '--block-device', '/dev/sda'])
-    print(f"ret = {p.returncode = }")
 
-    mach = 'jetson' if platform.processor() == 'aarch64' else 'test'
-    con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
-    con2 = "/dev/ttyUSB0"
-    print(f"{mach}, {config_dir() = }")
+    mach = get_platform()
+    conf_path = config_dir()
+    config_dict = toml_load(conf_path / f"{mach}_server_config.toml")
+    mav_connection = config_dict['mavlink']['connection']
 
-    config_dict = toml_load(config_dir() / f"{mach}_server_config.toml")
+    print(f"{mach = }, {conf_path = } {mav_connection = }")
     print(config_dict)
 
+    usb_mount_command = config_dict['usb_mount_command']
+    subprocess.run(usb_mount_command.split())
+
     print("Starting GSTCameras")
-    cam_0 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_cam_0.toml"), loglevel=LogLevels.INFO)
-    cam_1 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"{mach}_cam_1.toml"), loglevel=LogLevels.INFO)
-    cam_2 = GSTCamera(config_dict, camera_dict=toml_load(config_dir() / f"viewsheen.toml"), loglevel=LogLevels.INFO)
+    cam_0 = GSTCamera(config_dict, camera_dict=toml_load(conf_path / f"{mach}_cam_0.toml"), loglevel=LogLevels.INFO)
+    cam_1 = GSTCamera(config_dict, camera_dict=toml_load(conf_path / f"{mach}_cam_1.toml"), loglevel=LogLevels.INFO)
+    cam_2 = GSTCamera(config_dict, camera_dict=toml_load(conf_path / f"viewsheen.toml"), loglevel=LogLevels.INFO)
 
     print("*** Starting MAVcom")
     try:
-        UAV_server = MAVCom(con2, source_system=222, loglevel=LogLevels.DEBUG)
+        UAV_server = MAVCom(mav_connection, source_system=222, loglevel=LogLevels.DEBUG)
     except Exception as e:
         print(f"*** MAVCom failed to start: {e} **** ")
         cam_0.close()

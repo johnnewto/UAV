@@ -9,4 +9,9 @@ cam_10_UDP_port  = 5010
 usb_mount_command = 'udisksctl mount -b /dev/sda' 
 image_save_path = '/media/{user}/jpgs'
 
-# image_save_path = '/home/jetson/repos/UAV/_temp'
+[mavlink]
+#connection_string = "udpout:192.168.1.175:14445"
+connection_string = "/dev/ttyUSB0"
+
+    # con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
+    # con2 = "/dev/ttyUSB0" if mach == 'jetson' else "/dev/ttyUSB1"

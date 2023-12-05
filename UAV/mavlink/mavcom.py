@@ -308,6 +308,9 @@ class MAVCom:
         assert self.master.mavlink20(), "Mavlink 2 protocol is not happening ?, check os.environ['MAVLINK20'] = '1'"
         pass
 
+    def on_message(self, msg):
+        pass  # overide this
+
     def start_listen(self):
         """Listen for MAVLink commands """
         self._t_mav_listen.start()
@@ -345,8 +348,8 @@ class MAVCom:
 
         # Test - It is a broadcast message (target_system field omitted or zero)
         if not hasattr(msg, 'target_system') or msg.target_system == 0:
-            if msg.get_type() != 'HEARTBEAT':
-                self.log.debug(format_rcvd_msg(msg, "target_system: ???, Pass to ALL Components"))
+            # if msg.get_type() != 'HEARTBEAT':
+            #     self.log.debug(format_rcvd_msg(msg, "target_system: ???, Pass to ALL Components"))
             return 0  # for all components
 
         # Test - The target_system matches its system id and target_component is broadcast (target_component omitted or zero).
@@ -388,6 +391,8 @@ class MAVCom:
             # Wait for a MAVLink message
             try:  # Todo: catch bad file descriptor error
                 msg = self.master.recv_match(blocking=True, timeout=1)
+                # if callable(self.on_message):
+                self.on_message(msg)
             except Exception as e:
                 self.log.debug(f"Exception: {e}")
                 time.sleep(1)
