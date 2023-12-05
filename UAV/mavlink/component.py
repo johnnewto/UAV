@@ -171,7 +171,8 @@ class Component:
                 mavutil.mavlink.MAV_AUTOPILOT_INVALID,  # autopilot
                 0,  # base_mode
                 0,  # custom_mode
-                mavutil.mavlink.MAV_STATE_ACTIVE,  # system_status
+                0,  # system_status
+                # mavutil.mavlink.MAV_STATE_ACTIVE,  # system_status
             )
             # print("Cam heartbeat_send")
             time.sleep(1)  # Send every second
@@ -284,9 +285,9 @@ class Component:
 
             try:
                 msg = self.message_que.get(timeout=timeout)
-                if msg.get_type() != 'HEARTBEAT':  # todo change to msg.get_msgId() == MAVLink.MAVLINK_MSG_ID_HEARTBEAT
+                # if msg.get_type() != 'HEARTBEAT':  # todo change to msg.get_msgId() == MAVLink.MAVLINK_MSG_ID_HEARTBEAT
                     # print (f"{MAVLink.MAVLINK_MSG_ID_HEARTBEAT = }")
-                    self.log.debug(format_rcvd_msg(msg))
+                    # self.log.debug(format_rcvd_msg(msg))
                 self.num_msgs_rcvd += 1
             except queue.Empty:  # i.e time out
                 time.sleep(0.01)
