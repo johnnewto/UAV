@@ -34,8 +34,9 @@ if __name__ == '__main__':
     # subprocess.run(["ls", "-l"]) 
 
     logging.info(f"boot_time_str = {boot_time_str = }")
-    # p = subprocess.run(["ls", "-l"])
-    # print(f"ret = {p.returncode = }")
+    p = subprocess.run(["ls", "-l"])
+    p = subprocess.run(['udisksctl', 'mount', '--block-device', '/dev/sda'])
+    print(f"ret = {p.returncode = }")
 
     mach = 'jetson' if platform.processor() == 'aarch64' else 'test'
     con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
@@ -52,7 +53,7 @@ if __name__ == '__main__':
 
     print("*** Starting MAVcom")
     try:
-        UAV_server = MAVCom(con2, source_system=222, loglevel=LogLevels.INFO)
+        UAV_server = MAVCom(con2, source_system=222, loglevel=LogLevels.DEBUG)
     except Exception as e:
         print(f"*** MAVCom failed to start: {e} **** ")
         cam_0.close()
@@ -77,7 +78,7 @@ if __name__ == '__main__':
             # cam_1.video_start_streaming()
             # cam_2.video_start_streaming()
 
-            while cam_1.pipeline:
+            while cam_0.pipeline:
                 # if time.time() - last_time > 10:
                 #     last_time = time.time()
                 #     encoder0 = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
@@ -86,7 +87,7 @@ if __name__ == '__main__':
                 #     encoder0.set_property("bitrate", bitrate)
                 #     encoder1.set_property("bitrate", bitrate*2)
                 #     print(f"{bitrate = }")
-                if cam_1.last_image is not None:
+                if cam_0.last_image is not None:
                     pass
                     # cv2.imshow('gst_src', cam_1.last_image)
                     # cam_1.last_image = None

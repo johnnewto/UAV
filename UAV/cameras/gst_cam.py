@@ -19,6 +19,8 @@ except:
 import threading
 import cv2
 import numpy as np
+import subprocess
+
 # try:
 #     # https://hackernoon.com/how-to-manage-configurations-easily-using-toml-files
 #     import tomllib   # Python 3.11+
@@ -674,6 +676,10 @@ class GSTCamera(CV2Camera):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
         # self.interval = interval
+
+        # p = subprocess.run(['udisksctl', 'mount', '--block-device', '/dev/sda'])
+        # print(f"ret = {p.returncode = }")
+
         self.camera_capture_status.image_status = 1
         self.camera_capture_status.image_interval = interval
         # self.max_count = count
@@ -690,7 +696,11 @@ class GSTCamera(CV2Camera):
 
         if not os.path.exists(_save_path):
             self.log.error(f"{_save_path} does not exist")
+            self.log.error(f"Try to mount USB")
+            p = subprocess.run(['udisksctl', 'mount', '--block-device', '/dev/sda'])
+            self.log.info(f"ret = {p.returncode = }")
             raise Exception(f"{_save_path} does not exist")
+            
         _path = _save_path + '/' + self.cam_name
         if not os.path.exists(_path):
             os.mkdir(_path)
@@ -743,12 +753,14 @@ class GSTCamera(CV2Camera):
         """Start video streaming. Creates a GStreamer pipeline for streaming video, if it does not exist otherwise resumes it."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
         self._pipeline_stream_udp.set_valve_state("myvalve", False)
+        # self._pipeline_stream_udp.play()
         self.log.info(f'Video streaming "{self._pipeline_stream_udp.pipeline.get_name()}" resumed on port {self._stream_dict["port"]}')
 
     def video_stop_streaming(self):  # Stream ID (0 for all streams
         """Stop video streaming by pause on gstreamer valve element."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
         self._pipeline_stream_udp.set_valve_state("myvalve", True)
+        # self._pipeline_stream_udp.pause()
         self.log.info(f'Video streaming "{self._pipeline_stream_udp.pipeline.get_name()}" stopped (paused) on port {self._stream_dict["port"]}')
 
     def video_start_capture(self, stream_id,  # Stream ID (0 for all streams)

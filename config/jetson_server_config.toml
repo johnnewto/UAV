@@ -7,6 +7,6 @@ cam_1_UDP_port  = 5001
 cam_10_UDP_port  = 5010
 
 usb_mount_command = 'udisksctl mount -b /dev/sda' 
-# image_save_path = '/media/{user}/jpgs'
+image_save_path = '/media/{user}/jpgs'
 
-image_save_path = '/home/jetson/repos/UAV/_temp'
+# image_save_path = '/home/jetson/repos/UAV/_temp'

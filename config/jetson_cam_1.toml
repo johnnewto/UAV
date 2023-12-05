@@ -28,7 +28,7 @@ loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
 
 pipeline = [
      "nvarguscamerasrc sensor_id=1 ! video/x-raw(memory:NVMM),width=4032, height=3040, framerate=30/1, format=NV12 ",
-    'videorate max-rate={fps} drop-only=true ! queue max-size-buffers=3 leaky=downstream',
+    # 'videorate max-rate={fps} drop-only=true ! queue max-size-buffers=3 leaky=downstream',
     'tee name=t',
 
     # "t.",
@@ -49,18 +49,17 @@ port = '*cam_1_UDP_port*'    # overwrite with server_config.toml
 bitrate=2000000
 
 pipeline = [
-    'interpipesrc listen-to={cam_name} is-live=true allow-renegotiation=true format=time',
+    'interpipesrc listen-to={cam_name} is-live=false allow-renegotiation=true format=time',
     'valve name=myvalve drop=False ',
-    'videorate max-rate={fps} drop-only=true skip-to-first=true ! video/x-raw,framerate={fps}/1',
+    'videorate max-rate={fps} drop-only=true skip-to-first=true ! video/x-raw(memory:NVMM),framerate={fps}/1',
     'nvvidconv ! video/x-raw(memory:NVMM), width=2000, height=1500, format=NV12',
-    'queue',
-    # 'nvv4l2h265enc name=encoder bitrate={bitrate}',
+    # 'queue',
     'nvv4l2h265enc bitrate={bitrate} iframeinterval=10 insert-sps-pps=true  preset-level=UltraFastPreset EnableTwopassCBR=false maxperf-enable=true',
     'rtph265pay config-interval=1 ! udpsink host={host} port={port} sync=false async=false',
     ]
 
 [gstreamer_jpg_filesink]
-fps = '10   # Frames per second * 10
+fps = 10   # Frames per second * 10
 quality = 95
 filenames = '%03d.jpg'
 index = 0
@@ -68,7 +67,7 @@ index = 0
 pipeline = [
     'interpipesrc listen-to={cam_name} is-live=false allow-renegotiation=true format=time',
     'queue',
-    'videorate drop-only=true skip-to-first=true ! video/x-raw,framerate={fps}/10',
+    'videorate drop-only=true skip-to-first=true ! video/x-raw(memory:NVMM), framerate={fps}/20',
     'nvvidconv ! video/x-raw(memory:NVMM), format=I420',
     'nvjpegenc quality={quality} idct-method=1',
     'multifilesink location={save_path}/{cam_name}/{filenames} index={index}',
