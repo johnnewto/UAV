@@ -1,7 +1,7 @@
 __all__ = ['ViewsheenGimbal']
 
-import time
 import socket
+import threading
 
 import numpy as np
 
@@ -9,8 +9,6 @@ from .gimbal import Gimbal
 from ..logging import LogLevels
 from ..utils import config_dir
 
-from ..airsim.client import AirSimClient
-import threading
 # from ..camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot, zoom, VS_IP_ADDRESS, VS_PORT
 
 # Define the IP address and port number of the viewsheengimbal

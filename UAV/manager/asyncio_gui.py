@@ -207,10 +207,14 @@ async def record_task(client: CameraClient,  # mav component
     yield Btn_State.FAILED
 
 
+class GimbalManagerClient:
+    pass
+
+
 @dataclass
 class Gui:
     camera_client: CameraClient | None = None
-    gimbal_client: GimbalClient | None = None
+    gimbal_client: GimbalClient | GimbalManagerClient | None = None
     auto: Callable = None
     reset: Callable = None
     pause: Callable = None
