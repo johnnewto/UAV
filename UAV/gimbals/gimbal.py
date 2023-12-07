@@ -6,7 +6,7 @@ from typing import List
 from ..logging import logging, LogLevels
 # from ..mavlink.mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
 from ..utils.general import time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-from ..mavlink.component import Component, mavutil, mavlink, MAVLink
+from mavcom.mavlink.component import Component, mavutil, mavlink, MAVLink
 import time
 
 

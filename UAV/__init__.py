@@ -9,5 +9,5 @@ UAV_DIR = os.path.dirname(os.path.abspath(__file__))
 
 setup_logging(verbose=get_log_level())
 
-from .mavlink.mavcom import MAVCom, mavutil, MAV_TYPE_GCS, MAV_TYPE_CAMERA
-from .mavlink.component import Component
+from mavcom.mavlink.mavcom import MAVCom, mavutil, MAV_TYPE_GCS, MAV_TYPE_CAMERA
+from mavcom.mavlink.component import Component

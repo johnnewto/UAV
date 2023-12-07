@@ -7,7 +7,7 @@ import time
 from typing import List
 
 from ..logging import logging, LogLevels
-from ..mavlink.component import MAVLink
+from mavcom.mavlink.component import MAVLink
 from ..utils.general import time_since_boot_ms, time_UTC_usec, date_time_str
 
 try:

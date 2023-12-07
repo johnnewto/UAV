@@ -5,7 +5,8 @@ import cv2
 from gstreamer import GstContext
 from UAV.cameras.gst_cam import GSTCamera, logging
 from UAV.logging import LogLevels
-from UAV.mavlink import CameraServer, MAVCom, mavlink
+from mavcom.mavlink import MAVCom, mavlink
+from UAV.mavlink import CameraServer
 from UAV.mavlink.gimbal_server_viewsheen import GimbalServerViewsheen
 from UAV.utils import config_dir, get_platform, boot_time_str, toml_load
 # import platform

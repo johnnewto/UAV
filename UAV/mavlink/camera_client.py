@@ -6,7 +6,7 @@ __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION'
 import asyncio
 import contextlib
 
-from .client_component import ClientComponent, mavlink
+from mavcom.mavlink.component import Component, mavlink
 from ..logging import LogLevels
 
 # from .component import Component, mavutil, mavlink
@@ -77,7 +77,7 @@ async def event_wait(evt, timeout):
     return evt.is_set()
 
 
-class CameraClient(ClientComponent):
+class CameraClient(Component):
     """Create a client component to send commands to a companion computer or GCS that will control a cameras via a CameraServer instance """
 
     def __init__(self,

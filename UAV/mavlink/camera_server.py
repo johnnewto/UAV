@@ -3,16 +3,13 @@ from __future__ import annotations
 __all__ = ['NAN', 'CAMERA_INFORMATION', 'CAMERA_SETTINGS', 'STORAGE_INFORMATION', 'CAMERA_CAPTURE_STATUS',
            'CAMERA_IMAGE_CAPTURED', 'CameraServer', 'Component']
 
-import time, os, sys
+from mavcom.mavlink.component import Component, mavlink
 
-from .client_component import ClientComponent
 from ..cameras.gst_cam import GSTCamera, BaseCamera
 from ..logging import logging, LogLevels
+
 # from .mavcom import MAVCom, time_since_boot_ms, time_UTC_usec, boot_time_str, date_time_str
-from .component import Component, mavutil, mavlink, MAVLink
-import threading
-import cv2
-import numpy as np
+# from .component import Component, mavutil, mavlink, MAVLink
 
 # import toml
 
@@ -74,7 +71,7 @@ def try_log(func):  # decorator
     return wrapper
 
 
-class CameraServer(ClientComponent):
+class CameraServer(Component):
     """Create a mavlink Camera server Component, cameras argument will normally be a  gstreamer pipeline"""
     mav_cmd_list = [mavlink.MAV_CMD_REQUEST_MESSAGE,
                     mavlink.MAV_CMD_STORAGE_FORMAT,
@@ -105,7 +102,7 @@ class CameraServer(ClientComponent):
 
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
         # self.set_log(loglevel)
-        self.append_message_callback(self.on_server_message)
+        self.append_message_handler(self.on_server_message)
 
         self.camera: GSTCamera = camera
 

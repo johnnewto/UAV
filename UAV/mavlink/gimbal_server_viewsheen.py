@@ -13,7 +13,7 @@ __all__ = ['NAN', 'GIMBAL_DEVICE_SET_ATTITUDE', 'GIMBAL_MANAGER_SET_MANUAL_CONTR
 
 import socket
 
-from .component import Component, mavlink_command_to_string
+from mavcom.mavlink.component import Component, mavlink_command_to_string
 # from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
 from ..camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot, zoom, VS_IP_ADDRESS, VS_PORT
 from ..logging import LogLevels
@@ -41,7 +41,7 @@ class GimbalServerViewsheen(Component):
         
         super().__init__( source_component=source_component, mav_type=mav_type, loglevel=loglevel)
         
-        self.append_message_callback(self.on_message)
+        self.append_message_handler(self.on_a_message)
         self.connect()
      
      
@@ -60,7 +60,7 @@ class GimbalServerViewsheen(Component):
         self.log.info(f"Connected to gimbal socket")
         return True
     
-    def on_message(self, msg):
+    def on_a_message(self, msg):
         """Callback for a command received from the gimbal"""
         # https://mavlink.io/en/messages/common.html#GIMBAL_DEVICE_SET_ATTITUDE
         # print(f" {msg = }")

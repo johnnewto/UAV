@@ -3,13 +3,13 @@ from __future__ import annotations
 __all__ = ['NAN', 'GimbalManagerClient']
 
 import asyncio
-# from pymavlink.dialects.v20.ardupilotmega
-from pymavlink.dialects.v20.ardupilotmega import MAVLink_message
-# , gimbal_manager_set_pitchyaw_send, gimbal_manager_set_manual_control_encode)
 
+from UAV.mavlink import mavlink
+from mavcom.mavlink.component import mavlink_command_to_string, Component
 from .camera_client import check_target
-from .client_component import ClientComponent, mavlink
-from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink
+
+# from pymavlink.dialects.v20.ardupilotmega
+# , gimbal_manager_set_pitchyaw_send, gimbal_manager_set_manual_control_encode)
 
 """
 https://mavlink.io/en/services/gimbal_v2.html
@@ -19,11 +19,7 @@ The protocol also defines what status information is published for developers, c
 The protocol supports a number of hardware setups, and enables gimbals with varying capabilities
 """
 
-import socket
-
-from .component import Component, mavlink_command_to_string
 # from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
-from ..camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot, zoom, VS_IP_ADDRESS, VS_PORT
 from ..logging import LogLevels
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
@@ -50,7 +46,7 @@ MAV_CMD_IMAGE_START_CAPTURE = 2000  # https://mavlink.io/en/messages/common.html
 MAV_CMD_IMAGE_STOP_CAPTURE = 2001  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
 
 
-class GimbalManagerClient(ClientComponent):
+class GimbalManagerClient(Component):
     """Create a mavlink gimbalmanager client component for send commands to a gimbal on a companion computer """
 
     def __init__(self,

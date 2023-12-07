@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .component import Component, mavutil, mavlink, MAVLink
+from mavcom.mavlink.component import Component, mavutil, mavlink, MAVLink
 from ..gimbals.gimbal import Gimbal
 
 """
@@ -17,7 +17,7 @@ __all__ = ['NAN', 'GIMBAL_DEVICE_SET_ATTITUDE', 'GIMBAL_MANAGER_SET_MANUAL_CONTR
 
 import socket
 
-from .component import Component, mavlink_command_to_string
+from mavcom.mavlink.component import Component, mavlink_command_to_string
 # from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
 from ..camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot, zoom, VS_IP_ADDRESS, VS_PORT
 from ..logging import LogLevels

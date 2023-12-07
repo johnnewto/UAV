@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 Gimbal Client Component
 https://mavlink.io/en/services/gimbal_v2.html
@@ -9,17 +10,14 @@ The protocol supports a number of hardware setups, and enables gimbals with vary
 """
 
 __all__ = ['NAN', 'GIMBAL_DEVICE_SET_ATTITUDE', 'GIMBAL_MANAGER_SET_MANUAL_CONTROL', 'MAV_CMD_SET_CAMERA_ZOOM',
-           'MAV_CMD_IMAGE_START_CAPTURE', 'MAV_CMD_IMAGE_STOP_CAPTURE', 'GimbalClient', 'GimbalServer']
+           'MAV_CMD_IMAGE_START_CAPTURE', 'MAV_CMD_IMAGE_STOP_CAPTURE', 'GimbalClient']
 
-import socket
-
-from .component import Component, mavlink_command_to_string
+from mavcom.mavlink.component import Component
+# from .component import Component, mavlink_command_to_string
 # from viewsheen_sdk.gimbal_cntrl import pan_tilt, snapshot,  zoom, VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
-from ..camera_sdks.viewsheen.gimbal_cntrl import pan_tilt, snapshot, zoom, VS_IP_ADDRESS, VS_PORT
 from ..logging import LogLevels
 
 # from UAV.imports import *   # TODO why is this relative import on nbdev_export?
-
 
 
 # from pymavlink.dialects.v20 import ardupilotmega as mav
@@ -30,6 +28,8 @@ GIMBAL_MANAGER_SET_MANUAL_CONTROL = 288  # https://mavlink.io/en/messages/common
 MAV_CMD_SET_CAMERA_ZOOM = 531  # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
 MAV_CMD_IMAGE_START_CAPTURE = 2000  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
 MAV_CMD_IMAGE_STOP_CAPTURE = 2001  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
+
+
 class GimbalClient(Component):
     """Create a mavlink gimbal client component for send commands to a gimbal on a companion computer or GCS """
 
@@ -37,11 +37,11 @@ class GimbalClient(Component):
                  source_component: int,  # used for component indication
                  mav_type: int,  # used for heartbeat MAV_TYPE indication
                  loglevel: LogLevels | int = LogLevels.INFO):  # logging level
-        
+
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
         # self.gimbal_target_component = None
         # self.camera_target_component = None
-        
+
     # def send_message(self, msg):
     #     """Send a message to the gimbal"""
     #     self.master.mav.send(msg)
@@ -69,7 +69,6 @@ class GimbalClient(Component):
             q,
             angular_velocity_x, angular_velocity_y, angular_velocity_z,
         )
-        command_id = None
         return True
         # ret = await self.wait_ack(self.target_system, self.target_component, command_id=command_id, timeout=1)
         # if ret:
@@ -83,33 +82,31 @@ class GimbalClient(Component):
         #         f"**No ACK: {self.target_system}/{self.target_component} {mavlink_command_to_string(command_id)}:{command_id}")
         #     self.num_acks_drop += 1
         #     return False
-    
+
     def set_zoom(self, value):
         """ Set the cameras zoom"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM
         return self.send_command(self.target_system, self.target_component,
-        MAV_CMD_SET_CAMERA_ZOOM,
-        [0,
-         value, 0,0,0,0,0])
-    
+                                 MAV_CMD_SET_CAMERA_ZOOM,
+                                 [0,
+                                  value, 0, 0, 0, 0, 0])
+
     def start_capture(self):
         """Start image capture sequence."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE
         return self.send_command(self.target_system, self.target_component,
-        MAV_CMD_IMAGE_START_CAPTURE,
-        [0,
-         0, # interval
-         1, # number of  images to capture
-         0, # Sequence number starting from 1. This is only valid for single-capture (param3 == 1), otherwise set to 0.  Increment the capture ID for each capture command to prevent double captures when a command is re-transmitted.
-         NAN, # Reserved
-         NAN, # Reserved
-         NAN]) # Reserved
-    
+                                 MAV_CMD_IMAGE_START_CAPTURE,
+                                 [0,
+                                  0,  # interval
+                                  1,  # number of  images to capture
+                                  0,  # Sequence number starting from 1. This is only valid for single-capture (param3 == 1), otherwise set to 0.  Increment the capture ID for each capture command to prevent double captures when a command is re-transmitted.
+                                  NAN,  # Reserved
+                                  NAN,  # Reserved
+                                  NAN])  # Reserved
+
     def stop_capture(self):
         """Stop image capture sequence"""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE
         return self.send_command(self.target_system, self.target_component,
-        MAV_CMD_IMAGE_STOP_CAPTURE,
-        [0, NAN, NAN, NAN, NAN, NAN, NAN])
-
-
+                                 MAV_CMD_IMAGE_STOP_CAPTURE,
+                                 [0, NAN, NAN, NAN, NAN, NAN, NAN])
