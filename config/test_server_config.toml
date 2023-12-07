@@ -12,7 +12,7 @@ image_save_path = '/media/{user}/jpgs'   # usb drive with volume label 'jpgs'
 [mavlink]
 source_system = 222
 #connection = "udpout:localhost:14445"
-connection = "/dev/ttyUSB1"
+connection = "/dev/ttyUSB0"
 
 
     # con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"

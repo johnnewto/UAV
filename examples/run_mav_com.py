@@ -27,7 +27,7 @@ class Cli(Component):
         self._set_message_callback(on_message)
 
 con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
+# con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
 
 async def main():
     with MAVCom(con1, source_system=111) as client:

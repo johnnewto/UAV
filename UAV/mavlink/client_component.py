@@ -62,7 +62,7 @@ class ClientComponent(Component):
 
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
 
-        self._set_message_callback(self.on_message)
+        self.append_message_callback(self.on_message)
         self._message_callback_conds = []
 
     def set_message_callback_cond(self, msg_id, target_system, target_component):
@@ -121,7 +121,7 @@ class ClientComponent(Component):
         self.log.debug(f"Sent {msg}")
 
     # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_MESSAGE
-    async def request_message(self, msg_id, params=None, target_system=None, target_component=None):
+    async def request_message(self, msg_id, params=None, target_system=None, target_component=None, timeout=1):
         """ Request the target system(s) emit a single instance of a specified message (i.e. a "one-shot" version of MAV_CMD_SET_MESSAGE_INTERVAL).
         https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_MESSAGE"""
         if params is None:
@@ -134,7 +134,7 @@ class ClientComponent(Component):
                                 [msg_id] + params
                                 )
 
-        await self.wait_message_callback(cond)
+        await self.wait_message_callback(cond, timeout=timeout)
         return cond['msg']
 
     async def request_message_stream(self, target_system=None, target_component=None,

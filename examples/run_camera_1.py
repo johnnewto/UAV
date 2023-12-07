@@ -18,10 +18,10 @@ DISPLAY_H264_PIPELINE = to_gst_string([
 ])
 
 
-# con1 = "udpin:localhost:14445"
-# con2 = "udpin:localhost:14445"
-con1 = "udpin:192.168.144.1:14445"
-con2 = "udpout:192.168.144.1:14445"
+con1 = "udpin:localhost:14445"
+con2 = "udpin:localhost:14445"
+# con1 = "udpin:192.168.144.1:14445"
+# con2 = "udpout:192.168.144.1:14445"
 gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 
 

@@ -45,3 +45,4 @@ py-cpuinfo~=9.0.0
 packaging~=23.2
 future~=0.18.3
 platformdirs~=3.11.0
+python-statemachine~=2.1.0

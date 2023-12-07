@@ -5,7 +5,8 @@ import gstreamer.utils as gst_utils
 from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
 from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavutil, mavlink
-from UAV.utils.general import boot_time_str, With, toml_load, config_dir
+from UAV.mavlink.client_component import ClientComponent
+from UAV.utils.general import boot_time_str, With, toml_load, config_dir, get_platform
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
 from gstreamer.utils import to_gst_string
 
@@ -31,13 +32,19 @@ DISPLAY_RAW_PIPELINE = to_gst_string([
 con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 
 gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
-
+# mach = get_platform()
+# conf_path = config_dir()
+# config_dict = toml_load(conf_path / f"{mach}_server_config.toml")
+# mav_connection = config_dict['mavlink']['connection']
+#
+# print(f"{mach = }, {conf_path = } {mav_connection = }")
+# print(config_dict)
 
 # if __name__ == '__main__':
 async def main(num_cams, udp_encoder):
     # logger.disabled = True
     print(f"{boot_time_str =}")
-
+    server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
     # if True:
     with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
 
@@ -49,17 +56,15 @@ async def main(num_cams, udp_encoder):
         with GstPipes(display_pipelines, loglevel=LogLevels.INFO):  # this will show the video on fpsdisplaysink
             with MAVCom(con1, source_system=111, loglevel=LogLevels.CRITICAL) as GCS_client:  # This normally runs on GCS
                 with MAVCom(con2, source_system=222, loglevel=LogLevels.CRITICAL) as UAV_server:  # This normally runs on drone
-                    # UAV_server.log.disabled = True
-                    # GCS_client.log.disabled = True
 
-                    # add GCS manager
                     gcs: CameraClient = GCS_client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG))
-                    # gcs.log.disabled = True
-                    # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "test_cam_0.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.INFO)
-                    # cam_2 = GSTCamera(camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_cam_0.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
+
+                    cam_1 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.INFO)
+                    # cam_2 = GSTCamera(server_config_dict, camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_cam_0.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
                     UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=10))
+                    contrl = UAV_server.add_component(ClientComponent(mav_type=mavlink.MAV_TYPE_ONBOARD_CONTROLLER, source_component=mavlink.MAV_COMP_ID_CAMERA, loglevel=10))
+
                     # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavlink.MAV_COMP_ID_CAMERA2, cameras=cam_2, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=24, cameras=None, loglevel=LogLevels.WARNING))
 
@@ -67,6 +72,8 @@ async def main(num_cams, udp_encoder):
                     # GCS client requests
                     # ret = await gcs.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_CAMERA)
                     ret = await gcs.wait_heartbeat(target_system=222, target_component=mavlink.MAV_COMP_ID_CAMERA, timeout=1)
+
+
                     print(f"Heartbeat {ret = }")
                     # await asyncio.sleep(0.1)
                     msg = await gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system=222,

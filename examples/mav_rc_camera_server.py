@@ -9,9 +9,12 @@ import time
 
 import pymavlink.dialects.v20.all as dialect
 
-from UAV.mavlink import MAVCom, mavlink
+from UAV.cameras.gst_cam import GSTCamera
+from UAV.logging import LogLevels
+from UAV.mavlink import MAVCom, mavlink, CameraServer
 from UAV.mavlink.client_component import ClientComponent
 from UAV.utils import config_dir, get_platform, toml_load
+from UAV.mavlink.message_request import MessageRequest
 
 # assert os.environ['MAVLINK20'] == '1', "Set the environment variable before from pymavlink import mavutil  library is imported"
 # from pymavlink import mavutil
@@ -41,14 +44,17 @@ def on_message(msg: mavlink.MAVLink_message):
         print(f"***** RC {msg}")
 
 async def main():
-    with MAVCom(mav_connection, source_system=config_dict['mavlink']['source_system'], loglevel=20) as client:
-        client.on_message = on_message
+    with MAVCom(mav_connection, source_system=config_dict['mavlink']['source_system'], loglevel=20) as UAV_server:
+        UAV_server.on_message = on_message
 
-
-        comp = client.add_component(ClientComponent(mav_type=mavlink.MAV_TYPE_GCS, source_component=1, loglevel=20))  # MAV_TYPE_GCS
-        ret = await comp.wait_heartbeat(target_system=1, target_component=1, timeout=5)
+        # mq = MessageRequest(UAV_server)
+        # mq.log.info(f"{mq = }")
+        server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
+        cam_0 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.DEBUG)
+        comp: CameraServer = UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=20))
+        ret = await comp.wait_heartbeat(target_system=1, target_component=1, timeout=5)  # from FC
         print(f"Heartbeat {ret = }")
-
+        cam_snapping = False
         while True:
             msg = await comp.request_message(msg_id=mavlink.MAVLINK_MSG_ID_RC_CHANNELS, target_system=1, target_component=1)
             # print(f"request_message {msg}")
@@ -57,26 +63,33 @@ async def main():
                 if msg.chancount == 0:
                     print("RC might not be connected")
             if msg is not None:
+                # RC channel 7 switch is used to trigger the message
                 print(f"{msg.chan7_raw = }  ", end='')
                 print(f"RC_CHANNELS: chancount = {msg.chancount}: {msg.chan1_raw}, {msg.chan2_raw}, {msg.chan3_raw}, {msg.chan4_raw}, {msg.chan5_raw}, {msg.chan6_raw}, {msg.chan7_raw}, {msg.chan8_raw}, {msg.chan9_raw}, {msg.chan10_raw}, {msg.chan11_raw}, {msg.chan12_raw}, {msg.chan13_raw}, {msg.chan14_raw}, {msg.chan15_raw}, {msg.chan16_raw}, {msg.chan17_raw}, {msg.chan18_raw}")
 
                 if msg.chan7_raw > 1200:
-                    # msg = mavlink.MAVLink_statustext_message(mavlink.MAV_SEVERITY_WARNING, b"Hello")
-                    # comp.send_message(msg)
-                    text = f"Roll a dice: {random.randint(1, 6)} flip a coin: {random.randint(0, 1)}"
+                    if not cam_snapping:
+                        text = f"Camera taking snapshots: {msg.chan7_raw}"
+                        # text = f"Roll a dice: {random.randint(1, 6)} flip a coin: {random.randint(0, 1)}"
+                        comp.master.mav.statustext_send(mavlink.MAV_SEVERITY_INFO, text=text.encode("utf-8"))
+                        print(f"Start Sent ")
+                        comp.camera.image_start_capture(1, 0)
 
-                    # create STATUSTEXT message
-                    message = dialect.MAVLink_statustext_message(severity=dialect.MAV_SEVERITY_INFO,
-                                                                 text=text.encode("utf-8"))
+                    cam_snapping = True
 
-                    # send message to the GCS
-                    comp.master.mav.send(message)
-                    # comp.master.mav.statustext_send(mavlink.MAV_SEVERITY_WARNING, b"Hello")
-                    print(f"Sent ")
-                    time.sleep(1)
+                else:
+                    if cam_snapping:
+                        text = f"Camera stopped taking snapshots: {msg.chan7_raw}"
+                        # text = f"Roll a dice: {random.randint(1, 6)} flip a coin: {random.randint(0, 1)}"
+                        comp.master.mav.statustext_send(mavlink.MAV_SEVERITY_INFO, text=text.encode("utf-8"))
+                        print(f"Stop Sent ")
+                        comp.camera.image_stop_capture()
+                    cam_snapping = False
+
                     # await comp.send_command(target_system=1, target_component=1, command_id=mavlink.MAV_CMD_DO_SET_MODE, params=[mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, 0, 0, 0, 0, 0, 0])
                     # print(f"Sent {mavlink.MAV_CMD_DO_SET_MODE} {mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED}")
-            time.sleep(0.1)
+            time.sleep(0.01)
+
 
 
 if __name__ == '__main__':

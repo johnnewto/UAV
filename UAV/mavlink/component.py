@@ -75,7 +75,7 @@ class Component:
         self.target_system = None
         self.target_component = None
 
-        self.message_callback = None  # callback function for when a command is received
+        self.message_callbacks = []  # callback functions for when a command is received
         # self._message_callbacks = [] # list of callback functions for when a command is received
 
         self._heartbeat_que = LeakyQueue(maxsize=10)
@@ -134,9 +134,12 @@ class Component:
         assert self.master is not None, "self.master is None"
         self.master.mav.srcComponent = self.source_component
 
-    def _set_message_callback(self, callback: typ.Callable):
-        """Set the callback function for when a command is received."""
-        self.message_callback = callback
+    def append_message_callback(self, callback: typ.Callable):
+        """append the callback function for when a command is received."""
+        assert callable(callback), f"callback is not callable {callback = }"
+        # assert call back is not in list
+        assert callback not in self.message_callbacks, f"callback is already in list {callback = }"
+        self.message_callbacks.append(callback)
 
     def send_ping(self, target_system: int, target_component: int, ping_num: int = None):
         """Send self.max_pings * ping messages to test if the server is alive."""
@@ -286,8 +289,8 @@ class Component:
             try:
                 msg = self.message_que.get(timeout=timeout)
                 # if msg.get_type() != 'HEARTBEAT':  # todo change to msg.get_msgId() == MAVLink.MAVLINK_MSG_ID_HEARTBEAT
-                    # print (f"{MAVLink.MAVLINK_MSG_ID_HEARTBEAT = }")
-                    # self.log.debug(format_rcvd_msg(msg))
+                # print (f"{MAVLink.MAVLINK_MSG_ID_HEARTBEAT = }")
+                # self.log.debug(format_rcvd_msg(msg))
                 self.num_msgs_rcvd += 1
             except queue.Empty:  # i.e time out
                 time.sleep(0.01)
@@ -326,12 +329,22 @@ class Component:
         # Callback for when a message is received.
         # for cb in self._message_callbacks:
         #     cb(msg)
-        if self.message_callback is not None:
-            ok = self.message_callback(msg)
-        else:
+        ok = False
+        for cb in self.message_callbacks:
+            if cb(msg):
+                ok = True   # just one to make ok
+
+        if self.message_callbacks == []:
             self.log.debug(f"Received command but no callback set {msg}")
             # print(f"!!! YAY!!! {get_linenumber()} {self} Received command {msg}")
             ok = False
+
+        # if self.message_callback is not None:
+        #     ok = self.message_callback(msg)
+        # else:
+        #     self.log.debug(f"Received command but no callback set {msg}")
+        #     # print(f"!!! YAY!!! {get_linenumber()} {self} Received command {msg}")
+        #     ok = False
         self.num_cmds_rcvd += 1
         if ok:
             self.send_ack(msg, mavutil.mavlink.MAV_RESULT_ACCEPTED)
@@ -373,8 +386,8 @@ class Component:
             return False
 
     async def _test_command(self, target_system: int,  # target system
-                           target_component: int,  # target component
-                           camera_id: int):  # cameras id (0 for all cams)
+                            target_component: int,  # target component
+                            camera_id: int):  # cameras id (0 for all cams)
         """
         example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a cameras
         """
@@ -393,7 +406,7 @@ class Component:
     async def test_command(self, target_system: int,  # target system
                            target_component: int,  # target component
                            camera_id: int):  # cameras id (0 for all cams)
-        msg = self.master.mav.gimbal_manager_set_manual_control_send(target_system, target_component,0, 0, 0, 0, 0, 0,)   # todo this is not working in ardupilot routing
+        msg = self.master.mav.gimbal_manager_set_manual_control_send(target_system, target_component, 0, 0, 0, 0, 0, 0, )  # todo this is not working in ardupilot routing
 
         msg = self.master.mav.gimbal_device_set_attitude_send(target_system, target_component, 0, [0, 0, 0, 0], 0, 0, 0)
         self.log.debug(f"!!!!! Sending Test Message: {target_system}/{target_component}")
