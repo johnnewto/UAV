@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import cv2
@@ -33,7 +34,8 @@ import subprocess
 # con2 = "udpout:192.168.1.175:14445" if mach == 'jetson' else "udpout:localhost:14445"
 # con2 = "/dev/ttyUSB0" if mach == 'jetson' else "/dev/ttyUSB1"
 
-if __name__ == '__main__':
+
+async def main():
     logging.info(f"boot_time_str = {boot_time_str = }")
 
     mach = get_platform()
@@ -65,8 +67,8 @@ if __name__ == '__main__':
     with GstContext():
         with UAV_server:  # This normally runs on drone
             # UAV_server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_gst_1))
-            UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=20))
-            UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=20))
+            comp0: CameraServer = UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=20))
+            comp1: CameraServer = UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=20))
             UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA3, camera=cam_2, loglevel=20))
 
             UAV_server.add_component(GimbalServerViewsheen(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=mavlink.MAV_COMP_ID_GIMBAL, loglevel=20))
@@ -79,24 +81,50 @@ if __name__ == '__main__':
             # cam_1.video_start_streaming()
             # cam_2.video_start_streaming()
 
-            while cam_0.pipeline:
-                # if time.time() - last_time > 10:
-                #     last_time = time.time()
-                #     encoder0 = cam_0._pipeline_stream_udp.pipeline.get_by_name("encoder")
-                #     encoder1 = cam_1._pipeline_stream_udp.pipeline.get_by_name("encoder")
-                #     bitrate = 4000000 if bitrate != 4000000 else 100000
-                #     encoder0.set_property("bitrate", bitrate)
-                #     encoder1.set_property("bitrate", bitrate*2)
-                #     print(f"{bitrate = }")
-                if cam_0.last_image is not None:
-                    pass
-                    # cv2.imshow('gst_src', cam_1.last_image)
-                    # cam_1.last_image = None
-                    # cv2.waitKey(10)
-                time.sleep(0.01)
+            cam_snapping = False
+            while True:
+                msg = await comp0.request_message(msg_id=mavlink.MAVLINK_MSG_ID_RC_CHANNELS, target_system=1, target_component=1)
+                # print(f"request_message {msg}")
+                if msg == mavlink.MAVLINK_MSG_ID_RC_CHANNELS:
+                    print(f"request_message {msg}")
+                    if msg.chancount == 0:
+                        print("RC might not be connected")
+                if msg is not None:
+                    # RC channel 7 switch is used to trigger the message
+                    print(f"{msg.chan7_raw = }  ", end='')
+                    print(
+                        f"RC_CHANNELS: chancount = {msg.chancount}: {msg.chan1_raw}, {msg.chan2_raw}, {msg.chan3_raw}, {msg.chan4_raw}, {msg.chan5_raw}, {msg.chan6_raw}, {msg.chan7_raw}, {msg.chan8_raw}, {msg.chan9_raw}, {msg.chan10_raw}, {msg.chan11_raw}, {msg.chan12_raw}, {msg.chan13_raw}, {msg.chan14_raw}, {msg.chan15_raw}, {msg.chan16_raw}, {msg.chan17_raw}, {msg.chan18_raw}")
+
+                    if msg.chan7_raw > 1200:
+                        if not cam_snapping:
+                            text = f"Camera taking snapshots: {msg.chan7_raw}"
+                            # text = f"Roll a dice: {random.randint(1, 6)} flip a coin: {random.randint(0, 1)}"
+                            comp0.master.mav.statustext_send(mavlink.MAV_SEVERITY_INFO, text=text.encode("utf-8"))
+                            print(f"Start Sent ")
+                            comp0.camera.image_start_capture(1, 0)
+                            comp1.camera.image_start_capture(1, 0)
+
+                        cam_snapping = True
+
+                    else:
+                        if cam_snapping:
+                            text = f"Camera stopped taking snapshots: {msg.chan7_raw}"
+                            # text = f"Roll a dice: {random.randint(1, 6)} flip a coin: {random.randint(0, 1)}"
+                            comp0.master.mav.statustext_send(mavlink.MAV_SEVERITY_INFO, text=text.encode("utf-8"))
+                            print(f"Stop Sent ")
+                            comp0.camera.image_stop_capture()
+                            comp1.camera.image_stop_capture()
+                        cam_snapping = False
+
+                        # await comp.send_command(target_system=1, target_component=1, command_id=mavlink.MAV_CMD_DO_SET_MODE, params=[mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, 0, 0, 0, 0, 0, 0])
+                        # print(f"Sent {mavlink.MAV_CMD_DO_SET_MODE} {mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED}")
+                time.sleep(0.5)
 
     cv2.destroyAllWindows()
     time.sleep(0.01)
     cam_0.close()
     cam_1.close()
     cam_2.close()
+if __name__ == '__main__':
+    print(__doc__)
+    asyncio.run(main())
