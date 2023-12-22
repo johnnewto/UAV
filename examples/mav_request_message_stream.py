@@ -4,14 +4,12 @@ Here we request  MAVLINK_MSG_ID_RC_CHANNELS at 1 second interval
 """
 
 import asyncio
-import os
 import time
+
+from UAV.mavlink import Component, MAVCom, mavlink
+
 # assert os.environ['MAVLINK20'] == '1', "Set the environment variable before from pymavlink import mavutil  library is imported"
 # from pymavlink import mavutil
-
-from UAV.mavlink import MAVCom
-from UAV.mavlink import CameraClient, MAVCom, mavlink, mavutil
-from UAV.mavlink.client_component import ClientComponent
 
 # utils.set_gst_debug_level(Gst.DebugLevel)
 # con1 = "udpin:localhost:14445"
@@ -27,7 +25,7 @@ target_system = 222
 
 async def main():
     with MAVCom(mav_connection, source_system=source_system, loglevel=10) as client:
-        comp = client.add_component(ClientComponent(mav_type=mavlink.MAV_TYPE_GCS, source_component=1, loglevel=20))  # MAV_TYPE_GCS
+        comp = client.add_component(Component(mav_type=mavlink.MAV_TYPE_GCS, source_component=1, loglevel=20))  # MAV_TYPE_GCS
         ret = await comp.wait_heartbeat(target_system=1, target_component=1, timeout=5)
         print(f"Heartbeat {ret = }")
         ret = await comp.request_message_stream(1, 1,

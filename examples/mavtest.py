@@ -20,7 +20,7 @@ import asyncio
 import time
 
 from UAV.mavlink import MAVCom, mavlink, mavutil
-from UAV.mavlink.client_component import ClientComponent
+from UAV.mavlink import Component
 from UAV.utils import config_dir, get_platform, toml_load
 
 # assert os.environ['MAVLINK20'] == '1', "Set the environment variable before from pymavlink import mavutil  library is imported"
@@ -44,7 +44,7 @@ def on_message(msg: mavlink.MAVLink_message):
 
 async def main():
     with MAVCom(mav_connection, source_system=config_dict['mavlink']['source_system'], loglevel=10) as client:
-        comp = client.add_component(ClientComponent(mav_type=mavlink.MAV_TYPE_GCS, source_component=1, loglevel=10))  # MAV_TYPE_GCS
+        comp = client.add_component(Component(mav_type=mavlink.MAV_TYPE_GCS, source_component=1, loglevel=10))  # MAV_TYPE_GCS
         ret = await comp.wait_heartbeat(target_system=1, target_component=1, timeout=5)
         print(f"Heartbeat {ret = }")
         client.master.mav.request_data_stream_send(1, 1,
