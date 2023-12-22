@@ -1,0 +1,39 @@
+[
+  {
+    "listing": "/tutorials/index.html",
+    "items": [
+      "/tutorials/api_walkthrough.html",
+      "/tutorials/airsim_walkthrough.html",
+      "/tutorials/mav_camera_walkthrough.html",
+      "/tutorials/mavlink_doc&debug.html",
+      "/tutorials/template.html"
+    ]
+  },
+  {
+    "listing": "/api/index.html",
+    "items": [
+      "/api/airsim.client.html",
+      "/api/airsim.commands.html",
+      "/api/camera.gst_cam.html",
+      "/api/gstreamer_python_doc.html",
+      "/api/template.html",
+      "/api/mavlink.mavcom.html",
+      "/api/mavlink.camera.html",
+      "/api/mavlink.component.html",
+      "/api/mavlink.viewsheen_gimbal.html",
+      "/api/params.html",
+      "/api/utils.display.html",
+      "/api/utils.general.html"
+    ]
+  },
+  {
+    "listing": "/contributing/index.html",
+    "items": [
+      "/contributing/doc_walkthrough.html",
+      "/contributing/directives.html",
+      "/contributing/docs.html",
+      "/contributing/config.html",
+      "/contributing/why_nbdev.html"
+    ]
+  }
+]
