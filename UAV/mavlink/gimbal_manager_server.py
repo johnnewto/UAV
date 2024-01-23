@@ -58,7 +58,7 @@ class GimbalServer(Component):
 
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
 
-        self._set_message_callback(self.on_message)
+        self.wait_message_callback(self.on_message)
         self.gimbal: Gimbal = gimbal
 
     def on_mav_connection(self):

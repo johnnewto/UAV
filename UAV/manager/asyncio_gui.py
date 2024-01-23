@@ -224,8 +224,13 @@ class Gui:
 
     new_cam_queue = asyncio.Queue()
     exit_event = asyncio.Event()
+    exit_event.clear()
 
     async def find_cameras(self):
+        self.exit_event.clear()
+        self.cameras = []
+        print("find_gimbals exit_event = ", self.exit_event)
+
         while not self.exit_event.is_set():
             ret = await self.camera_client.wait_heartbeat(remote_mav_type=mavutil.mavlink.MAV_TYPE_CAMERA, timeout=2)
             if ret:
@@ -233,10 +238,12 @@ class Gui:
                     self.cameras.append(ret)
                     await self.new_cam_queue.put(ret)
                     print(f" Found Camera {ret[0]}/{ret[1]}")
-        print("find_cameras exit")
+        print("find_cameras exit", self.exit_event.is_set())
 
     async def find_gimbals(self):
         """ Find all gimbals, add to gimbals list    """
+        self.exit_event.clear()
+        self.gimbals = []
         while not self.exit_event.is_set():
             ret = await self.gimbal_client.wait_heartbeat(remote_mav_type=mavlink.MAV_TYPE_GIMBAL, timeout=0.5)
             if ret:

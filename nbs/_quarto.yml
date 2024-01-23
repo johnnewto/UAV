@@ -42,8 +42,6 @@ website:
       - auto: "/*.ipynb"
       - section: Tutorials
         contents: tutorials/*
-      - section: Explanations
-        contents: explanations/*
       - section: API
         contents: api/*
       - section: Contributing
@@ -57,9 +55,7 @@ website:
       - text: "Get Started"
         href: getting_started.ipynb
       - text: "Tutorial"
-        href: tutorials/api_walkthrough.ipynb
-      - text: "Blog"
-        href: blog/index.qmd
+        href: tutorials/mav_camera_walkthrough.ipynb
       - text: "Help"
         menu:
           - text: "Report an Issue"

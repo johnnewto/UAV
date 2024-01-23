@@ -54,6 +54,7 @@ async def main():
                     print("CancelledError")
                     pass
 
+                cam_0.close()
                 cam_1.close()
                 cam_2.close()
 

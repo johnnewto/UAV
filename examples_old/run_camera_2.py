@@ -22,8 +22,8 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
 
 print(f"{boot_time_str =}")
-
-cam_uav = GSTCamera(camera_dict=toml_load(config_dir() / "test_cam_0.toml"))
+server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
+cam_uav = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"))
 
 
 async def doit():

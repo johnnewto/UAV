@@ -65,7 +65,6 @@ pipeline = [
     'rtph264pay ! udpsink host={host} port={port} sync=true',
     ]
 
-
 [gstreamer_jpg_filesink]
 fps = 10   # Frames per second * 10
 quality = 85

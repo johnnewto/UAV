@@ -1,3 +1,4 @@
+cam_name = 'cam_1'
 [camera_info]
 vendor_name = "John Doe                   "
 model_name = "Fake Camera                  "

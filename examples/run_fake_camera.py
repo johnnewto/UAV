@@ -9,9 +9,11 @@ from gstreamer import GstContext, Gst
 gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 if __name__ == '__main__':
     print(f"{boot_time_str =}")
-    p = start_displays(display_type='cv2', num_cams=2, port=5000)
+    client_config_dict = toml_load(config_dir() / f"client_config.toml")
+    p = start_displays(client_config_dict, display_type='cv2')
     with GstContext():
-        with GSTCamera(camera_dict=toml_load(config_dir() / "test_camera_special.toml"), loglevel=10) as cam:
+        server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
+        with GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_camera_special.toml"), loglevel=10) as cam:
             time.sleep(1)
             # p = start_displays(num_cams=2, port=5000)
             time.sleep(1)

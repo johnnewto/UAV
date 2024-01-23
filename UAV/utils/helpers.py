@@ -1,5 +1,6 @@
 __all__ = ['start_displays']
 
+import platform
 import time
 from multiprocessing import Process
 from typing import Dict
@@ -14,10 +15,11 @@ except:
 
 
 def start_displays(config_dict, display_type: str = 'cv2',  # display type
-                width=800, height=600
+                    width=800, height=600,
                    ) -> Process:  # encoder type
     """ Display video from one or more gst streams from drone in a separate process"""
-
+    # if config_dict is None:
+    #
     if config_dict['camera_udp_decoder'] == 'h264':
         cmd = 'udpsrc port={port} ! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96'
         avdec = 'avdec_h264'
@@ -123,12 +125,15 @@ def start_displays(config_dict, display_type: str = 'cv2',  # display type
 
 
 if __name__ == '__main__':
+    from UAV.utils.general import  toml_load, config_dir
     width, height, fps, num_buffers = 1920, 1080, 30, 200
     caps_filter = 'capsfilter caps=video/x-raw,format=RGB,width={},height={},framerate={}/1'.format(width, height, fps)
     command = 'videotestsrc is-live=true num-buffers={} ! {} ! timeoverlay !  appsink emit-signals=True sync=false'.format(num_buffers, caps_filter)
 
-    p = start_displays(display_type='cv2', num_cams=5)
-    # command = gst_utils.format_pipeline(**test_camera_dict)
+    # p = start_displays(display_type='cv2', num_cams=5)
+    client_config_dict = toml_load(config_dir() / f"client_config.toml")
+    p = start_displays(client_config_dict, display_type='cv2')
+
     with GstContext():
         with GstPipeline(command, loglevel=10):
             time.sleep(5)

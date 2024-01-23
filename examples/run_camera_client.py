@@ -1,16 +1,15 @@
 import asyncio
 import time
-
+import platform
 from UAV.mavlink import CameraClient, MAVCom, mavlink
 from UAV.utils import helpers
-from UAV.utils.general import boot_time_str
-
+from UAV.utils.general import boot_time_str, toml_load, config_dir
 # con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
-con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
+# con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB1"
 # con1, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
 # con1 = "udpout:192.168.122.84:14445"
 con1 = "udpin:localhost:14445"
-con1 = "udpin:192.168.144.1:14445"
+# con1 = "udpin:192.168.144.1:14445"
 
 async def main():
     with MAVCom(con1, source_system=111, ) as client:
@@ -34,7 +33,12 @@ async def main():
 
 if __name__ == '__main__':
     print(f"{boot_time_str =}")
-    p = helpers.start_displays(num_cams=2, port=5000)
+    # p = helpers.start_displays(num_cams=2, port=5000)
+    client_config_dict = toml_load(config_dir() / f"client_config.toml")
+    print(client_config_dict)
+    if platform.processor() != 'aarch64':
+        client_config_dict['camera_udp_decoder'] = 'h264'  # on pc override as h264
+    p = helpers.start_displays(client_config_dict, display_type='cv2')
     # p = helpers.dotest()
     asyncio.run(main())
     p.terminate()

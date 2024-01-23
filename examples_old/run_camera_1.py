@@ -38,7 +38,8 @@ async def main(num_cams):
                     # add GCS manager
                     gcs: CameraClient = GCS_client.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=LogLevels.DEBUG))
                     # add UAV cameras, This normally runs on drone
-                    cam_1 = GSTCamera(camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.INFO)
+                    server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
+                    cam_1 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.INFO)
 
                     UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=10))
 

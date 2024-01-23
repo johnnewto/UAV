@@ -21,12 +21,13 @@ async def main():
             # connect to the cameras manager
             gcs_cam_manager = gcs_mavlink.add_component(CameraClient(mav_type=mavlink.MAV_TYPE_GCS, source_component=11, loglevel=20))
             gcs_gim: GimbalManagerClient = gcs_mavlink.add_component(GimbalManagerClient(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=12, loglevel=LogLevels.INFO))
+            server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
 
             # start cameras, This would run on a drone companion computer
-            cam_front = AirsimCamera(camera_name='center', camera_dict=toml_load(config_dir() / "airsim_cam_front.toml"))
-            cam_left = AirsimCamera(camera_name='left', camera_dict=toml_load(config_dir() / "airsim_cam_left.toml"))
-            cam_right = AirsimCamera(camera_name='right', camera_dict=toml_load(config_dir() / "airsim_cam_right.toml"))
-            cam_down = AirsimCamera(camera_name='down', camera_dict=toml_load(config_dir() / "airsim_cam_down.toml"))
+            cam_front = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_center.toml"))
+            cam_left = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_left.toml"))
+            cam_right = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_right.toml"))
+            cam_down = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_down.toml"))
             gim_1 = AirsimGimbal(camera_name='center', loglevel=10)
 
             # connect cameras to mavlink
@@ -79,7 +80,9 @@ async def main():
 
 
 if __name__ == '__main__':
-    p = helpers.start_displays(display_type='cv2', num_cams=4, names=['front', 'left', 'right', 'down'], port=5000)
+    # p = helpers.start_displays(display_type='cv2')
+    client_config_dict = toml_load(config_dir() / f"client_airsim_config.toml")
+    p = helpers.start_displays(client_config_dict, display_type='cv2')
     # p = helpers.start_displays(display_type='cv2', num_cams=4, names=['front'], port=5000)
     asyncio.run(main())
     p.terminate()

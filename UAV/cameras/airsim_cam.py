@@ -24,12 +24,12 @@ class AirsimCamera(GSTCamera):
     """ run the airsim enviroment Create a airsim cameras component for testing using GStreamer"""
 
     def __init__(self,
-                 camera_name="high_res",
+                 config_dict,  # config dict
                  camera_dict=None,  # camera_info dict
                  udp_encoder='h264',  # encoder for video streaming
                  loglevel=LogLevels.INFO):  # log flag
 
-        self.camera_name = camera_name
+        self.camera_name = camera_dict['cam_name']
         _dict = camera_dict['gstreamer_video_src']
         self._dont_wait = threading.Event()  # used to pause or resume the thread
 
@@ -40,8 +40,8 @@ class AirsimCamera(GSTCamera):
         self.asc = AirSimClient()
 
         self._dont_wait = threading.Event()  # used to pause or resume the thread
-        super().__init__(camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=loglevel)
-        self.log.info(f"***** AirsimCamera: {camera_name = } ******")
+        super().__init__(config_dict, camera_dict=camera_dict, udp_encoder=udp_encoder, loglevel=loglevel)
+        self.log.info(f"***** AirsimCamera: {self.camera_name = } ******")
 
     def check_airsm_camera_resolution(self, settings_file_path, camera_name, desired_width, desired_height):
         """check the airsim cameras resolution and update if necessary"""

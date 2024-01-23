@@ -14,12 +14,14 @@ if __name__ == '__main__':
     # UDP_ENCODER = 'raw-video'
     camera_dict_0 = toml_load(config_dir() / "airsim_cam_front.toml")
     camera_dict_1 = toml_load(config_dir() / "airsim_cam_left.toml")
-    p = start_displays(num_cams=2, port=5000)
-
+    # p = start_displays(num_cams=2, port=5000)
+    client_config_dict = toml_load(config_dir() / f"client_airsim_config.toml")
+    p = start_displays(client_config_dict, display_type='cv2')
     with GstContext():
-        with AirsimCamera(camera_name='center', camera_dict=camera_dict_0, loglevel=LogLevels.INFO) as air_cam_0:
+        server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
+        with AirsimCamera(server_config_dict, camera_dict=camera_dict_0, loglevel=LogLevels.INFO) as air_cam_0:
             # if True:
-            with AirsimCamera(camera_name='left', camera_dict=camera_dict_1, loglevel=LogLevels.INFO) as air_cam_1:
+            with AirsimCamera(server_config_dict, camera_dict=camera_dict_1, loglevel=LogLevels.INFO) as air_cam_1:
 
                 # air_cam_1.video_start_streaming()
                 for i in range(10):

@@ -4,8 +4,8 @@ import time
 import gstreamer.utils as gst_utils
 from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
-from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavutil, mavlink
-from UAV.mavlink.client_component import ClientComponent
+from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavutil, mavlink, Component
+# from UAV.mavlink.client_component import ClientComponent
 from UAV.utils.general import boot_time_str, With, toml_load, config_dir, get_platform
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes
 from gstreamer.utils import to_gst_string
@@ -63,7 +63,7 @@ async def main(num_cams, udp_encoder):
                     # cam_2 = GSTCamera(server_config_dict, camera_dict=read_camera_dict_from_toml(find_config_dir() / "test_cam_0.toml"), udp_encoder=udp_encoder, loglevel=LogLevels.CRITICAL)
 
                     UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_1, loglevel=10))
-                    contrl = UAV_server.add_component(ClientComponent(mav_type=mavlink.MAV_TYPE_ONBOARD_CONTROLLER, source_component=mavlink.MAV_COMP_ID_CAMERA, loglevel=10))
+                    # contrl = UAV_server.add_component(Component(mav_type=mavlink.MAV_TYPE_ONBOARD_CONTROLLER, source_component=mavlink.MAV_COMP_ID_CAMERA, loglevel=10))
 
                     # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component= mavlink.MAV_COMP_ID_CAMERA2, cameras=cam_2, loglevel=LogLevels.CRITICAL))
                     # UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=24, cameras=None, loglevel=LogLevels.WARNING))

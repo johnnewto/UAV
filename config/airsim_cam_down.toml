@@ -1,3 +1,4 @@
+cam_name = 'down'
 [camera_info]
 vendor_name = "Maui63                   "
 model_name = "Airsim Camera                  "
