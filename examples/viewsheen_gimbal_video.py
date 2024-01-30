@@ -13,10 +13,15 @@ import numpy as np
 # from UAV.camera_sdks.viewsheen import GST_Video
 import gstreamer.utils as gst_utils
 from UAV import MAVCom
+from UAV.gimbals.viewsheen_gimbal import ViewsheenGimbal
 from UAV.mavlink import mavlink
 from UAV.camera_sdks.viewsheen.gimbal_cntrl import VS_IP_ADDRESS, VS_PORT, KeyReleaseThread
-from UAV.mavlink.vs_gimbal import GimbalClient, GimbalServer
+from UAV.mavlink import  GimbalManagerClient, GimbalServer
 from gstreamer import GstVideoSource
+
+from UAV.cameras.gst_cam import GSTCamera
+from UAV.utils.general import boot_time_str, toml_load, config_dir
+from UAV.logging import LogLevels
 
 # self.video_source = f'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue'
 # # self.video_codec = '! application/x-rtp, payload=96 ! rtph264depay ! h264parse ! avdec_h264'
@@ -28,7 +33,7 @@ from gstreamer import GstVideoSource
 
 DEFAULT_PIPELINE = gst_utils.to_gst_string([
             'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
-            'rtph265depay ! h265parse ! avdec_h265',
+            'rtph264depay ! h264parse ! avdec_h264',
             'decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert',
             'appsink name=mysink emit-signals=true sync=false async=false max-buffers=2 drop=true',
             # # 'x264enc tune=zerolatency noise-reduction=10000 bitrate=2048 speed-preset=superfast',
@@ -70,12 +75,16 @@ async def main(sock=None):
     MAV_TYPE_CAMERA = mavlink.MAV_TYPE_CAMERA
     MAV_TYPE_GIMBAL = mavlink.MAV_TYPE_GIMBAL
 
+    # server_config_dict = toml_load(config_dir() / f"test_server_config.toml")
+    # cam_vs = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / f"viewsheen_H264.toml"), loglevel=LogLevels.INFO)
+    gim_vs = ViewsheenGimbal()
+
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
     # con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"
     with MAVCom(con1, source_system=111) as client:
         with MAVCom(con2, source_system=222, ) as server:
-            gimbal:GimbalClient = client.add_component(GimbalClient(mav_type=MAV_TYPE_GCS, source_component=11, loglevel=10))
-            server.add_component(GimbalServer(mav_type=MAV_TYPE_GIMBAL, source_component=22, loglevel=10))
+            gimbal: GimbalManagerClient = client.add_component(GimbalManagerClient(mav_type=MAV_TYPE_GCS, source_component=11, loglevel=10))
+            server.add_component(GimbalServer(mav_type=MAV_TYPE_GIMBAL, source_component=22, gimbal=gim_vs, loglevel=10))
 
             ret = await gimbal.wait_heartbeat(target_system=222, target_component=22, timeout=1)
             print(f"Heartbeat {ret = }")
@@ -115,7 +124,7 @@ async def main(sock=None):
 
                 if k == ord('d'):  # Right arrow key
                     print("Right arrow key pressed")
-                    await gimbal.set_attitude(NAN, NAN, 0.0, 0.2)
+                    await gimbal._set_attitude(NAN, NAN, 0.0, 0.2)
                     # pan_tilt(gimbal_speed)
                     KeyReleaseThread().start()
 

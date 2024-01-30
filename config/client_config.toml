@@ -8,14 +8,14 @@
 
 
 
-camera_names = ['front', 'down']
-camera_ip_ports = [5000, 5001]
+camera_names = ['front', 'down', 'gimbal']
+camera_ip_ports = [5000, 5001, 5010]
 #camera_udp_decoder = 'h264'
 camera_udp_decoder = 'h265'
 camera_component = 11
 
-gimbal_names = ['gimbal']
-gimbal_ip_ports = [5010]
+#gimbal_names = ['gimbal']   # todo confusing , should be camera
+#gimbal_ip_ports = [5010]   # this is a camera
 gimbal_component = 12
 
 [mavlink]

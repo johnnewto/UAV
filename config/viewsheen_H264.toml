@@ -1,0 +1,68 @@
+cam_name = 'cam_vs0'
+[camera_info]
+vendor_name = "Viewsheen                   "
+model_name = "Viewsheen Camera                  "
+firmware_version = 1
+focal_length = 8.0
+sensor_size_h = 6.0
+sensor_size_v = 4.0
+resolution_h = 1920
+resolution_v = 1080
+lens_id = 0
+flags = 0
+cam_definition_version = 1
+cam_definition_uri = "http://example.com/camera_definition.xml"
+
+[camera_position]
+x = 0.0
+y = 0.0
+z = 0.0
+roll = 0.0
+pitch = 0.0
+yaw = 0.0
+
+[gstreamer_video_src]
+fps = 30   # Frames per second
+width = 800
+height = 600
+loglevel = 'DEBUG'   # todo add loglevel to all pipelines and to gst_utils
+
+viewsheenIP = '192.168.144.108:554'
+pipeline = [
+    'rtspsrc location="rtsp://admin:admin@{viewsheenIP}" latency=100',
+    'tee name=t',
+#
+#    "t.",
+#    'rtph265depay ! rtph265pay config-interval=1',
+#    'udpsink host=127.0.0.1 port=5010 sync=true',
+#    'queue', 'videoscale ', 'capsfilter caps=video/x-raw,format=RGB,width=400,height=300',
+#    'videoconvert ! autovideosink',
+
+#    "t.",
+#    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
+#
+#    "t.",
+#    'queue name=q1 leaky=2 ! intervideosink channel=channel_1  sync=false',
+
+    "t.",
+    'interpipesink name=cam_vs1 ',
+]
+
+
+
+# streaming pipelines
+
+[gstreamer_udpsink]
+host = '*camera_UDP_IP*'     # overwrite with server_config.toml
+port = '*cam_10_UDP_port*'    # overwrite with server_config.toml
+pipeline = [
+    'interpipesrc listen-to=cam_vs1  is-live=true  allow-renegotiation=true format=time',
+
+    'valve name=myvalve drop=False ',
+    'queue',
+    'rtph264depay',
+    'rtph264pay config-interval=1',
+    'udpsink host={host} port={port} sync=true',
+    ]
+
+

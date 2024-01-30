@@ -4,6 +4,7 @@ import platform
 import time
 from multiprocessing import Process
 from typing import Dict
+from datetime import datetime
 import cv2
 
 try:
@@ -105,6 +106,14 @@ def start_displays(config_dict, display_type: str = 'cv2',  # display type
                     if buffer[i]:
                         if count % 100 == 0:
                             print(f'buffer[{i}].data.shape = {buffer[i].data.shape}')
+                        # put in presentation time stamp
+                        secs = buffer[i].pts / 1000000000
+                        pts = datetime.fromtimestamp(secs)
+                        position = (10, 170)  # (x, y) coordinates
+                        # number = str(pts)
+                        _pts = pts.strftime('%M:%S.%f')
+                        # Use OpenCV to put the pts on the image
+                        cv2.putText(buffer[i].data, _pts, position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255), 2)
 
                         cv2.imshow(_names[i], buffer[i].data)
 

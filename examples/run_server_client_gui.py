@@ -1,6 +1,8 @@
 import asyncio
 import platform
 
+from gstreamer import GstContext
+
 from UAV.cameras.gst_cam import GSTCamera
 from UAV.logging import LogLevels
 from UAV.manager import Gui
@@ -33,7 +35,7 @@ async def main():
                 # add UAV cameras, This normally runs on drone
                 cam_0 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.DEBUG)
                 cam_1 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_1.toml"), loglevel=LogLevels.DEBUG)
-                cam_2 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / f"viewsheen.toml"), loglevel=LogLevels.INFO)
+                cam_2 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / f"viewsheen_H264.toml"), loglevel=LogLevels.INFO) # viewsheen camera
 
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=LogLevels.INFO))
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=LogLevels.INFO))
@@ -46,7 +48,7 @@ async def main():
                 gui = Gui(camera_client=gcs, gimbal_client=gimbal)
                 t1 = asyncio.create_task(gui.find_cameras())
                 t3 = asyncio.create_task(gui.run_gui())
-                t4 = asyncio.create_task(gui.gimbal_view())
+                t4 = asyncio.create_task(gui.gimbal_control())
 
                 try:
                     await asyncio.gather(t1, t3, t4)
@@ -65,6 +67,6 @@ if __name__ == '__main__':
     print(client_config_dict)
     if platform.processor() != 'aarch64':
         client_config_dict['camera_udp_decoder'] = 'h264'  # on pc override as h264
-    p = helpers.start_displays(client_config_dict, display_type='cv2')
+    p = helpers.start_displays(client_config_dict, display_type='cv2')  # Todo show how this starts multiple displays
     asyncio.run(main())
     p.terminate()

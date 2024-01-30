@@ -129,7 +129,7 @@ def add_camera(client, window, manager, comp, buttons=None):
         manager.register(b)
 
 
-def create_window(layout=None):
+def create_cam_window(layout=None):
     """ Create a base layout and window"""
     if layout is None:
         layout = [
@@ -275,13 +275,15 @@ class Gui:
             logging.warning("Gui pause is not callable")
 
         btn_manager = ButtonManager()
-        window = create_window([[sg.Button('Info'), sg.B('Auto'), sg.B('Reset'), sg.B('Pause'), sg.Button('Exit')]]).finalize()
-        window.bind('<Right>', '__GIMBAL_RIGHT__')
-        window.bind('<Left>', '__GIMBAL_LEFT__')
-        window.bind('<Up>', '__GIMBAL_UP__')
-        window.bind('<Down>', '__GIMBAL_DOWN__')
+        cam_window = create_cam_window([[sg.Button('Info'), sg.B('Auto'), sg.B('Reset'), sg.B('Pause'), sg.Button('Exit')]]).finalize()
+        cam_window.bind('<Right>', '__GIMBAL_RIGHT__')
+        cam_window.bind('<Left>', '__GIMBAL_LEFT__')
+        cam_window.bind('<Up>', '__GIMBAL_UP__')
+        cam_window.bind('<Down>', '__GIMBAL_DOWN__')
 
         btn_tasks = []
+
+        # cam_window event loop
         while True:
             try:
                 # check for new cameras, add to window
@@ -291,11 +293,11 @@ class Gui:
                            FButton(self.camera_client, comp, stream_task, 'Stream'),
                            FButton(self.camera_client, comp, record_task, 'Record')]
 
-                add_camera(self.camera_client, window, btn_manager, comp, buttons=buttons)
+                add_camera(self.camera_client, cam_window, btn_manager, comp, buttons=buttons)
             except asyncio.QueueEmpty:
                 pass
 
-            event, values = window.read(timeout=1)
+            event, values = cam_window.read(timeout=1)
             if event == '__TIMEOUT__':
                 await asyncio.sleep(0.01)
 
@@ -356,20 +358,13 @@ class Gui:
                 if task: btn_tasks.append(task)
                 # await task
                 print(f" {(event, values) = } {len(btn_tasks) = } ")
-        window.close()
-        print("run_gui exit")
 
-    async def gimbal_view(self, width=800, height=600):
+        cam_window.close()
+        print("cam_window run_gui exit")
+
+    async def gimbal_control(self, width=800, height=600):
         if self.gimbal_client is None:
             logging.error("Gui has no client")
-
-        GIMBAL_PIPELINE = gst_utils.to_gst_string([
-            # 'rtspsrc location=rtsp://admin:admin@192.168.144.108:554 latency=100 ! queue',
-            'udpsrc port=5010 ! application/x-rtp,encoding-name=H265',
-            'rtph265depay ! h265parse ! avdec_h265',
-            'decodebin ! videoconvert ! video/x-raw,format=(string)BGR ! videoconvert',
-            'appsink name=mysink emit-signals=true sync=false async=false max-buffers=2 drop=true',
-        ])
 
         (system, target) = await self.find_gimbal()
 
@@ -377,97 +372,147 @@ class Gui:
         time.sleep(0.1)
         gimbal.set_target(system, target)
 
-        cv2.namedWindow('Gimbal', cv2.WINDOW_GUI_NORMAL)
-        cv2.resizeWindow('Gimbal', width, height)
+
+        layout = [
+            [sg.RealtimeButton('<', key='-GIMBAL-LEFT-'),
+             sg.RealtimeButton('^', key='-GIMBAL-UP-'),
+             sg.RealtimeButton('>', key='-GIMBAL-RIGHT-'),
+             sg.RealtimeButton('v', key='-GIMBAL-DOWN-')
+             ],
+            [sg.B('Zoom In'), sg.B('Zoom Out'), sg.B('Zoom Stop')],
+            [sg.B('Zoom In x2'), sg.B('Zoom Out x2')]
+        ]
+        gimbal_view = sg.Window('Gimbal Control', layout)
+        gimbal_view.Finalize()
+        gimbal_view.bind('d', '-GIMBAL-RIGHT-')
+        gimbal_view.bind('a', '-GIMBAL-LEFT-')
+        gimbal_view.bind('s', '-GIMBAL-DOWN-')
+        gimbal_view.bind('w', '-GIMBAL-UP-')
 
         NAN = float("nan")
 
-        print('Initialising stream...')
-
-        gimbal_pipeline = GstVideoSource(GIMBAL_PIPELINE, leaky=True)
-        gimbal_pipeline.startup()
-
-        # while not self.exit_event.is_set():
-        #     buffer = pipeline.pop()
-        #     if buffer:
-        #         break
-        #     waited += 1
-        #     print('\r  Frame not available (x{})'.format(waited), end='')
-        #     cv2.waitKey(30)
-        #     await asyncio.sleep(0.01)
-        #
-        # print('\nSuccess!\nStarting streaming - press "q" to quit.')
-        # # ret, (width, height) = gst_utils.get_buffer_size_from_gst_caps(Gst.Caps)
-        count = 0
-        # gimbal_speed = 40
         while not self.exit_event.is_set():
-            buffer = gimbal_pipeline.pop(timeout=0.01)
-            count += 1
-            # print(f" {count = }")
-            await asyncio.sleep(0.001)
-            # continue
-
-            if buffer:
-                cv2.imshow('Gimbal', buffer.data)
-
-            k = cv2.waitKey(1)
-            if k == ord('q') or k == ord('Q') or k == 27:
+            event, values = gimbal_view.read(timeout=50)
+            # if event == '__TIMEOUT__':
+            #     await asyncio.sleep(0.01)
+            if event == '__TIMEOUT__':
+                await asyncio.sleep(0.01)
+            elif event == None or event == "Exit":
+                # for task in btn_tasks:
+                #     task.cancel()
+                self.exit_event.set()
                 break
-
-            if k == ord('d'):  # Right arrow key
+            elif event == '-GIMBAL-RIGHT-':  # Right arrow key
                 print("Right arrow key pressed")
                 await gimbal.set_attitude(NAN, NAN, 0.0, 0.2)
+                await asyncio.sleep(0.01)
                 # pan_tilt(gimbal_speed)
-                KeyReleaseThread().start()
+                # KeyReleaseThread().start()
 
-            if k == ord('a'):  # Left arrow key
+            elif event == '-GIMBAL-LEFT-':  # Left arrow key
                 print("Left arrow key pressed")
                 await gimbal.set_attitude(NAN, NAN, 0.0, -0.2)
-                KeyReleaseThread().start()
+                await asyncio.sleep(0.01)
+                # KeyReleaseThread().start()
 
-            if k == ord('w'):
+            elif event == '-GIMBAL-UP-':
                 print("Up arrow key pressed")
                 await gimbal.set_attitude(NAN, NAN, 0.2, 0.0)
-                KeyReleaseThread().start()
+                await asyncio.sleep(0.01)
+                # KeyReleaseThread().start()
 
-            if k == ord('s'):
+            elif event == '-GIMBAL-DOWN-':
                 print("Down arrow key pressed")
                 await gimbal.set_attitude(NAN, NAN, -0.2, 0.0)
-                KeyReleaseThread().start()
+                await asyncio.sleep(0.01)
+                # KeyReleaseThread().start()
 
-            if k == ord('1'):
-                print("Zoom in pressed")
+            elif event == 'Zoom In':
+                print("Zoom In pressed")
                 await gimbal.set_zoom(1)
 
-            if k == ord('2'):
-                print("Zoom out pressed")
+            elif event == 'Zoom Out':
+                print("Zoom Out pressed")
                 await gimbal.set_zoom(2)
 
-            if k == ord('3'):
-                print("Zoom stop pressed")
-                await gimbal.set_zoom(3)
+            elif event == '__TIMEOUT__':
+                await asyncio.sleep(0.01)
 
-            if k == ord('4'):
-                print("Zoom  = 1")
-                await gimbal.set_zoom(4)
-
-            if k == ord('5'):
-                print("Zoom x2 in")
-                await gimbal.set_zoom(5)
-
-            if k == ord('6'):
-                print("Zoom x2 out")
-                await gimbal.set_zoom(6)
-
-            if k == ord('c'):
-                print("Snapshot in pressed")
-                gimbal.start_capture()
+        ### ========================
+        # cv2.namedWindow('Gimbal Pan & Tilt', cv2.WINDOW_GUI_NORMAL)
+        # cv2.resizeWindow('Gimbal', width, height)
+        # NAN = float("nan")
+        #
+        # count = 0
+        # gimbal_speed = 40
+        # while not self.exit_event.is_set():
+        #     # buffer = gimbal_pipeline.pop(timeout=0.01)
+        #     buffer = None
+        #     count += 1
+        #     # print(f" {count = }")
+        #     await asyncio.sleep(0.001)
+        #     # continue
+        #
+        #     if buffer:
+        #         cv2.imshow('Gimbal', buffer.data)
+        #
+        #     k = cv2.waitKey(1)
+        #     if k == ord('q') or k == ord('Q') or k == 27:
+        #         break
+        #
+        #     if k == ord('d'):  # Right arrow key
+        #         print("Right arrow key pressed")
+        #         await gimbal.set_attitude(NAN, NAN, 0.0, 0.2)
+        #         # pan_tilt(gimbal_speed)
+        #         KeyReleaseThread().start()
+        #
+        #     if k == ord('a'):  # Left arrow key
+        #         print("Left arrow key pressed")
+        #         await gimbal.set_attitude(NAN, NAN, 0.0, -0.2)
+        #         KeyReleaseThread().start()
+        #
+        #     if k == ord('w'):
+        #         print("Up arrow key pressed")
+        #         await gimbal.set_attitude(NAN, NAN, 0.2, 0.0)
+        #         KeyReleaseThread().start()
+        #
+        #     if k == ord('s'):
+        #         print("Down arrow key pressed")
+        #         await gimbal.set_attitude(NAN, NAN, -0.2, 0.0)
+        #         KeyReleaseThread().start()
+        #
+        #     if k == ord('1'):
+        #         print("Zoom in pressed")
+        #         await gimbal.set_zoom(1)
+        #
+        #     if k == ord('2'):
+        #         print("Zoom out pressed")
+        #         await gimbal.set_zoom(2)
+        #
+        #     if k == ord('3'):
+        #         print("Zoom stop pressed")
+        #         await gimbal.set_zoom(3)
+        #
+        #     if k == ord('4'):
+        #         print("Zoom  = 1")
+        #         await gimbal.set_zoom(4)
+        #
+        #     if k == ord('5'):
+        #         print("Zoom x2 in")
+        #         await gimbal.set_zoom(5)
+        #
+        #     if k == ord('6'):
+        #         print("Zoom x2 out")
+        #         await gimbal.set_zoom(6)
+        #
+        #     if k == ord('c'):
+        #         print("Snapshot in pressed")
+        #         gimbal.start_capture()
 
         print("Gimbal View exit")
         # this cause errors perhaps because not running gst context
         #     gimbal_pipeline.pause()
         #     gimbal_pipeline.shutdown()
-
 
 if __name__ == '__main__':
 
@@ -476,7 +521,7 @@ if __name__ == '__main__':
 
     async def main():
         comp = 0
-        window = create_window()
+        window = create_cam_window()
         btn_tasks = []
         while True:
             event, values = window.read(timeout=100)

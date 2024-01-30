@@ -47,7 +47,7 @@ MAV_CMD_IMAGE_STOP_CAPTURE = 2001  # https://mavlink.io/en/messages/common.html#
 
 
 class GimbalServer(Component):
-    """Create a Viewsheen mavlink Camera Server Component for receiving commands from a gimbal on a companion computer or GCS"""
+    """Create a Viewsheen mavlink Camera Server Component for receiving/sending commands from/to a gimbal on a companion computer or GCS"""
 
     def __init__(self,
                  source_component: int = mavlink.MAV_COMP_ID_GIMBAL,  # used for component indication
@@ -58,7 +58,8 @@ class GimbalServer(Component):
 
         super().__init__(source_component=source_component, mav_type=mav_type, loglevel=loglevel)
 
-        self.wait_message_callback(self.on_message)
+        # self.wait_message_callback(self.on_message)
+        self.append_message_handler(self.on_server_message)
         self.gimbal: Gimbal = gimbal
 
     def on_mav_connection(self):
@@ -71,8 +72,10 @@ class GimbalServer(Component):
         self.gimbal.source_system = self.source_system
         self.gimbal.source_component = self.source_component
 
-    def on_message(self, msg):
-        """Callback for a command received from the gimbal"""
+
+
+    def on_server_message(self, msg):
+        """Callback for a command received from the gimbal client"""
         # https://mavlink.io/en/messages/common.html#GIMBAL_DEVICE_SET_ATTITUDE
         # print(f" {msg = }")
         # print(f" {msg.get_type() = }")
