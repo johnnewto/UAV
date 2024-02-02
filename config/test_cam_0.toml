@@ -81,3 +81,14 @@ pipeline = [
     ]
 
 
+[gstreamer_track_appsink]
+fps = 10   # Frames per second * 10
+
+pipeline = [
+    'interpipesrc listen-to={cam_name} is-live=false allow-renegotiation=true format=time',
+    'queue',
+    'videorate drop-only=true skip-to-first=true ! video/x-raw,framerate={fps}/10',
+    'videoconvert',
+    'capsfilter caps=video/x-raw,format=BGR ',
+    'appsink name={cam_name} emit-signals=true  sync=false ',
+    ]

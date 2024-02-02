@@ -1,5 +1,7 @@
 import asyncio
 import time
+import sys
+print (sys.path)
 
 import gstreamer.utils as gst_utils
 from gstreamer import GstPipeline, Gst, GstContext, GstPipes

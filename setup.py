@@ -39,6 +39,7 @@ setuptools.setup(
         'Natural Language :: ' + cfg['language'].title(),
     ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
     url = cfg['git_url'],
+    package_dir = {"": "src"}, # directory containing all the packages (e.g.  src/mypkg, src/mypkg/subpkg1, ...)
     packages = setuptools.find_packages(),
     include_package_data = True,
     install_requires = requirements,
