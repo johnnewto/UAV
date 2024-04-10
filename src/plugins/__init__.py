@@ -1,24 +1,42 @@
+"""
+This module provides a base class for creating plugins and a function for loading modules.
+
+Classes:
+- Base: Basic resource class
+
+Functions:
+- load_module: Load a module from the given path.
+"""
+
 import os
 import traceback
 from importlib import util
 
 
 class Base:
-    """Basic resource class. Concrete resources will inherit from this one
-    """
+    """Basic resource class. Inherit from this one."""
     plugins = []
     plugins_dict = {}
 
-    # For every class that inherits from the current,
-    # the class name will be added to plugins
     def __init_subclass__(cls, **kwargs):
+        """Add the subclass to the list of plugins and plugins_dict."""
         super().__init_subclass__(**kwargs)
         cls.plugins.append(cls)
         cls.plugins_dict[cls.__name__] = cls
 
 
-# Small utility to automatically load modules
 def load_module(path):
+    """Load a module from the given path.
+
+    Args:
+        path (str): The path to the module file.
+
+    Returns:
+        module: The loaded module.
+
+    Raises:
+        Exception: If an error occurs while loading the module.
+    """
     name = os.path.split(path)[-1]
     spec = util.spec_from_file_location(name, path)
     module = util.module_from_spec(spec)
