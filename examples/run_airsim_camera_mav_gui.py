@@ -16,6 +16,7 @@ con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
 # con1, con2 = "/dev/ttyACM0", "/dev/ttyACM2"
 async def main():
     with (MAVCom(con1, source_system=111, loglevel=20) as gcs_mavlink):  # ground control station mavlink
+
         with MAVCom(con2, source_system=222, loglevel=20) as drone_mavlink:  # drone mavlink
 
             # connect to the cameras manager

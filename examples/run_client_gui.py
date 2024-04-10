@@ -37,11 +37,11 @@ async def main(config_dict):
         gui = Gui(camera_client=cam, gimbal_client=gimbal)
         t1 = asyncio.create_task(gui.find_cameras())
         t3 = asyncio.create_task(gui.run_gui())
-        t4 = asyncio.create_task(gui.gimbal_view())
+        # t4 = asyncio.create_task(gui.gimbal_view())
 
         try:
 
-            await asyncio.gather(t1, t3, t4)
+            await asyncio.gather(t1, t3)
         except asyncio.CancelledError:
             print("CancelledError")
             pass

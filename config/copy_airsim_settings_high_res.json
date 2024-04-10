@@ -1,0 +1,78 @@
+{
+    "SettingsVersion": 1.2,
+    "SimMode": "Multirotor",
+    "ViewMode": "",
+    "ClockSpeed": 1,
+
+    "Vehicles": {
+        "Drone1": {
+            "VehicleType": "SimpleFlight",
+            "X": 0,
+            "Y": 0,
+            "Z": 0,
+            "Yaw": 0,
+            "Cameras": {
+                "center": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 800,
+                            "Height": 600
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": -0.4,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 0.0
+                },
+                "left": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 800,
+                            "Height": 600
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": -0.4,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": -90.0
+                },
+                "right": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 800,
+                            "Height": 600
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": -0.4,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 90.0
+                },
+                "down": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 800,
+                            "Height": 600
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.01,
+                    "Pitch": -90.0,
+                    "Roll": 0.0,
+                    "Yaw": 0.0
+                }
+            }
+        }
+    }
+}
