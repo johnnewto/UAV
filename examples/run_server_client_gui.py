@@ -10,7 +10,8 @@ from UAV.mavlink import CameraClient, CameraServer, MAVCom, mavlink, GimbalServe
 from UAV.mavlink.gimbal_client import GimbalClient
 from UAV.utils import helpers
 from UAV.utils.general import boot_time_str, toml_load, config_dir
-
+import  plugins
+from gstreamer import CallbackHandler
 
 # gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
 
@@ -20,6 +21,9 @@ async def main():
     # con1, con2 = "/dev/ttyACM0", "/dev/ttyACM2"
     # logger.disabled = True
     print(f"{boot_time_str =}")
+
+    plugins.Base.plugins_dict['BallTracker']().start()  # This is how you can start a plugin
+
 
     # with GstContext(loglevel=LogLevels.CRITICAL):  # GST main loop in thread
     if True:
@@ -36,6 +40,9 @@ async def main():
                 cam_0 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_0.toml"), loglevel=LogLevels.DEBUG)
                 cam_1 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / "test_cam_1.toml"), loglevel=LogLevels.DEBUG)
                 cam_2 = GSTCamera(server_config_dict, camera_dict=toml_load(config_dir() / f"viewsheen_H264.toml"), loglevel=LogLevels.INFO) # viewsheen camera
+
+                # this is an examle of how to set a plugin as a callback handler
+                cam_0.tracking_handler = CallbackHandler(callback=plugins.Base.plugins_dict['BallTracker']().on_buffer, id=0, name='cam_0')
 
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_0, loglevel=LogLevels.INFO))
                 UAV_server.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_1, loglevel=LogLevels.INFO))

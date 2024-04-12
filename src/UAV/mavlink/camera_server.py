@@ -60,13 +60,13 @@ def try_log(func):  # decorator
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
-            return True
+            return True   # return True to indicate that the message has been handled
         except Exception as err:
             try:
                 args[0].log.error(f"{err = }")   # args[0] is self for the class
             except:
                 logging.error(f"{err = }")
-            return False
+            return False  # return False to indicate that the message has not been handled
 
     return wrapper
 

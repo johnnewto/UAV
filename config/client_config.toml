@@ -22,9 +22,9 @@ gimbal_component = 12
 source_system = 111
 target_system = 222
 #connection = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
-connection = "/dev/ttyUSB0"  # holybro telemetry radio
+#connection = "/dev/ttyUSB0"  # holybro telemetry radio
 
-#connection = "udpin:localhost:14445"
+connection = "udpin:localhost:14445"
 # connection = "/dev/ttyACM0" "/dev/ttyUSB1"
 # connection, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
 # connection = "udpout:192.168.122.84:14445"

@@ -797,7 +797,7 @@ class GSTCamera(CV2Camera):
         0	CAMERA_MODE_IMAGE
         1	CAMERA_MODE_VIDEO
         2	CAMERA_MODE_IMAGE_SURVEY
-        3   Tracking
+        3   Tracking    (new Tracking mode)
         https://mavlink.io/en/messages/common.html#CAMERA_MODE
         """
         self.camera_mode = param
@@ -811,6 +811,8 @@ class GSTCamera(CV2Camera):
                 self._gst_track.shutdown()
             except Exception as e:
                 self.log.error(e)
+                raise Exception(f"Error in {self._gst_track.pipeline.get_name()}")
+                # return False   # return False to indicate that the message has not been handled
 
 
 
@@ -818,7 +820,15 @@ class GSTCamera(CV2Camera):
         """Start image tracking."""
 
         # self.max_count = count
-        _dict = self.camera_dict['gstreamer_track_appsink']
+        try:
+            _dict = self.camera_dict['gstreamer_track_appsink']
+        except KeyError as e:
+            self.log.error(f"camera_dict['gstreamer_track_appsink'] KeyError: {e}")
+            self.log.warning(f"Check that you have a 'gstreamer_track_appsink' in the camera_dict")
+            self.log.warning(f"{self.camera_dict = }")
+            raise KeyError
+            # return False
+
         _dict['cam_name'] = self.cam_name
         pipeline = gst_utils.format_pipeline(**_dict)
         self._gst_track = GstVideoSource(pipeline, callback_handler=self.tracking_handler, loglevel=self._loglevel).startup()

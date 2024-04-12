@@ -54,6 +54,8 @@ class BallTracker(plugins.Base):
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         image_copy = img.copy()
         final_image = cv2.drawContours(image_copy, contours, contourIdx=-1, color=(0, 255, 0), thickness=2)
+        # cv2.imshow('Ball Tracker', final_image)  # this will prob cause problems with the GTK thread
+        # cv2.waitKey(1)
 
         message = f'Ball {self.count = } {rects}'
 
