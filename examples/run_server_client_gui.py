@@ -1,3 +1,6 @@
+
+""" This is an example of how to run a server and client with a GUI"""
+
 import asyncio
 import platform
 
@@ -14,6 +17,7 @@ import  plugins
 from gstreamer import CallbackHandler
 
 # gst_utils.set_gst_debug_level(Gst.DebugLevel.FIXME)
+
 
 async def main():
     con1, con2 = "udpin:localhost:14445", "udpout:localhost:14445"
