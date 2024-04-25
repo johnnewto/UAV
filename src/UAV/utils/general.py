@@ -16,18 +16,14 @@ import toml
 
 
 def find_root_dir():
+    """Find the root directory of the project."""
     import subprocess
     # Run a Git command to get the root directory
     project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
     return project_dir
 
-# def config_dir():
-#     import subprocess
-#     # Run a Git command to get the root directory
-#     project_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode().strip()
-#     return Path(project_dir) / 'config'
-
 def config_dir(target_dir_name='config'):
+    """ Find the target directory in the parent directories."""
     current_dir = Path(__file__).parent
     while True:
         # Check if the target directory exists in the current directory
@@ -52,6 +48,7 @@ def get_platform():
     return 'jetson' if platform.processor() == 'aarch64' else 'test'
 
 def get_linenumber():
+    """Return the filename and line number of the caller."""
     cf = currentframe()
     filename = Path(getframeinfo(cf).filename).name
     return f"{filename}:{cf.f_back.f_lineno}"

@@ -1,9 +1,7 @@
 __all__ = ['start_displays']
 
-import platform
 import time
 from multiprocessing import Process
-from typing import Dict
 from datetime import datetime
 import cv2
 
@@ -113,9 +111,10 @@ def start_displays(config_dict, display_type: str = 'cv2',  # display type
                         # number = str(pts)
                         _pts = pts.strftime('%M:%S.%f')
                         # Use OpenCV to put the pts on the image
-                        cv2.putText(buffer[i].data, _pts, position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255), 2)
+                        im = buffer[i].data.copy()  # recent cv2 needs this to be a copy if you want to draw on it
+                        cv2.putText(im, _pts, position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255), 2)
 
-                        cv2.imshow(_names[i], buffer[i].data)
+                        cv2.imshow(_names[i],im)
 
                 cv2.waitKey(10)
                 if not any(buffer):

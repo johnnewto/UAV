@@ -10,8 +10,8 @@
 
 camera_names = ['front', 'down', 'gimbal']
 camera_ip_ports = [5000, 5001, 5010]
-#camera_udp_decoder = 'h264'
-camera_udp_decoder = 'h265'
+camera_udp_decoder = 'h264'
+# camera_udp_decoder = 'h265'
 camera_component = 11
 
 #gimbal_names = ['gimbal']   # todo confusing , should be camera
