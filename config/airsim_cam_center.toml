@@ -22,7 +22,6 @@ pitch = 0.0
 yaw = 0.0
 
 [gstreamer_video_src]
-name = 'cam_front'
 fps = 10   # Frames per second
 width = 1600
 height = 1200
@@ -43,8 +42,8 @@ pipeline = [
     "t.",
     'queue leaky=2 ! intervideosink channel=channel_1 sync=false', # connect to jpgfile pipeline
 
-    "t.",
-    ' queue ! interpipesink name={name}  ',
+    "t. ! queue",
+    'interpipesink name={cam_name}  ',
 
     ]
 
@@ -68,7 +67,6 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_udpsink]
-name = 'cam_front'
 fps = 10   # Frames per second
 
 width = 1600
@@ -78,8 +76,7 @@ bitrate = 2000
 port = 5000
 
 pipeline = [
-    'interpipesrc listen-to={name} is-live=true allow-renegotiation=true format=time',
-    'valve name=myvalve drop=False ',
+    'interpipesrc listen-to={cam_name} is-live=true allow-renegotiation=true format=time',
     'queue',
 #    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
     'videoconvert',
@@ -88,16 +85,16 @@ pipeline = [
     'rtph264pay ! udpsink host=127.0.0.1 port={port} sync=true',
     ]
 
-[gstreamer_raw_udpsink]
-name = 'cam_front'
-fps = 10   # Frames per second
-width = 1920
-height = 1080
-port = 5000
-pipeline = [
-    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
-    'queue',
-    'videoconvert ! videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
-    'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
+# [gstreamer_raw_udpsink]
+# name = 'cam_front'
+# fps = 10   # Frames per second
+# width = 1920
+# height = 1080
+# port = 5000
+# pipeline = [
+#     'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
+#     'queue',
+#     'videoconvert ! videoscale ! video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
+#     'rtpvrawpay ! udpsink host=127.0.0.1 port={port}',
 
-    ]
+#     ]

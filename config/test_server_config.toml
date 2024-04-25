@@ -11,7 +11,7 @@ image_save_path = '/media/{user}/jpgs'   # usb drive with volume label 'jpgs'
 
 [mavlink]
 source_system = 222
-connection = "udpout:localhost:14445"
+connection = "udpout:192.168.1.79:14445"
 #connection = "/dev/ttyUSB1"   # sometimes this changes !!!!
 
 

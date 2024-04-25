@@ -28,14 +28,14 @@ async def main():
             cam_front = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_center.toml"))
             cam_left = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_left.toml"))
             cam_right = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_right.toml"))
-            cam_down = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_down.toml"))
+            # cam_down = AirsimCamera(server_config_dict, camera_dict=toml_load(config_dir() / "airsim_cam_down.toml"))
             gim_1 = AirsimGimbal(camera_name='center', loglevel=10)
 
             # connect cameras to mavlink
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA, camera=cam_left))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA2, camera=cam_front))
             drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA3, camera=cam_right))
-            drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA4, camera=cam_down))
+            # drone_mavlink.add_component(CameraServer(mav_type=mavlink.MAV_TYPE_CAMERA, source_component=mavlink.MAV_COMP_ID_CAMERA4, camera=cam_down))
             drone_mavlink.add_component(GimbalServer(mav_type=mavlink.MAV_TYPE_GIMBAL, source_component=mavlink.MAV_COMP_ID_GIMBAL, gimbal=gim_1, loglevel=20))
 
             # # wait for heartbeat signal from the drone

@@ -55,8 +55,6 @@ port = '*cam_0_UDP_port*'    # overwrite with server_config.toml
 pipeline = [
 
     'interpipesrc listen-to={cam_name} is-live=true allow-renegotiation=true format=time',
-#    'queue max-size-buffers=1 leaky=downstream',
-    'valve name=myvalve drop=False ',
     'queue',
     'videorate drop-only=true skip-to-first=true ! video/x-raw,framerate={fps}/1',
     'videoconvert',

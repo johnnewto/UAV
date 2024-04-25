@@ -22,7 +22,6 @@ pitch = 0.0
 yaw = 0.0
 
 [gstreamer_video_src]
-name = 'cam_down'
 fps = 10   # Frames per second
 width = 1600
 height = 1200
@@ -44,7 +43,7 @@ pipeline = [
     'queue leaky=2 ! intervideosink channel=channel_1 sync=false', # connect to jpgfile pipeline
 
     "t.",
-    'interpipesink name={name}  ',
+    'interpipesink name={cam_name}  ',
 
     ]
 
@@ -68,15 +67,14 @@ pipeline = [
 # streaming pipelines
 
 [gstreamer_udpsink]
-name = 'cam_down'
+
 fps = 10   # Frames per second
 width = 1600
 height = 1200
 bitrate = 2000
 port = 5003
 pipeline = [
-    'interpipesrc listen-to={name}  is-live=true allow-renegotiation=true format=time',
-    'valve name=myvalve drop=False ',
+    'interpipesrc listen-to={cam_name}  is-live=true allow-renegotiation=true format=time',
     'queue',
 #    'capsfilter caps=video/x-raw,width={width},height={height},framerate={fps}/1',
     'videoconvert',

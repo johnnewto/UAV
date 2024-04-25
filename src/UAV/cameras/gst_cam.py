@@ -559,7 +559,7 @@ class GSTCamera(CV2Camera):
 
         if self.pipeline is None:
             _dict = self.camera_dict['gstreamer_video_src']
-            _dict['cam_name'] = self.cam_name
+            _dict['cam_name'] = self.cam_name  # propagate cam_name into _dict
             # width, height, fps, loglevel = _dict['width'], _dict['height'], _dict['fps'], _dict['loglevel']
             pipeline = gst_utils.format_pipeline(**_dict)
 
@@ -754,17 +754,31 @@ class GSTCamera(CV2Camera):
         self.video_stop_streaming()
 
     def video_start_streaming(self, streamId=0):  # Stream ID (0 for all streams
-        """Start video streaming. Creates a GStreamer pipeline for streaming video, if it does not exist otherwise resumes it."""
+        """ Start video streaming by setting interpipesrc listen to 'cam_nam'.
+        This requires a corresponding interpipesrc with name = 'cam_nam' in the pipeline."""
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_STREAMING
-        self._pipeline_stream_video.set_valve_state("myvalve", False)
-        # self._pipeline_stream_udp.play()
+    
+        try:
+            pipesrc = gst_utils.find_element(self._pipeline_stream_video.pipeline, "interpipesrc")
+            pipesrc.set_property("listen-to", self.cam_name)
+        except AttributeError:
+            self.log.error(f'interpipesrc not found in pipeline "{self._pipeline_stream_video.pipeline.get_name()}"')
+            return
+   
         self.log.info(f'Video streaming "{self._pipeline_stream_video.pipeline.get_name()}" resumed on port {self._stream_dict["port"]}')
 
     def video_stop_streaming(self):  # Stream ID (0 for all streams
-        """Stop video streaming by pause on gstreamer valve element."""
+        """Stop video streaming by setting interpipe listen to '' """
         # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_STREAMING
-        self._pipeline_stream_video.set_valve_state("myvalve", True)
-        # self._pipeline_stream_udp.pause()
+
+        try:
+            pipesrc = gst_utils.find_element(self._pipeline_stream_video.pipeline, "interpipesrc")
+            pipesrc.set_property("listen-to", "")
+        except AttributeError:
+            self.log.error(f'interpipesrc not found in pipeline "{self._pipeline_stream_video.pipeline.get_name()}"')
+            gst_utils.print_elements(self._pipeline_stream_video.pipeline)
+            return
+        
         self.log.info(f'Video streaming "{self._pipeline_stream_video.pipeline.get_name()}" stopped (paused) on port {self._stream_dict["port"]}')
 
     def video_start_capture(self, stream_id,  # Stream ID (0 for all streams)

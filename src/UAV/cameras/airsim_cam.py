@@ -88,6 +88,7 @@ class AirsimCamera(GSTCamera):
             return self
 
         _dict = self.camera_dict['gstreamer_video_src']
+        _dict['cam_name'] = self.cam_name  # propagate cam_name into _dict
         self.width, self.height, self.fps = _dict['width'], _dict['height'], _dict['fps']
         pipeline = gst_utils.format_pipeline(**_dict)
         self.pipeline = GstVideoSink(pipeline, width=self.width, height=self.height, fps=self.fps, loglevel=self._loglevel)
