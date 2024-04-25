@@ -1,0 +1,25 @@
+[
+  {
+    "listing": "/api/index.html",
+    "items": [
+      "/api/airsim.client.html",
+      "/api/airsim.commands.html",
+      "/api/camera.gst_cam.html",
+      "/api/gstreamer_python_doc.html",
+      "/api/template.html",
+      "/api/mavlink.camera.html",
+      "/api/mavlink.viewsheen_gimbal.html",
+      "/api/params.html",
+      "/api/utils.display.html",
+      "/api/utils.general.html"
+    ]
+  },
+  {
+    "listing": "/tutorials/index.html",
+    "items": [
+      "/tutorials/airsim_walkthrough.html",
+      "/tutorials/mav_camera_walkthrough.html",
+      "/tutorials/template.html"
+    ]
+  }
+]

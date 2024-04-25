@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.553">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Mavlink Camera Component for sending commands to a camera on a companion computer or GCS">
+
+<title>UAV - Mavlink Camera</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../favicon.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+<meta property="og:title" content="UAV - Mavlink Camera">
+<meta property="og:description" content="Mavlink Camera Component for sending commands to a camera on a companion computer or GCS">
+<meta property="og:site_name" content="UAV">
+<meta name="twitter:title" content="UAV - Mavlink Camera">
+<meta name="twitter:description" content="Mavlink Camera Component for sending commands to a camera on a companion computer or GCS">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">UAV</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="../getting_started.html" aria-current="page"> 
+<span class="menu-text">Get Started</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../tutorials/mav_camera_walkthrough.html"> 
+<span class="menu-text">Tutorial</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/johnnewto/UAV/issues"><i class="bi bi-bug" role="img">
+</i> 
+ <span class="dropdown-text">Report an Issue</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://forums.maui63.ai/"><i class="bi bi-chat-right-text" role="img">
+</i> 
+ <span class="dropdown-text">Maui63 Forum</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../getting_started.html#faq"><i class="bi bi-question-circle" role="img">
+</i> 
+ <span class="dropdown-text">FAQ</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/johnnewto/UAV"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/maui63"> <i class="bi bi-twitter" role="img" aria-label="Maui63.ai Twitter">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../api/index.html">API</a></li><li class="breadcrumb-item"><a href="../api/mavlink.camera.html">Mavlink Camera</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../getting_started.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Getting Started</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../tutorials/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tutorials</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tutorials/airsim_walkthrough.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Airsim Walkthrough</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tutorials/mav_camera_walkthrough.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mavlink Camera Walkthrough</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tutorials/template.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">template01</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../api/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">API</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/params.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Parameters</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils.display.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utils.Display</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils.general.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utils.General</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/gstreamer_python_doc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Gstreamer Python Documentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/airsim.client.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Airsim.Client</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/airsim.commands.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Airsim.Commands</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/mavlink.camera.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Mavlink Camera</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/mavlink.viewsheen_gimbal.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mavlink ViewSheen Gimbal Component</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/camera.gst_cam.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Camera Fake</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/template.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Gstreamer raw transmit</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <span class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Contributing</span></span>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#implementation-of-these-commands" id="toc-implementation-of-these-commands" class="nav-link active" data-scroll-target="#implementation-of-these-commands">Implementation of these commands:</a></li>
+  <li><a href="#camera-server" id="toc-camera-server" class="nav-link" data-scroll-target="#camera-server">Camera Server</a></li>
+  <li><a href="#cameraserver" id="toc-cameraserver" class="nav-link" data-scroll-target="#cameraserver">CameraServer</a></li>
+  <li><a href="#camera-client" id="toc-camera-client" class="nav-link" data-scroll-target="#camera-client">Camera Client</a></li>
+  <li><a href="#cameraclient" id="toc-cameraclient" class="nav-link" data-scroll-target="#cameraclient">CameraClient</a>
+  <ul>
+  <li><a href="#example-cameraclient" id="toc-example-cameraclient" class="nav-link" data-scroll-target="#example-cameraclient">Example: CameraClient</a></li>
+  </ul></li>
+  <li><a href="#example-test-locally-using-udp-ports" id="toc-example-test-locally-using-udp-ports" class="nav-link" data-scroll-target="#example-test-locally-using-udp-ports">Example: Test locally using UDP ports</a>
+  <ul>
+  <li><a href="#starting-a-client-and-server" id="toc-starting-a-client-and-server" class="nav-link" data-scroll-target="#starting-a-client-and-server">Starting a client and server</a></li>
+  <li><a href="#test-with-serial-ports" id="toc-test-with-serial-ports" class="nav-link" data-scroll-target="#test-with-serial-ports">Test with Serial ports</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/johnnewto/UAV/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../api/index.html">API</a></li><li class="breadcrumb-item"><a href="../api/mavlink.camera.html">Mavlink Camera</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Mavlink Camera</h1>
+</div>
+
+<div>
+  <div class="description">
+    Mavlink Camera Component for sending commands to a camera on a companion computer or GCS
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div id="cell-3" class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.cameras.gst_cam <span class="im">import</span> GSTCamera</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.logging <span class="im">import</span> LogLevels</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.manager <span class="im">import</span> Gui</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.mavlink <span class="im">import</span> CameraClient, CameraServer, MAVCom, mavlink, GimbalServerViewsheen</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.mavlink.camera_client <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.mavlink.camera_server <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.utils.display <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fastcore.test <span class="im">import</span> <span class="op">*</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Btn_State.RUNNING = 1</code></pre>
+</div>
+</div>
+<section id="implementation-of-these-commands" class="level3">
+<h3 class="anchored" data-anchor-id="implementation-of-these-commands">Implementation of these commands:</h3>
+<blockquote class="blockquote">
+<p><a href="https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS">MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS = 527</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION">MAV_CMD_REQUEST_CAMERA_INFORMATION = 523</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS">MAV_CMD_REQUEST_CAMERA_SETTINGS = 524</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION">MAV_CMD_REQUEST_STORAGE_INFORMATION = 525</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_STORAGE_FORMAT">MAV_CMD_STORAGE_FORMAT = 526</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM">MAV_CMD_SET_CAMERA_ZOOM = 531</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_FOCUS">MAV_CMD_SET_CAMERA_FOCUS = 532</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE">MAV_CMD_IMAGE_START_CAPTURE = 2000</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE">MAV_CMD_IMAGE_STOP_CAPTURE = 2001</a></p>
+<p><a href="https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_VIDEO_STREAM_INFORMATION">MAV_CMD_REQUEST_VIDEO_STREAM_INFORMATION = 2504</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_VIDEO_STREAM_STATUS">MAV_CMD_REQUEST_VIDEO_STREAM_STATUS = 2505</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE">MAV_CMD_VIDEO_START_CAPTURE = 2500</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE">MAV_CMD_VIDEO_STOP_CAPTURE = 2501</a> <a href="https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE">MAV_CMD_SET_CAMERA_MODE = 530</a></p>
+<p><strong>Note</strong> The simulated camera is implemented in PX4 <a href="https://github.com/PX4/PX4-SITL_gazebo-classic/blob/main/src/gazebo_camera_manager_plugin.cpp">gazebo_camera_manager_plugin.cpp</a>.</p>
+</blockquote>
+<div id="cell-5" class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># from pymavlink.dialects.v20 import ardupilotmega as mav</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># from pymavlink.dialects.v20.ardupilotmega import MAVLink</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>NAN <span class="op">=</span> <span class="bu">float</span>(<span class="st">"nan"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS = 527 # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_REQUEST_CAMERA_INFORMATION = 521 # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_INFORMATION</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_REQUEST_CAMERA_SETTINGS = 522 # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_CAMERA_SETTINGS</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_REQUEST_STORAGE_INFORMATION = 525 # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_STORAGE_INFORMATION</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_STORAGE_FORMAT = 526 # https://mavlink.io/en/messages/common.html#MAV_CMD_STORAGE_FORMAT</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_SET_CAMERA_ZOOM = 531 # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_ZOOM</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_SET_CAMERA_FOCUS = 532 # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_FOCUS</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_IMAGE_START_CAPTURE = 2000  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_START_CAPTURE</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_IMAGE_STOP_CAPTURE = 2001  # https://mavlink.io/en/messages/common.html#MAV_CMD_IMAGE_STOP_CAPTURE</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_REQUEST_VIDEO_STREAM_INFORMATION = 2504 # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_VIDEO_STREAM_INFORMATION</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_REQUEST_VIDEO_STREAM_STATUS = 2505 # https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_VIDEO_STREAM_STATUS</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_VIDEO_START_CAPTURE = 2500 # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_START_CAPTURE</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_VIDEO_STOP_CAPTURE = 2501 # https://mavlink.io/en/messages/common.html#MAV_CMD_VIDEO_STOP_CAPTURE</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">MAV_CMD_SET_CAMERA_MODE = 530 # https://mavlink.io/en/messages/common.html#MAV_CMD_SET_CAMERA_MODE</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>CAMERA_INFORMATION <span class="op">=</span> mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION <span class="co"># https://mavlink.io/en/messages/common.html#CAMERA_INFORMATION</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>CAMERA_SETTINGS <span class="op">=</span> mavlink.MAVLINK_MSG_ID_CAMERA_SETTINGS <span class="co"># https://mavlink.io/en/messages/common.html#CAMERA_SETTINGS</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>STORAGE_INFORMATION <span class="op">=</span> mavlink.MAVLINK_MSG_ID_STORAGE_INFORMATION <span class="co"># https://mavlink.io/en/messages/common.html#STORAGE_INFORMATION</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>CAMERA_CAPTURE_STATUS <span class="op">=</span> mavlink.MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS <span class="co"># https://mavlink.io/en/messages/common.html#CAMERA_CAPTURE_STATUS</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>CAMERA_IMAGE_CAPTURED <span class="op">=</span> mavlink.MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED <span class="co"># https://mavlink.io/en/messages/common.html#CAMERA_IMAGE_CAPTURED</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="camera-server" class="level3">
+<h3 class="anchored" data-anchor-id="camera-server">Camera Server</h3>
+<blockquote class="blockquote">
+<p>The server is on the companion computer and is used to receive commands from the camera on the ground station PC.</p>
+</blockquote>
+<hr>
+</section>
+<section id="cameraserver" class="level3">
+<h3 class="anchored" data-anchor-id="cameraserver">CameraServer</h3>
+<blockquote class="blockquote">
+<pre><code> CameraServer (source_component=100, mav_type=30, camera=None,
+               loglevel:UAV.logging.LogLevels|int=20)</code></pre>
+</blockquote>
+<p>Create a mavlink Camera server Component, cameras argument will normally be a gstreamer pipeline</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>source_component</td>
+<td>int</td>
+<td>100</td>
+<td>used for component indication</td>
+</tr>
+<tr class="even">
+<td>mav_type</td>
+<td>int</td>
+<td>30</td>
+<td>used for heartbeat MAV_TYPE indication</td>
+</tr>
+<tr class="odd">
+<td>camera</td>
+<td>NoneType</td>
+<td>None</td>
+<td>cameras (or FakeCamera for testing)</td>
+</tr>
+<tr class="even">
+<td>loglevel</td>
+<td>LogLevels | int</td>
+<td>20</td>
+<td>logging level</td>
+</tr>
+</tbody>
+</table>
+<div id="cell-8" class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run a server that can receive commands from a client</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.logging <span class="im">import</span> LogLevels</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># start a mavlink server that can receive commands from a client</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> MAVCom(<span class="st">"udpout:localhost:14445"</span>, source_system<span class="op">=</span><span class="dv">222</span>, loglevel<span class="op">=</span>LogLevels.DEBUG) <span class="im">as</span> UAV_server:</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add the camera server components to the server</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    UAV_server.add_component(CameraServer(mav_type<span class="op">=</span>mavlink.MAV_TYPE_CAMERA, source_component<span class="op">=</span>mavlink.MAV_COMP_ID_CAMERA, camera<span class="op">=</span><span class="va">None</span>))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    UAV_server.add_component(CameraServer(mavlink.MAV_COMP_ID_CAMERA2))</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    UAV_server.add_component(CameraServer(mavlink.MAV_COMP_ID_CAMERA3))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    time.sleep(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>INFO |28.955| mavcom.MAVCom   | mavcom.py :386 | Thread-6 ( | MainProces | MAVLink Mav2: True, source_system: 222
+WARNI|28.957| mavcom.CameraSe | camera_ser:114 | MainThread | MainProces | Component has no cameras object
+INFO |28.957| mavcom.CameraSe | basecompon:123 | MainThread | MainProces | Component Started self.source_component = 100, self.mav_type = 30, self.source_system = 222
+WARNI|28.958| mavcom.CameraSe | camera_ser:114 | MainThread | MainProces | Component has no cameras object
+INFO |28.958| mavcom.CameraSe | basecompon:123 | MainThread | MainProces | Component Started self.source_component = 101, self.mav_type = 30, self.source_system = 222
+WARNI|28.959| mavcom.CameraSe | camera_ser:114 | MainThread | MainProces | Component has no cameras object
+INFO |28.959| mavcom.CameraSe | basecompon:123 | MainThread | MainProces | Component Started self.source_component = 102, self.mav_type = 30, self.source_system = 222
+INFO |30.959| mavcom.CameraSe | basecompon:417 | MainThread | MainProces | CameraServer closed (not waiting for _t_heartbeat daemon thread)
+INFO |30.960| mavcom.CameraSe | basecompon:417 | MainThread | MainProces | CameraServer closed (not waiting for _t_heartbeat daemon thread)
+INFO |30.960| mavcom.CameraSe | basecompon:417 | MainThread | MainProces | CameraServer closed (not waiting for _t_heartbeat daemon thread)
+INFO |30.960| mavcom.MAVCom   | mavcom.py :442 | MainThread | MainProces | MAVCom  closed</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>UAV                             
+UAV                             
+UAV                             </code></pre>
+</div>
+</div>
+<div id="cell-9" class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>CameraServer().list_commands()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Supported Commands: https://mavlink.io/en/messages/common.html#mav_commands
+ Cmd = MAV_CMD_REQUEST_MESSAGE: 512 
+ Cmd = MAV_CMD_STORAGE_FORMAT: 526 
+ Cmd = MAV_CMD_SET_CAMERA_ZOOM: 531 
+ Cmd = MAV_CMD_IMAGE_START_CAPTURE: 2000 
+ Cmd = MAV_CMD_IMAGE_STOP_CAPTURE: 2001 
+ Cmd = MAV_CMD_VIDEO_START_CAPTURE: 2500 
+ Cmd = MAV_CMD_VIDEO_STOP_CAPTURE: 2501 
+ Cmd = MAV_CMD_SET_CAMERA_MODE: 530 
+ Cmd = MAV_CMD_VIDEO_START_STREAMING: 2502 
+ Cmd = MAV_CMD_VIDEO_STOP_STREAMING: 2503 
+Supported Message Requests:  https://mavlink.io/en/messages/common.html#messages
+
+MAVLINK_MSG_ID_CAMERA_INFORMATION:  259
+MAVLINK_MSG_ID_CAMERA_SETTINGS:  260
+MAVLINK_MSG_ID_STORAGE_INFORMATION:  261
+MAVLINK_MSG_ID_CAMERA_CAPTURE_STATUS:  262
+MAVLINK_MSG_ID_CAMERA_IMAGE_CAPTURED:  263
+MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION:  269
+MAVLINK_MSG_ID_VIDEO_STREAM_STATUS:  270</code></pre>
+</div>
+</div>
+</section>
+<section id="camera-client" class="level3">
+<h3 class="anchored" data-anchor-id="camera-client">Camera Client</h3>
+<blockquote class="blockquote">
+<p>The client is on the ground station PC and is used to send commands to the camera on the companion computer.</p>
+</blockquote>
+<hr>
+</section>
+<section id="cameraclient" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient">CameraClient</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient (source_component:int, mav_type:int,
+               loglevel:UAV.logging.LogLevels|int=20)</code></pre>
+</blockquote>
+<p>Create a client component to send commands to a companion computer or GCS that will control a cameras via a CameraServer instance</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>source_component</td>
+<td>int</td>
+<td></td>
+<td>used for component indication</td>
+</tr>
+<tr class="even">
+<td>mav_type</td>
+<td>int</td>
+<td></td>
+<td>used for heartbeat MAV_TYPE indication</td>
+</tr>
+<tr class="odd">
+<td>loglevel</td>
+<td>LogLevels | int</td>
+<td>20</td>
+<td>logging level</td>
+</tr>
+</tbody>
+</table>
+<section id="example-cameraclient" class="level4">
+<h4 class="anchored">Example: CameraClient</h4>
+<div id="cell-13" class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run a client that can send commands to a server</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> MAVCom(<span class="st">"udpin:localhost:14445"</span>, source_system<span class="op">=</span><span class="dv">111</span>, loglevel<span class="op">=</span>LogLevels.CRITICAL) <span class="im">as</span> client: </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add the camera client component to the client</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    gcs:CameraClient <span class="op">=</span> client.add_component( CameraClient(mav_type<span class="op">=</span>mavlink.MAV_TYPE_GCS, source_component<span class="op">=</span><span class="dv">11</span>, loglevel<span class="op">=</span>LogLevels.DEBUG) )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>DEBUG|31.104| mavcom.CameraCl | basecompon:119 | MainThread | MainProces | set_mav_connection CameraClient general.py:119 self.mav_com = &lt;MAVCom&gt;
+DEBUG|31.104| mavcom.CameraCl | basecompon:165 | Thread-16  | MainProces | Starting heartbeat type: 6 to all Systems and Components
+DEBUG|31.105| mavcom.CameraCl | basecompon:127 | MainThread | MainProces | Called from Component.start_mav_connection(), override to add startup behaviour
+DEBUG|31.105| mavcom.CameraCl | basecompon:168 | Thread-16  | MainProces | Sent heartbeat 6 self.source_system = 111 self.source_component = 11
+INFO |31.105| mavcom.CameraCl | basecompon:123 | MainThread | MainProces | Component Started self.source_component = 11, self.mav_type = 6, self.source_system = 111
+INFO |32.105| mavcom.CameraCl | basecompon:417 | MainThread | MainProces | CameraClient closed (not waiting for _t_heartbeat daemon thread)
+DEBUG|32.107| mavcom.CameraCl | basecompon:168 | Thread-16  | MainProces | Sent heartbeat 6 self.source_system = 111 self.source_component = 11</code></pre>
+</div>
+</div>
+<div id="cell-14" class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>doc_class(CameraClient)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<hr>
+<section id="basecomponent.append_message_handler" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.append_message_handler">BaseComponent.append_message_handler</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.append_message_handler (callback:Callable)</code></pre>
+</blockquote>
+<p>append the callback function for when a command is received.</p>
+<hr>
+</section>
+<section id="basecomponent.close" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.close">BaseComponent.close</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.close ()</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="basecomponent.count_message" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.count_message">BaseComponent.count_message</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.count_message (msg)</code></pre>
+</blockquote>
+<p>Count a message by adding it to the message_cnts dictionary. indexed by system and message type</p>
+<hr>
+</section>
+<section id="cameraclient.image_start_capture" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.image_start_capture">CameraClient.image_start_capture</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.image_start_capture (target_system=None,
+                                   target_component=None, interval=0,
+                                   count=1)</code></pre>
+</blockquote>
+<p>Start image capture sequence.</p>
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>target_system</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>target_component</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>interval</td>
+<td>int</td>
+<td>0</td>
+<td>Image capture interval</td>
+</tr>
+<tr class="even">
+<td>count</td>
+<td>int</td>
+<td>1</td>
+<td>Number of images to capture (0 for unlimited)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="cameraclient.image_stop_capture" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.image_stop_capture">CameraClient.image_stop_capture</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.image_stop_capture (target_system=None,
+                                  target_component=None)</code></pre>
+</blockquote>
+<p>Stop image capture sequence</p>
+<hr>
+</section>
+<section id="component.message_callback_cond" class="level3">
+<h3 class="anchored" data-anchor-id="component.message_callback_cond">Component.message_callback_cond</h3>
+<blockquote class="blockquote">
+<pre><code> Component.message_callback_cond (msg_id, target_system, target_component,
+                                  timeout=1)</code></pre>
+</blockquote>
+<p>Register a callback for a message received from a component server Returns the message</p>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="component.on_mav_connection" class="level3">
+<h3 class="anchored" data-anchor-id="component.on_mav_connection">Component.on_mav_connection</h3>
+<blockquote class="blockquote">
+<pre><code> Component.on_mav_connection ()</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="component.on_message" class="level3">
+<h3 class="anchored" data-anchor-id="component.on_message">Component.on_message</h3>
+<blockquote class="blockquote">
+<pre><code> Component.on_message
+                       (msg:pymavlink.dialects.v20.ardupilotmega.MAVLink_m
+                       essage)</code></pre>
+</blockquote>
+<p>Callback for a command received from a component server</p>
+<hr>
+</section>
+<section id="component.request_message" class="level3">
+<h3 class="anchored" data-anchor-id="component.request_message">Component.request_message</h3>
+<blockquote class="blockquote">
+<pre><code> Component.request_message (msg_id, params=None, target_system=None,
+                            target_component=None, timeout=1)</code></pre>
+</blockquote>
+<p>Request the target system(s) emit a single instance of a specified message (i.e.&nbsp;a “one-shot” version of MAV_CMD_SET_MESSAGE_INTERVAL). https://mavlink.io/en/messages/common.html#MAV_CMD_REQUEST_MESSAGE</p>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="component.request_message_stream" class="level3">
+<h3 class="anchored" data-anchor-id="component.request_message_stream">Component.request_message_stream</h3>
+<blockquote class="blockquote">
+<pre><code> Component.request_message_stream (target_system=None,
+                                   target_component=None, msg_id:int=147,
+                                   interval:int=1000000,
+                                   response_target:int=0)</code></pre>
+</blockquote>
+<p>A system can request that additional messages are sent as a stream, or change the rate at which existing streamed messages are sent, using the MAV_CMD_SET_MESSAGE_INTERVAL command. A single instance of a message can be requested by sending MAV_CMD_REQUEST_MESSAGE. See https://mavlink.io/en/mavgen_python/howto_requestmessages.html See https://mavlink.io/en/messages/common.html#MAV_CMD_SET_MESSAGE_INTERVAL</p>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="basecomponent.send_ack" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.send_ack">BaseComponent.send_ack</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.send_ack (msg, ack_result:object=0)</code></pre>
+</blockquote>
+<p>Send an ACK message to indicate a command was received.</p>
+<hr>
+</section>
+<section id="basecomponent.send_command" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.send_command">BaseComponent.send_command</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.send_command (target_system:int, target_component:int,
+                             command_id:int, params:list, timeout=0.5)</code></pre>
+</blockquote>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="component.send_message" class="level3">
+<h3 class="anchored" data-anchor-id="component.send_message">Component.send_message</h3>
+<blockquote class="blockquote">
+<pre><code> Component.send_message (msg)</code></pre>
+</blockquote>
+<p>Send a message to a component server</p>
+<hr>
+</section>
+<section id="basecomponent.send_ping" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.send_ping">BaseComponent.send_ping</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.send_ping (target_system:int, target_component:int,
+                          ping_num:int=None)</code></pre>
+</blockquote>
+<p>Send self.max_pings * ping messages to test if the server is alive.</p>
+<hr>
+</section>
+<section id="cameraclient.set_camera_mode" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.set_camera_mode">CameraClient.set_camera_mode</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.set_camera_mode (target_system=None, target_component=None,
+                               mode_id=0)</code></pre>
+</blockquote>
+<p>Set the camera mode</p>
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>target_system</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>target_component</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>mode_id</td>
+<td>int</td>
+<td>0</td>
+<td>https://mavlink.io/en/messages/common.html#CAMERA_MODE</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="cameraclient.set_camera_zoom" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.set_camera_zoom">CameraClient.set_camera_zoom</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.set_camera_zoom (target_system=None, target_component=None,
+                               zoom_type=0, zoom_value=1)</code></pre>
+</blockquote>
+<p>Set the cameras zoom</p>
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>target_system</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>target_component</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>zoom_type</td>
+<td>int</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>zoom_value</td>
+<td>int</td>
+<td>1</td>
+<td>0 to 100 zoom value</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="basecomponent.set_log" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.set_log">BaseComponent.set_log</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.set_log (loglevel)</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="basecomponent.set_mav_connection" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.set_mav_connection">BaseComponent.set_mav_connection</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.set_mav_connection (mav_com:MAVCom)</code></pre>
+</blockquote>
+<p>Set the mav_connection for the component</p>
+<hr>
+</section>
+<section id="component.set_message_callback_cond" class="level3">
+<h3 class="anchored" data-anchor-id="component.set_message_callback_cond">Component.set_message_callback_cond</h3>
+<blockquote class="blockquote">
+<pre><code> Component.set_message_callback_cond (msg_id, target_system,
+                                      target_component)</code></pre>
+</blockquote>
+<p>Register a callback condition for a message received from a component server</p>
+<hr>
+</section>
+<section id="basecomponent.set_source_compenent" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.set_source_compenent">BaseComponent.set_source_compenent</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.set_source_compenent ()</code></pre>
+</blockquote>
+<p>Set the source component for the master.mav</p>
+<hr>
+</section>
+<section id="basecomponent.set_target" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.set_target">BaseComponent.set_target</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.set_target (target_system, target_component)</code></pre>
+</blockquote>
+<p>Set the target system and component for the gimbal</p>
+<hr>
+</section>
+<section id="cameraclient.storage_format" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.storage_format">CameraClient.storage_format</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.storage_format (target_system=None, target_component=None)</code></pre>
+</blockquote>
+<p>Format storage (for cases where cameras has storage)</p>
+<hr>
+</section>
+<section id="basecomponent.test_command" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.test_command">BaseComponent.test_command</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.test_command (target_system:int, target_component:int,
+                             camera_id:int)</code></pre>
+</blockquote>
+<p>example: MAV_CMD_DO_DIGICAM_CONTROL to trigger a cameras</p>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="cameraclient.video_start_capture" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.video_start_capture">CameraClient.video_start_capture</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.video_start_capture (target_system=None,
+                                   target_component=None,
+                                   video_stream_id=0, frequency=1)</code></pre>
+</blockquote>
+<p>Start video capture</p>
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>target_system</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>target_component</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>video_stream_id</td>
+<td>int</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>frequency</td>
+<td>int</td>
+<td>1</td>
+<td>Frequency CAMERA_CAPTURE_STATUS messages should be sent while recording (0 for no messages, otherwise frequency in Hz)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="cameraclient.video_start_streaming" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.video_start_streaming">CameraClient.video_start_streaming</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.video_start_streaming (target_system=None,
+                                     target_component=None,
+                                     video_stream_id=0)</code></pre>
+</blockquote>
+<p>Start video streaming</p>
+<hr>
+</section>
+<section id="cameraclient.video_stop_capture" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.video_stop_capture">CameraClient.video_stop_capture</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.video_stop_capture (target_system=None,
+                                  target_component=None,
+                                  video_stream_id=0)</code></pre>
+</blockquote>
+<p>Stop video capture</p>
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>target_system</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>target_component</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>video_stream_id</td>
+<td>int</td>
+<td>0</td>
+<td>Video stream id (0 for all streams)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="cameraclient.video_stop_streaming" class="level3">
+<h3 class="anchored" data-anchor-id="cameraclient.video_stop_streaming">CameraClient.video_stop_streaming</h3>
+<blockquote class="blockquote">
+<pre><code> CameraClient.video_stop_streaming (target_system=None,
+                                    target_component=None,
+                                    video_stream_id=0)</code></pre>
+</blockquote>
+<p>Stop the video stream</p>
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>target_system</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>target_component</td>
+<td>NoneType</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>video_stream_id</td>
+<td>int</td>
+<td>0</td>
+<td>Video Stream ID (0 for all streams)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="basecomponent.wait_ack" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.wait_ack">BaseComponent.wait_ack</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.wait_ack (target_system, target_component, command_id=None,
+                         timeout=0.1)</code></pre>
+</blockquote>
+<p>Wait for an ack from target_system and target_component.</p>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="basecomponent.wait_heartbeat" class="level3">
+<h3 class="anchored" data-anchor-id="basecomponent.wait_heartbeat">BaseComponent.wait_heartbeat</h3>
+<blockquote class="blockquote">
+<pre><code> BaseComponent.wait_heartbeat (remote_mav_type=None, target_system=None,
+                               target_component=None, timeout:float=1.0)</code></pre>
+</blockquote>
+<p>Wait for a heartbeat from target_system and target_component.</p>
+<p><strong>Note: async function</strong></p>
+<hr>
+</section>
+<section id="component.wait_message_callback" class="level3">
+<h3 class="anchored" data-anchor-id="component.wait_message_callback">Component.wait_message_callback</h3>
+<blockquote class="blockquote">
+<pre><code> Component.wait_message_callback (cond, timeout=1, remove_after=True)</code></pre>
+</blockquote>
+<p>Wait for the callback for a message received from a component server</p>
+<p><strong>Note: async function</strong></p>
+</section>
+</div>
+</div>
+</section>
+</section>
+<section id="example-test-locally-using-udp-ports" class="level3">
+<h3 class="anchored" data-anchor-id="example-test-locally-using-udp-ports">Example: Test locally using UDP ports</h3>
+<blockquote class="blockquote">
+<p>on the same machine using UDP ports <code>14445</code> with <code>server_system_ID=111, client_system_ID=222</code> CameraClient is set to udpin:localhost:14445 and CameraServer is set to udpout:localhost:14445 udpin is so that the client can receive UDP from the mavproxy server at localhost:14445 CameraClient uses async/await to send commands to the CameraServer</p>
+</blockquote>
+<div id="cell-16" class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> asyncio</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> main():</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    MAV_TYPE_GCS <span class="op">=</span> mavlink.MAV_TYPE_GCS</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    MAV_TYPE_CAMERA <span class="op">=</span> mavlink.MAV_TYPE_CAMERA</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    con1, con2 <span class="op">=</span> <span class="st">"udpin:localhost:14445"</span>, <span class="st">"udpout:localhost:14445"</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># con1, con2 = "/dev/ttyACM0", "/dev/ttyUSB0"</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> MAVCom(con1, source_system<span class="op">=</span><span class="dv">111</span>) <span class="im">as</span> client:</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> MAVCom(con2, source_system<span class="op">=</span><span class="dv">222</span>) <span class="im">as</span> server:</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>            gcs:CameraClient <span class="op">=</span> client.add_component(</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>                CameraClient(mav_type<span class="op">=</span>MAV_TYPE_GCS, source_component<span class="op">=</span><span class="dv">11</span>))</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>            <span class="co"># server.add_component(CameraServer(mav_type=MAV_TYPE_CAMERA, source_component=22, camera=cam_fake1, debug=False))</span></span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>            server.add_component(CameraServer(mav_type<span class="op">=</span>MAV_TYPE_CAMERA, source_component<span class="op">=</span><span class="dv">22</span>, camera<span class="op">=</span><span class="va">None</span>))</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>            ret <span class="op">=</span> <span class="cf">await</span> gcs.wait_heartbeat(remote_mav_type<span class="op">=</span>mavlink.MAV_TYPE_CAMERA)</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Heartbeat received </span><span class="sc">{</span>ret <span class="op">=</span> <span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>            msg <span class="op">=</span> <span class="cf">await</span> gcs.request_message(mavlink.MAVLINK_MSG_ID_CAMERA_INFORMATION, target_system<span class="op">=</span><span class="dv">222</span>, target_component<span class="op">=</span><span class="dv">22</span>)</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>( <span class="ss">f"MAVLINK_MSG_ID_CAMERA_INFORMATION </span><span class="sc">{</span>msg<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>            <span class="co"># msg = await cam.request_storage_information()</span></span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>            <span class="co"># print (msg)</span></span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>            time.sleep(<span class="dv">1</span>)</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb44-27"><a href="#cb44-27" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> main()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>INFO |32.270| mavcom.MAVCom   | mavcom.py :386 | Thread-18  | MainProces | MAVLink Mav2: True, source_system: 111
+INFO |32.370| mavcom.MAVCom   | mavcom.py :386 | Thread-19  | MainProces | MAVLink Mav2: True, source_system: 222
+INFO |32.372| mavcom.CameraCl | basecompon:123 | MainThread | MainProces | Component Started self.source_component = 11, self.mav_type = 6, self.source_system = 111
+WARNI|32.373| mavcom.CameraSe | camera_ser:114 | MainThread | MainProces | Component has no cameras object
+INFO |32.374| mavcom.CameraSe | basecompon:123 | MainThread | MainProces | Component Started self.source_component = 22, self.mav_type = 30, self.source_system = 222
+INFO |34.374| mavcom.CameraSe | basecompon:417 | MainThread | MainProces | CameraServer closed (not waiting for _t_heartbeat daemon thread)
+INFO |34.375| mavcom.MAVCom   | mavcom.py :442 | MainThread | MainProces | MAVCom  closed
+INFO |34.375| mavcom.CameraCl | basecompon:417 | MainThread | MainProces | CameraClient closed (not waiting for _t_heartbeat daemon thread)
+INFO |34.376| mavcom.MAVCom   | mavcom.py :442 | MainThread | MainProces | MAVCom  closed</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>UAV                             
+Heartbeat received ret = (222, 22)
+MAVLINK_MSG_ID_CAMERA_INFORMATION CAMERA_INFORMATION {time_boot_ms : 3985, vendor_name : UAV, model_name : FakeCamera, firmware_version : 1, focal_length : 2.799999952316284, sensor_size_h : 3.200000047683716, sensor_size_v : 2.4000000953674316, resolution_h : 640, resolution_v : 480, lens_id : 0, flags : 0, cam_definition_version : 1, cam_definition_uri : , gimbal_device_id : 0}</code></pre>
+</div>
+</div>
+<section id="starting-a-client-and-server" class="level4">
+<h4 class="anchored" data-anchor-id="starting-a-client-and-server">Starting a client and server</h4>
+<blockquote class="blockquote">
+<p>on the same machine using UDP ports <code>14445</code> with <code>server_system_ID=111, client_system_ID=222</code></p>
+</blockquote>
+<div id="cell-18" class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> UAV.mavlink <span class="im">import</span> CameraClient, CameraServer, MAVCom, mavlink, GimbalServerViewsheen</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> on_message(message):</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"on_message: </span><span class="sc">{</span>message<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">True</span> <span class="co"># Return True to indicate that command was ok and send ack</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Cam1(Component):</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, source_component, mav_type, debug<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(source_component<span class="op">=</span>source_component, mav_type<span class="op">=</span>mav_type)</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.append_message_handler(on_message)</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Cam2(Component):</span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, source_component, mav_type, debug<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(source_component<span class="op">=</span>source_component, mav_type<span class="op">=</span>mav_type)</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.append_message_handler(on_message)</span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Cli(Component):</span>
+<span id="cb47-22"><a href="#cb47-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, source_component, mav_type, debug<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb47-23"><a href="#cb47-23" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(source_component<span class="op">=</span>source_component, mav_type<span class="op">=</span>mav_type)</span>
+<span id="cb47-24"><a href="#cb47-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.append_message_handler(on_message)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-20" class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># assert False, "Stop here"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="test-with-serial-ports" class="level4">
+<h4 class="anchored" data-anchor-id="test-with-serial-ports">Test with Serial ports</h4>
+<p>Test using a Pixhawk connected via telemetry 2 and USB serial ports. CamClient is set to udpin:localhost:14445 and CamServer is set to udpout:localhost:14435 udpin is so that the client can receive UDP from the mavproxy server at localhost:14445 mavproxy.py –master=/dev/ttyACM1 –baudrate 57600 –out udpout:localhost:14445 mavproxy.py –master=/dev/ttyACM3 –baudrate 57600 –out udpout:localhost:14435</p>
+<div id="cell-22" class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test sending a command and receiving an ack from client to server</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> MAVCom(<span class="st">"/dev/ttyACM0"</span>, source_system<span class="op">=</span><span class="dv">111</span>) <span class="im">as</span> client:</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> MAVCom(<span class="st">"/dev/ttyUSB0"</span>, source_system<span class="op">=</span><span class="dv">222</span>) <span class="im">as</span> server:</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>        client.add_component(Cli(client, mav_type<span class="op">=</span>mavlink.MAV_TYPE_GCS))</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>        server.add_component(Cam1(server, mav_type<span class="op">=</span>mavlink.MAV_TYPE_CAMERA))</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>        server.add_component(Cam1(server, mav_type<span class="op">=</span>mavlink.MAV_TYPE_CAMERA))</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> key, comp <span class="kw">in</span> client.component.items():</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> comp.wait_heartbeat(target_system<span class="op">=</span><span class="dv">222</span>, target_component<span class="op">=</span><span class="dv">22</span>, timeout<span class="op">=</span><span class="fl">0.1</span>):</span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span> (<span class="st">"*** Received heartbeat **** "</span> )</span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>        NUM_TO_SEND <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(NUM_TO_SEND):</span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>            client.component[<span class="dv">11</span>]._test_command(<span class="dv">222</span>, <span class="dv">22</span>, <span class="dv">1</span>)</span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>            client.component[<span class="dv">11</span>]._test_command(<span class="dv">222</span>, <span class="dv">23</span>, <span class="dv">1</span>)</span>
+<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>        client.component[<span class="dv">11</span>]._test_command(<span class="dv">222</span>, <span class="dv">24</span>, <span class="dv">1</span>)</span>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>server<span class="sc">.</span>source_system <span class="op">=</span> <span class="sc">}</span><span class="ss">;  </span><span class="sc">{</span>server<span class="sc">.</span>message_cnts <span class="op">=</span> <span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>client<span class="sc">.</span>source_system <span class="op">=</span> <span class="sc">}</span><span class="ss">;  </span><span class="sc">{</span>client<span class="sc">.</span>message_cnts <span class="op">=</span> <span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb49-21"><a href="#cb49-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>client<span class="sc">.</span>source_system <span class="op">=</span> <span class="sc">}</span><span class="ss"> </span><span class="ch">\n</span><span class="sc">{</span>client<span class="sc">.</span>summary()<span class="sc">}</span><span class="ss"> </span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb49-22"><a href="#cb49-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>server<span class="sc">.</span>source_system <span class="op">=</span> <span class="sc">}</span><span class="ss"> </span><span class="ch">\n</span><span class="sc">{</span>server<span class="sc">.</span>summary()<span class="sc">}</span><span class="ss"> </span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb49-23"><a href="#cb49-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-24"><a href="#cb49-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> client.component[<span class="dv">11</span>].num_cmds_sent <span class="op">==</span> NUM_TO_SEND <span class="op">*</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb49-25"><a href="#cb49-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> client.component[<span class="dv">11</span>].num_acks_rcvd <span class="op">==</span> NUM_TO_SEND <span class="op">*</span> <span class="dv">2</span></span>
+<span id="cb49-26"><a href="#cb49-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> client.component[<span class="dv">11</span>].num_acks_drop <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb49-27"><a href="#cb49-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> server.component[<span class="dv">22</span>].num_cmds_rcvd <span class="op">==</span> NUM_TO_SEND</span>
+<span id="cb49-28"><a href="#cb49-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> server.component[<span class="dv">23</span>].num_cmds_rcvd <span class="op">==</span> NUM_TO_SEND</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ERROR|34.431| mavcom.MAVCom   | mavcom.py :296 | MainThread | MainProces | [Errno 2] could not open port /dev/ttyACM0: [Errno 2] No such file or directory: '/dev/ttyACM0'</code></pre>
+</div>
+<div class="cell-output cell-output-error">
+<pre><code>SerialException: [Errno 2] could not open port /dev/ttyACM0: [Errno 2] No such file or directory: '/dev/ttyACM0'</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>For debugging help see http://localhost:3000/tutorials/mavlink_doc&amp;debug.html and http://localhost:3000/tutorials/mavlink_doc&amp;debug.html#debugging</p>
+</blockquote>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/johnnewto\.github\.io\/UAV");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/johnnewto/UAV/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
