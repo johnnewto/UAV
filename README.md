@@ -53,6 +53,10 @@ pip install --upgrade pip
 pip install -e .
 ```
 
+For local install
+``` sh
+pip install git+file:///home/john/PycharmProjects/UAV#egg=UAV
+```
 3.  Install gstreamer
 
 ``` sh

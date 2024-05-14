@@ -1,21 +1,10 @@
 
-
-#mav_connection = "udpin:localhost:14445"
-# mav_connection = "/dev/ttyACM0" "/dev/ttyUSB1"
-# mav_connection, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
-# mav_connection = "udpout:192.168.122.84:14445"
-# mav_connection = "udpin:10.42.0.1:14445"
-
-
-
-camera_names = ['front', 'down', 'gimbal']
-camera_ip_ports = [5000, 5001, 5010]
+camera_names = ['0', '1', '2', '3']    # ['front', 'down', 'gimbal']
+camera_ip_ports = [5000, 5001, 5002, 5003]      # [5000, 5001, 5010]
 camera_udp_decoder = 'h264'
 # camera_udp_decoder = 'h265'
 camera_component = 11
 
-#gimbal_names = ['gimbal']   # todo confusing , should be camera
-#gimbal_ip_ports = [5010]   # this is a camera
 gimbal_component = 12
 
 [mavlink]
@@ -24,9 +13,9 @@ target_system = 222
 #connection = "udpin:192.168.1.175:14445"     # this is the wlan IP of this pc
 #connection = "/dev/ttyUSB0"  # holybro telemetry radio
 
-connection = "udpin:192.168.1.79:14445"
+# connection = "udpin:192.168.1.79:14445"
 # connection = "/dev/ttyACM0" "/dev/ttyUSB1"
 # connection, con2 = "/dev/ttyUSB0", "/dev/ttyUSB1"
 # connection = "udpout:192.168.122.84:14445"
-# connection = "udpin:10.42.0.1:14445"
+connection = "udpin:10.42.0.1:14445"
 

@@ -14,11 +14,7 @@ for o in expected: assert o in cfg, "missing expected setting: {}".format(o)
 setup_cfg = {o:cfg[o] for o in cfg_keys}
 
 licenses = {
-    'apache2': ('Apache Software License 2.0','OSI Approved :: Apache Software License'),
     'mit': ('MIT License', 'OSI Approved :: MIT License'),
-    'gpl2': ('GNU General Public License v2', 'OSI Approved :: GNU General Public License v2 (GPLv2)'),
-    'gpl3': ('GNU General Public License v3', 'OSI Approved :: GNU General Public License v3 (GPLv3)'),
-    'bsd3': ('BSD License', 'OSI Approved :: BSD License'),
 }
 statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
     '4 - Beta', '5 - Production/Stable', '6 - Mature', '7 - Inactive' ]
@@ -39,8 +35,7 @@ setuptools.setup(
         'Natural Language :: ' + cfg['language'].title(),
     ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
     url = cfg['git_url'],
-    package_dir = {"": "src"}, # directory containing all the packages (e.g.  src/mypkg, src/mypkg/subpkg1, ...)
-    packages = setuptools.find_packages(),
+    packages=['src.UAV',],
     include_package_data = True,
     install_requires = requirements,
     extras_require={ 'dev': dev_requirements },

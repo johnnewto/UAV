@@ -32,19 +32,19 @@ pipeline = [
     'videotestsrc pattern=ball is-live=true ! timeoverlay',
     'textoverlay text="Front" valignment=top halignment=right font-desc="Sans, 18" shaded-background=true',
     'capsfilter caps=video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1',
-    'tee name=t',
+#     'tee name=t',
 
-    "t.",
-    'queue', 'videoscale ', 'capsfilter caps=video/x-raw,format=RGB,width=400,height=300',
-    'videoconvert ! autovideosink',
+#     "t.",
+#     'queue', 'videoscale ', 'capsfilter caps=video/x-raw,format=RGB,width=400,height=300',
+#     'videoconvert ! autovideosink',
 
-#    "t.",
-#    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
-#
-#    "t.",
-#    'queue leaky=2 ! intervideosink channel={cam_name}  sync=false',
+# #    "t.",
+# #    'queue leaky=2 ! intervideosink channel=channel_0  sync=false',
+# #
+# #    "t.",
+# #    'queue leaky=2 ! intervideosink channel={cam_name}  sync=false',
 
-    "t.",
+#     "t.",
     'interpipesink name={cam_name} ',
 ]
 
